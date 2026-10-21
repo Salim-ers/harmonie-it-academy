@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "vercel-build": "tsx scripts/check-env.ts && tsx scripts/migrate.ts && tsx scripts/seed.ts && next build",
+    "vercel-build": "tsx scripts/check-env.ts && tsx scripts/migrate.ts && tsx scripts/seed.ts && tsx scripts/ensure-admin.ts && next build",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit -p .",
@@ -16,6 +16,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/migrate.ts",
     "db:seed": "tsx scripts/seed.ts",
+    "db:admin": "tsx scripts/ensure-admin.ts",
     "db:reset": "./scripts/reset-db.sh",
     "audit:archive": "python3 -I scripts/audit-archive.py",
     "test:e2e": "playwright test"
