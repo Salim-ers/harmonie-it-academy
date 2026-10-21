@@ -1,0 +1,151 @@
+{
+  "meta": {
+    "slug": "n1-vlan",
+    "title": "VLAN : introduction pour le support",
+    "summary": "Comprendre pourquoi une entreprise découpe son réseau en VLAN, reconnaître au poste les symptômes d'un mauvais VLAN et transmettre au N2 une escalade exploitable.",
+    "level": "debutant",
+    "prerequisites": [
+      "Savoir lire une adresse IP et un masque (leçon « Adresse IP, masque et passerelle »)",
+      "Connaître le DHCP et l'adresse APIPA (leçon « DHCP »)"
+    ],
+    "objectives": [
+      "Expliquer pourquoi une entreprise segmente son réseau",
+      "Définir un VLAN et distinguer port d'accès et port trunk",
+      "Relier un VLAN à son sous-réseau, sa passerelle et son étendue DHCP",
+      "Décrire en notions le routage inter-VLAN, le relais DHCP et le VLAN voix",
+      "Reconnaître au poste les symptômes d'un port placé dans le mauvais VLAN",
+      "Lire un extrait de show vlan brief et show interfaces status et rédiger l'escalade adaptée"
+    ],
+    "durationMin": 40,
+    "skills": [
+      { "code": "vlan", "weight": 3 },
+      { "code": "network-fundamentals", "weight": 2 }
+    ],
+    "next": "n1-ad-notions"
+  },
+  "blocks": [
+    { "id": "intro", "kind": "paragraph", "text": "Lundi, 9 h 15, siège du Groupe Valmont. Le service comptabilité a déménagé du 2e au 3e étage pendant le week-end. Douze personnes appellent dans la demi-heure. Dix fonctionnent après redémarrage. Deux, non : l'un obtient une adresse en 10.20.30.x et voit seulement les imprimantes, l'autre affiche une adresse en 169.254. Le technicien qui connaît les VLAN comprend en deux minutes que ces deux prises murales ne sont pas branchées sur le bon « réseau logique ». Il ne touche à aucun switch : il écrit au N2 les numéros de prise, les adresses obtenues et les VLAN attendus. Le problème est réglé avant 10 h." },
+    { "id": "h-pourquoi", "kind": "heading", "level": 2, "text": "Pourquoi segmenter un réseau" },
+    { "id": "p-pourquoi", "kind": "paragraph", "text": "Imaginez un siège de 400 personnes, avec postes, téléphones IP, imprimantes, caméras, bornes Wi-Fi et serveurs, tous sur un seul et même réseau. Trois problèmes apparaissent vite. **La sécurité** : un poste infecté peut atteindre directement chaque caméra et chaque serveur. **Les performances** : certains messages sont envoyés à tout le monde (diffusions, comme le Discover du DHCP), et plus le réseau est grand, plus ce bruit de fond augmente. **L'organisation** : impossible d'appliquer des règles différentes aux téléphones et aux postes. La solution consiste à découper le réseau en plusieurs réseaux plus petits, sans pour autant acheter un switch par usage." },
+    { "id": "def", "kind": "callout", "tone": "definition", "title": "Définition simple", "text": "Un **VLAN** (Virtual Local Area Network, réseau local virtuel) est un **réseau logique** créé à l'intérieur d'un ou plusieurs switchs. Les appareils d'un même VLAN communiquent directement entre eux ; pour joindre un autre VLAN, ils doivent passer par un routeur, comme s'ils étaient sur des switchs physiquement séparés. Chaque VLAN est identifié par un **numéro** (VLAN ID), compris entre 1 et 4094." },
+    { "id": "analogie", "kind": "callout", "tone": "analogy", "title": "Analogie", "text": "Un switch avec des VLAN, c'est un immeuble de bureaux partagé par plusieurs entreprises. Les couloirs et les ascenseurs sont communs (le switch physique), mais chaque entreprise a ses propres bureaux, fermés par badge (les VLAN). Pour passer d'une entreprise à l'autre, il faut passer par l'accueil, qui vérifie si la visite est autorisée : c'est le routeur ou le pare-feu entre les VLAN." },
+    { "id": "diag-vlan", "kind": "diagram", "diagram": "vlan-segmentation", "caption": "Un même switch héberge plusieurs VLAN ; le lien trunk transporte tous les VLAN vers le cœur de réseau, qui route entre eux." },
+    { "id": "tab-valmont", "kind": "table", "caption": "Les VLAN fictifs du siège du Groupe Valmont", "headers": ["VLAN ID", "Nom", "Sous-réseau", "Passerelle", "DHCP"], "rows": [
+      ["10", "Bureaux", "10.20.10.0/24", "10.20.10.1", "Oui, étendue 10.20.10.50 à .240"],
+      ["20", "Téléphonie", "10.20.20.0/24", "10.20.20.1", "Oui, étendue dédiée avec options pour les téléphones"],
+      ["30", "Imprimantes", "10.20.30.0/24", "10.20.30.1", "Réservations uniquement"],
+      ["100", "Serveurs et infrastructure", "10.20.1.0/24 et 10.20.5.0/24 (simplifié)", "10.20.1.1 / 10.20.5.1", "Non (adresses fixes)"]
+    ] },
+    { "id": "p-regle", "kind": "paragraph", "text": "Retenez cette équivalence, valable dans l'immense majorité des entreprises : **un VLAN = un sous-réseau IP = une passerelle = souvent une étendue DHCP**. C'est elle qui vous permet, en regardant simplement une adresse IP sur un poste, de savoir **dans quel VLAN il se trouve**. Un poste en 10.20.30.x au siège de Valmont est dans le VLAN Imprimantes, quoi qu'en dise l'étiquette de la prise murale." },
+    { "id": "vlan1-info", "kind": "callout", "tone": "info", "title": "Une précision sur le VLAN 1", "text": "Le VLAN 1 est le VLAN par défaut de nombreux switchs : tout port non configuré y appartient. Pour cette raison, la plupart des équipes réseau évitent de l'utiliser pour la production et placent serveurs, postes et téléphones dans des VLAN dédiés. Le tableau ci-dessus est volontairement simplifié (en réalité, un VLAN correspond en principe à un seul sous-réseau). Vous n'avez pas à retenir les numéros : ce qui compte est la correspondance entre adresse et VLAN, que votre documentation interne indique." },
+    { "id": "h-ports", "kind": "heading", "level": 2, "text": "Port d'accès et port trunk" },
+    { "id": "p-acces", "kind": "paragraph", "text": "Un **port d'accès** est un port de switch rattaché à **un seul VLAN de données**. C'est le cas de presque toutes les prises murales : le poste qui s'y branche n'a aucune idée qu'il est dans un VLAN, il envoie des trames ordinaires et le switch les range dans le VLAN du port. C'est pourquoi **déplacer un poste d'une prise à l'autre peut changer son réseau** sans que rien ne change sur le poste." },
+    { "id": "p-trunk", "kind": "paragraph", "text": "Un **port trunk** transporte **plusieurs VLAN** sur un seul câble. On le trouve entre deux switchs, entre un switch et le cœur de réseau, ou vers une borne Wi-Fi qui diffuse plusieurs SSID. Pour que l'équipement d'en face sache à quel VLAN appartient chaque trame, le switch y ajoute une petite **étiquette**, définie par la norme **IEEE 802.1Q**. Cette étiquette de 4 octets contient notamment le numéro du VLAN. Sur un trunk, un VLAN particulier, appelé **VLAN natif**, peut circuler sans étiquette." },
+    { "id": "tab-ports", "kind": "table", "caption": "Port d'accès ou port trunk", "headers": ["Critère", "Port d'accès", "Port trunk"], "rows": [
+      ["Nombre de VLAN de données", "Un seul", "Plusieurs"],
+      ["Étiquette 802.1Q", "Non, trames ordinaires", "Oui (sauf VLAN natif)"],
+      ["Branché sur", "Poste, imprimante, caméra", "Autre switch, cœur de réseau, borne Wi-Fi, hyperviseur"],
+      ["Ce que vit l'appareil", "Il ignore être dans un VLAN", "L'équipement d'en face lit les étiquettes"]
+    ] },
+    { "id": "h-routage", "kind": "heading", "level": 2, "text": "Passer d'un VLAN à l'autre : routage et relais DHCP" },
+    { "id": "p-routage", "kind": "paragraph", "text": "Deux VLAN sont deux réseaux distincts. Pour qu'un poste du VLAN Bureaux imprime sur une imprimante du VLAN Imprimantes, son trafic part vers **sa passerelle** (10.20.10.1), qui le **route** vers le VLAN 30. Ce rôle est tenu par un switch de cœur dit « de niveau 3 », un routeur ou un pare-feu. C'est aussi à cet endroit que l'on décide **qui a le droit de parler à qui** : on peut autoriser l'impression mais interdire aux postes de joindre les caméras." },
+    { "id": "p-relais", "kind": "paragraph", "text": "Vous avez vu dans la leçon DHCP que les diffusions ne franchissent pas un routeur. Or, le serveur DHCP du Groupe Valmont est dans le réseau des serveurs, pas dans chaque VLAN. Sur la passerelle de chaque VLAN, l'équipe réseau configure donc un **relais DHCP** qui capte les demandes des postes et les transmet au serveur, en indiquant de quel VLAN elles proviennent. Le serveur répond alors avec une adresse de **la bonne étendue**. Un relais oublié sur un nouveau VLAN, et tous les postes de ce VLAN se retrouvent en 169.254." },
+    { "id": "h-voix", "kind": "heading", "level": 2, "text": "Le VLAN voix et la téléphonie IP" },
+    { "id": "p-voix", "kind": "paragraph", "text": "Dans beaucoup de bureaux, il n'y a qu'une prise par poste de travail : le **téléphone IP** se branche sur la prise murale, et l'ordinateur se branche **derrière le téléphone**, qui intègre un petit switch. Le port du switch est alors configuré avec deux VLAN : un **VLAN de données** (Bureaux, 10) pour l'ordinateur et un **VLAN voix** (Téléphonie, 20) pour le téléphone. Le téléphone découvre son VLAN voix grâce à un protocole de découverte (souvent LLDP, ou CDP chez Cisco) ou à une option DHCP, puis étiquette son propre trafic. Séparer la voix permet de lui donner la **priorité** : une conversation supporte mal le moindre retard." },
+    { "id": "voix-field", "kind": "callout", "tone": "field", "title": "Sur le terrain", "text": "Un PC branché derrière un téléphone qui obtient une adresse du VLAN Téléphonie (10.20.20.x) au lieu du VLAN Bureaux est un symptôme classique d'une configuration de port incomplète. À l'inverse, un téléphone qui affiche « adresse IP en cours » en boucle peut ne pas recevoir son VLAN voix. Dans les deux cas, notez le modèle de téléphone, la prise et l'adresse obtenue." },
+    { "id": "h-n1", "kind": "heading", "level": 2, "text": "Ce que le N1 observe, ce qu'il transmet" },
+    { "id": "tab-symptomes", "kind": "table", "caption": "Symptômes au poste et interprétation", "headers": ["Ce que vous voyez", "Ce que cela suggère", "Ce que vous vérifiez"], "rows": [
+      ["Adresse d'un autre VLAN de l'entreprise (ex. 10.20.30.x pour un PC)", "Le port est affecté au mauvais VLAN", "Numéro de prise, adresse d'un voisin, poste branché sur une autre prise"],
+      ["APIPA 169.254.x.x après un déménagement, lien actif", "Port dans un VLAN sans DHCP, sans relais, ou VLAN inexistant sur ce switch", "Prise voisine qui fonctionne, autres postes du même étage"],
+      ["Adresse correcte mais accès refusé à une ressource d'un autre VLAN", "Règle de filtrage entre VLAN", "Test-NetConnection sur le port de la ressource, comparaison avec un collègue"],
+      ["Tout un étage en APIPA depuis l'ajout d'un VLAN", "Relais DHCP manquant sur ce VLAN", "Nombre de postes touchés, heure de début, changement récent annoncé"]
+    ] },
+    { "id": "cmd-ipconfig", "kind": "command", "shell": "cmd", "command": "ipconfig", "explanation": "Sur un poste de bureau déménagé : l'adresse suffit à identifier le VLAN dans lequel se trouve la prise.", "output": "Carte Ethernet Ethernet :\n\n   Suffixe DNS propre à la connexion. . . : valmont.local\n   Adresse IPv4. . . . . . . . . . . . . .: 10.20.30.117\n   Masque de sous-réseau. . . . . . . . . : 255.255.255.0\n   Passerelle par défaut. . . . . . . . . : 10.20.30.1", "outputNotes": [
+      { "match": "10.20.30.117", "note": "Une adresse du VLAN Imprimantes (30) sur un PC de bureau : la prise est rattachée au mauvais VLAN. Le poste n'y est pour rien." },
+      { "match": "10.20.30.1", "note": "La passerelle confirme le VLAN 30. Le poste peut sans doute imprimer, mais les règles de filtrage de ce VLAN lui interdisent probablement le reste." }
+    ] },
+    { "id": "h-cisco", "kind": "heading", "level": 2, "text": "Ce que vous verrez le N2 faire : lecture d'un switch Cisco" },
+    { "id": "p-cisco", "kind": "paragraph", "text": "Vous n'aurez pas, en N1, d'accès en configuration aux switchs. Mais vous verrez souvent un collègue N2 réseau consulter un switch pendant que vous êtes au téléphone avec l'utilisateur. Savoir lire ces deux commandes de **consultation** (elles ne modifient rien) vous permet de comprendre ce qu'il cherche et de lui donner les bonnes informations. Les sorties ci-dessous sont des extraits réalistes et simplifiés." },
+    { "id": "cmd-show-vlan", "kind": "command", "shell": "cisco-ios", "command": "show vlan brief", "explanation": "Liste les VLAN connus du switch et les ports d'accès affectés à chacun. Les ports trunk n'y figurent pas : ils transportent plusieurs VLAN.", "output": "VLAN Name                             Status    Ports\n---- -------------------------------- --------- -------------------------------\n1    default                          active\n10   BUREAUX                          active    Gi1/0/1, Gi1/0/3, Gi1/0/4, Gi1/0/5\n                                                Gi1/0/6, Gi1/0/7, Gi1/0/8\n20   TELEPHONIE                       active\n30   IMPRIMANTES                      active    Gi1/0/2, Gi1/0/40, Gi1/0/41", "outputNotes": [
+      { "match": "10   BUREAUX", "note": "Le VLAN 10 et les ports d'accès qui lui sont rattachés : ce sont les prises des postes de bureau." },
+      { "match": "30   IMPRIMANTES", "note": "Le port Gi1/0/2 apparaît dans le VLAN Imprimantes, au milieu des ports de bureau : c'est sans doute la prise du PC qui reçoit une adresse en 10.20.30.x." },
+      { "match": "20   TELEPHONIE", "note": "Aucun port listé ici ne signifie pas que la téléphonie est inutilisée : selon la plateforme, les ports avec VLAN voix peuvent être affichés différemment. Le N2 sait l'interpréter." }
+    ] },
+    { "id": "cmd-show-int", "kind": "command", "shell": "cisco-ios", "command": "show interfaces status", "explanation": "Affiche chaque port avec sa description, son état, son VLAN, et la vitesse négociée. C'est souvent la première commande du N2 quand vous lui donnez un numéro de prise.", "output": "Port      Name               Status       Vlan       Duplex  Speed Type\nGi1/0/1   Bur-3.12-A         connected    10         a-full a-1000 10/100/1000BaseTX\nGi1/0/2   Bur-3.12-B         connected    30         a-full a-1000 10/100/1000BaseTX\nGi1/0/3   Bur-3.13-A         notconnect   10           auto   auto 10/100/1000BaseTX\nGi1/0/40  Imp-3-Couloir      connected    30         a-full  a-100 10/100/1000BaseTX\nTe1/1/1   Uplink-Coeur       connected    trunk        full    10G SFP-10GBase-SR", "outputNotes": [
+      { "match": "Bur-3.12-B", "note": "La description du port reprend le numéro de prise murale : c'est pourquoi votre ticket doit toujours mentionner ce numéro. Ici, la prise de bureau 3.12-B est dans le VLAN 30." },
+      { "match": "notconnect", "note": "Aucun appareil branché ou lien absent : c'est l'équivalent côté switch du « Média déconnecté » d'ipconfig." },
+      { "match": "trunk", "note": "Le lien vers le cœur de réseau transporte tous les VLAN : c'est un port trunk." }
+    ] },
+    { "id": "cisco-warning", "kind": "callout", "tone": "warning", "title": "Attention", "text": "Ces commandes sont présentées en lecture seule, pour comprendre le travail du N2. Modifier le VLAN d'un port est une opération simple techniquement, mais elle peut couper un poste, un téléphone ou une caméra, et elle doit suivre la procédure de changement de l'entreprise. Si l'on vous confie un jour un accès, ce sera avec des droits et une procédure définis." },
+    { "id": "h-demo", "kind": "heading", "level": 2, "text": "Démonstration : après le déménagement de la comptabilité" },
+    { "id": "steps-demo", "kind": "steps", "title": "Qualifier un problème de VLAN depuis le poste", "steps": [
+      { "title": "Relever l'adresse", "text": "Le poste PC-CPT-009 affiche 10.20.30.117 et la passerelle 10.20.30.1 : adresse du VLAN Imprimantes.", "command": "ipconfig" },
+      { "title": "Relever la prise", "text": "Demander à l'utilisateur le numéro inscrit sur la prise murale : 3.12-B. Noter aussi l'étage et le bureau." },
+      { "title": "Comparer avec une prise voisine", "text": "Avec l'accord de l'utilisateur, brancher le poste sur la prise 3.12-A : il obtient 10.20.10.143. Le poste est sain, la prise 3.12-B est en cause.", "command": "ipconfig /renew" },
+      { "title": "Vérifier l'ampleur", "text": "Les autres postes de l'étage sont en 10.20.10.x : le problème est limité à une ou deux prises, pas à tout le VLAN." },
+      { "title": "Escalader au N2 réseau", "text": "« Prise 3.12-B (3e étage, comptabilité) : PC obtient 10.20.30.x (VLAN Imprimantes) au lieu du VLAN Bureaux (10). Poste OK sur la prise 3.12-A. Contournement en place. Merci de vérifier le VLAN du port correspondant. »" }
+    ] },
+    { "id": "mistakes", "kind": "mistakes", "items": [
+      { "mistake": "Configurer une adresse IP fixe du VLAN Bureaux sur un poste branché dans le VLAN Imprimantes", "why": "Le poste aura une adresse qui ne correspond pas au réseau du port : il ne joindra pas sa passerelle et rien ne fonctionnera mieux.", "fix": "Laisser le poste en DHCP et faire corriger le VLAN du port par le N2." },
+      { "mistake": "Penser qu'un VLAN est lié à l'ordinateur", "why": "Sur un port d'accès, c'est le port du switch qui détermine le VLAN, pas la machine.", "fix": "Raisonner en prises et en ports : le même poste change de VLAN en changeant de prise." },
+      { "mistake": "Escalader sans numéro de prise", "why": "Le N2 doit retrouver le port du switch ; sans prise ni bureau, il ne peut que deviner.", "fix": "Toujours indiquer prise, étage, bureau, adresse obtenue et VLAN attendu." },
+      { "mistake": "Brancher un petit switch de bureau pour « ajouter des prises »", "why": "Il peut créer des boucles, contourner les règles du port ou mélanger téléphone et PC dans le mauvais VLAN.", "fix": "Demander l'activation d'une prise supplémentaire au N2." }
+    ] },
+    { "id": "risks", "kind": "risks", "items": [
+      "Ne modifiez jamais la configuration d'un switch (VLAN d'un port, trunk) sans habilitation et sans demande de changement validée : une erreur peut couper un étage entier ou un service critique.",
+      "Ne branchez pas un câble entre deux prises murales et ne connectez pas de switch personnel : une boucle réseau peut paralyser tout un VLAN en quelques secondes.",
+      "Le contournement « brancher sur la prise du voisin » doit se faire avec l'accord de l'utilisateur concerné et rester temporaire, documenté dans le ticket.",
+      "Un appareil inconnu qui apparaît dans un VLAN sensible (serveurs, caméras) est un incident de sécurité à signaler, pas un problème de confort."
+    ] },
+    { "id": "quiz", "kind": "quiz", "title": "Vérifiez votre compréhension", "questions": ["vlan-definition", "vlan-acces-trunk", "vlan-adresse-identifie", "vlan-relais-dhcp", "vlan-voix"] },
+    { "id": "exercise", "kind": "exercise", "title": "Tout le nouveau plateau en 169.254", "context": "Le Groupe Valmont a ouvert ce lundi un nouveau plateau au 4e étage pour l'équipe projet. L'équipe réseau a créé un nouveau VLAN 40 « Projets » en 10.20.40.0/24 vendredi. Ce matin, les 15 postes du plateau affichent tous une adresse 169.254.x.x, lien actif. Un portable du 3e étage, branché par un technicien sur une prise du 4e, obtient aussi une APIPA. Au 3e étage, ce même portable obtient bien une adresse 10.20.10.x.", "task": "Analysez la situation : que prouvent ces observations, quelle cause paraît la plus probable, et que transmettez-vous au N2 ?", "hints": [
+      "Le même portable fonctionne au 3e étage et échoue au 4e : le poste est-il en cause ?",
+      "Tous les postes du plateau sont touchés et le VLAN est tout neuf. Qu'est-ce qui doit exister pour qu'un nouveau VLAN reçoive des adresses DHCP ?",
+      "Il faut une étendue DHCP pour 10.20.40.0/24 et un relais DHCP configuré sur la passerelle du VLAN 40. L'un des deux manque probablement."
+    ], "solution": [
+      "L'APIPA avec lien actif prouve que les postes sont en DHCP mais ne reçoivent aucune réponse. Le portable de test, sain au 3e étage, échoue au 4e : les postes ne sont pas en cause, c'est le réseau du plateau qui l'est.",
+      "Tous les postes du nouveau VLAN sont touchés en même temps : il ne s'agit pas d'une prise isolée. Pour un nouveau VLAN, il faut une étendue DHCP correspondante sur le serveur et un relais DHCP sur la passerelle du VLAN, voire que le VLAN soit bien transporté sur le trunk jusqu'au switch de l'étage. L'oubli de l'un de ces éléments, juste après la création du VLAN, est l'hypothèse la plus probable.",
+      "Le N1 ne modifie rien sur le serveur DHCP ni sur les équipements réseau. Il ouvre un incident à fort impact (15 personnes bloquées) et l'associe au changement de vendredi.",
+      "Escalade attendue : « Nouveau plateau 4e étage, VLAN 40 Projets créé vendredi : 15 postes en APIPA, lien actif. Portable de test OK au 3e (10.20.10.x), APIPA au 4e. Suspicion : étendue DHCP 10.20.40.0/24, relais DHCP ou transport du VLAN 40 manquant. Impact : équipe projet entière bloquée depuis 8 h 30. »"
+    ], "rubric": {
+      "criteria": [
+        { "id": "apipa", "label": "Identifie l'absence de réponse DHCP (APIPA)", "points": 2, "patterns": ["apipa", "169.254", "pas de reponse dhcp", "aucune reponse dhcp", "pas d'adresse dhcp"], "required": true },
+        { "id": "poste-ok", "label": "Innocente les postes grâce au portable de test", "points": 2, "patterns": ["portable", "pas les postes", "poste sain", "postes ne sont pas en cause", "fonctionne au 3"] },
+        { "id": "cause", "label": "Soupçonne l'étendue, le relais DHCP ou le transport du nouveau VLAN", "points": 3, "patterns": ["relais", "helper", "etendue", "scope", "trunk", "vlan 40"], "required": true },
+        { "id": "changement", "label": "Relie l'incident au changement de vendredi", "points": 2, "patterns": ["vendredi", "nouveau vlan", "changement", "creation du vlan", "recemment cree"] },
+        { "id": "escalade", "label": "Escalade avec impact et éléments de test", "points": 2, "patterns": ["escalad*", "n2", "incident", "impact", "equipe reseau"] }
+      ],
+      "redFlags": [
+        { "id": "ipfixe", "label": "Propose des adresses fixes comme solution", "patterns": ["ip fixe", "adresse fixe", "adresse statique", "ip statique"], "penalty": 2 }
+      ],
+      "passPercent": 60
+    } },
+    { "id": "interview", "kind": "interview", "questions": [
+      { "question": "Qu'est-ce qu'un VLAN et pourquoi les entreprises en utilisent-elles ?", "expectedPoints": ["Un réseau logique créé dans les switchs", "Chaque VLAN est un réseau séparé, souvent un sous-réseau IP", "Sécurité : on contrôle les échanges entre VLAN", "Performances : on limite la diffusion", "Organisation : règles par usage (voix, imprimantes, invités)"], "modelAnswer": "Un VLAN est un réseau logique créé à l'intérieur des switchs : les appareils d'un même VLAN se voient directement, ceux de VLAN différents doivent passer par un routeur ou un pare-feu. Les entreprises s'en servent pour la sécurité, car on décide qui peut parler à qui, pour limiter le trafic de diffusion, et pour appliquer des règles par usage : la voix avec une priorité, les imprimantes à part, les invités isolés. En pratique, un VLAN correspond presque toujours à un sous-réseau IP, ce qui permet au support de savoir dans quel VLAN est un poste rien qu'en regardant son adresse." },
+      { "question": "Un utilisateur a déménagé et son PC obtient une adresse d'un autre réseau de l'entreprise. Que faites-vous ?", "expectedPoints": ["Identifier le VLAN à partir de l'adresse", "Relever le numéro de prise", "Tester une prise voisine pour innocenter le poste", "Ne pas mettre d'IP fixe", "Escalader au N2 avec prise, adresse obtenue et VLAN attendu"], "modelAnswer": "L'adresse me dit dans quel VLAN se trouve la prise : par exemple 10.20.30.x correspond au VLAN Imprimantes. Le poste n'est donc pas en cause, c'est le port du switch. Je relève le numéro de prise, je teste si possible une autre prise du bureau pour confirmer, puis j'escalade au N2 réseau avec la prise, l'adresse obtenue et le VLAN attendu. Je ne mets surtout pas d'adresse fixe, qui ne marcherait pas dans ce VLAN et masquerait le problème." }
+    ] },
+    { "id": "glossary", "kind": "glossary", "terms": [
+      { "term": "VLAN", "en": "Virtual Local Area Network", "definition": "Réseau logique créé dans les switchs, identifié par un numéro." },
+      { "term": "Port d'accès", "en": "Access port", "definition": "Port de switch rattaché à un seul VLAN de données, sans étiquette." },
+      { "term": "Port trunk", "en": "Trunk port", "definition": "Port qui transporte plusieurs VLAN, avec une étiquette 802.1Q par trame." },
+      { "term": "Étiquette 802.1Q", "en": "802.1Q tag", "definition": "Champ de 4 octets ajouté à une trame pour indiquer son VLAN." },
+      { "term": "VLAN natif", "en": "Native VLAN", "definition": "VLAN dont les trames circulent sans étiquette sur un trunk." },
+      { "term": "Routage inter-VLAN", "en": "Inter-VLAN routing", "definition": "Passage du trafic d'un VLAN à un autre via un routeur, un switch de niveau 3 ou un pare-feu." },
+      { "term": "VLAN voix", "en": "Voice VLAN", "definition": "VLAN dédié aux téléphones IP, souvent prioritaire." },
+      { "term": "Boucle réseau", "en": "Network loop", "definition": "Chemin circulaire entre ports qui fait tourner le trafic indéfiniment et sature le réseau." }
+    ] },
+    { "id": "summary", "kind": "summary", "points": [
+      "Un VLAN est un réseau logique dans les switchs : il sépare les usages pour la sécurité, les performances et l'organisation.",
+      "Un VLAN = un sous-réseau = une passerelle = souvent une étendue DHCP : l'adresse d'un poste révèle son VLAN.",
+      "Un port d'accès appartient à un seul VLAN ; un trunk en transporte plusieurs grâce à l'étiquette 802.1Q.",
+      "Le routage entre VLAN passe par une passerelle ; le relais DHCP permet à chaque VLAN d'obtenir ses adresses.",
+      "Mauvaise adresse ou APIPA après un déménagement : relever la prise, comparer avec une prise voisine, ne rien modifier, escalader.",
+      "show vlan brief et show interfaces status sont des commandes de consultation du N2 : la description du port reprend souvent le numéro de prise."
+    ] },
+    { "id": "references", "kind": "references", "items": [
+      { "title": "IEEE 802.1Q — Bridges and Bridged Networks", "url": "https://standards.ieee.org/ieee/802.1Q/10323/", "publisher": "IEEE Standards Association", "verifiedAt": "2026-10-21" },
+      { "title": "Inter-Switch Link and IEEE 802.1Q Frame Format", "url": "https://www.cisco.com/c/en/us/support/docs/lan-switching/8021q/17056-741-4.html", "publisher": "Cisco", "verifiedAt": "2026-10-21" },
+      { "title": "Serveur DHCP dans Windows Server (agent de relais)", "url": "https://learn.microsoft.com/windows-server/networking/technologies/dhcp/dhcp-top", "publisher": "Microsoft Learn", "verifiedAt": "2026-10-21" }
+    ] }
+  ]
+}

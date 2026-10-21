@@ -1,0 +1,131 @@
+[
+  {
+    "code": "methode-etapes-ordre",
+    "lesson": "n1-methode-diagnostic",
+    "skill": "diagnostic",
+    "prompt": "Remettez dans l'ordre les six étapes de la méthode de diagnostic.",
+    "data": {
+      "type": "order",
+      "items": [
+        { "id": "tests", "text": "Tester les hypothèses dans l'ordre" },
+        { "id": "symptome", "text": "Décrire le symptôme" },
+        { "id": "valider", "text": "Valider avec l'utilisateur et documenter" },
+        { "id": "hypo", "text": "Formuler des hypothèses" },
+        { "id": "corriger", "text": "Corriger" },
+        { "id": "impact", "text": "Mesurer l'impact" }
+      ],
+      "answer": ["symptome", "impact", "hypo", "tests", "corriger", "valider"]
+    },
+    "explanation": "On décrit d'abord ce qui se passe, puis on mesure l'étendue (ce qui fixe la priorité et le périmètre), on formule plusieurs causes possibles, on les teste, on corrige la cause confirmée, et l'on termine par la validation et la documentation. Corriger avant de tester revient à agir au hasard ; formuler des hypothèses avant de connaître le symptôme et l'impact les rend arbitraires.",
+    "difficulty": 1
+  },
+  {
+    "code": "methode-ordre-tests",
+    "lesson": "n1-methode-diagnostic",
+    "skill": "diagnostic",
+    "prompt": "Un poste n'affiche plus rien sur son écran externe. Quel test faites-vous en premier ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Vérifier que l'écran est allumé et que le câble est bien branché des deux côtés" },
+        { "id": "b", "text": "Réinstaller le pilote de la carte graphique" },
+        { "id": "c", "text": "Demander le remplacement de l'écran" },
+        { "id": "d", "text": "Réinitialiser Windows" }
+      ],
+      "answer": "a"
+    },
+    "explanation": "La vérification de l'alimentation et du câble est probable et ne prend que quelques secondes : elle passe en premier. Réinstaller le pilote est plus long et à garder pour plus tard. Demander un remplacement sans test fait perdre du temps et du matériel si le câble était simplement débranché. Réinitialiser Windows est le test le plus coûteux et le plus risqué, totalement disproportionné ici.",
+    "difficulty": 1
+  },
+  {
+    "code": "methode-comparaison",
+    "lesson": "n1-methode-diagnostic",
+    "skill": "diagnostic",
+    "prompt": "Un utilisateur ne peut pas ouvrir une application métier sur son poste. Il se connecte sur le poste de sa collègue avec son propre compte : le problème est identique. Que pouvez-vous en déduire ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Le problème suit le compte : il est probablement lié à ses droits, à son profil ou à son compte" },
+        { "id": "b", "text": "Le problème vient de son poste" },
+        { "id": "c", "text": "L'application est en panne pour tout le monde" },
+        { "id": "d", "text": "Le réseau du bureau est en panne" }
+      ],
+      "answer": "a"
+    },
+    "explanation": "Le problème se reproduit sur un autre poste avec le même compte : il suit l'utilisateur, pas la machine. Le poste d'origine est donc innocenté. La collègue utilise l'application sur ce même poste, donc l'application et le réseau du bureau fonctionnent pour elle : ni panne générale, ni réseau en cause. Il reste le compte, ses droits ou des éléments de profil.",
+    "difficulty": 2
+  },
+  {
+    "code": "methode-tnc-lecture",
+    "lesson": "n1-methode-diagnostic",
+    "skill": "diagnostic",
+    "prompt": "`Test-NetConnection srv-fic01 -Port 445` renvoie `TcpTestSucceeded : True`, mais l'utilisateur voit toujours « Accès refusé » sur le partage. Quelles pistes restent ouvertes ? (plusieurs réponses)",
+    "data": {
+      "type": "multiple",
+      "choices": [
+        { "id": "droits", "text": "Les droits du compte sur le dossier" },
+        { "id": "ident", "text": "Des identifiants mémorisés périmés sur le poste" },
+        { "id": "compte", "text": "Un problème sur le compte de l'utilisateur" },
+        { "id": "dns", "text": "Le serveur DNS ne trouve pas srv-fic01" },
+        { "id": "cable", "text": "Le câble réseau du poste est débranché" }
+      ],
+      "answer": ["droits", "ident", "compte"]
+    },
+    "explanation": "Le test réussi prouve que le nom est résolu, que le chemin réseau fonctionne et que le serveur écoute sur le port 445 : le DNS et le câble sont donc hors de cause. « Accès refusé » oriente vers ce qui reste après le réseau : les droits sur le dossier, les identifiants enregistrés sur le poste ou l'état du compte.",
+    "difficulty": 2
+  },
+  {
+    "code": "methode-une-chose",
+    "lesson": "n1-methode-diagnostic",
+    "skill": "diagnostic",
+    "prompt": "Vrai ou faux : pour gagner du temps, il est préférable de mettre à jour le pilote, vider le cache et redémarrer en une seule fois, puis de tester.",
+    "data": { "type": "truefalse", "answer": false },
+    "explanation": "Faux. Si le problème disparaît, on ne sait pas laquelle des trois actions l'a résolu, et l'on ne peut ni documenter la cause ni écrire un article fiable. Si l'une des actions crée un nouveau problème, on ne sait pas laquelle annuler. La règle est une modification, un test, une note : le temps « gagné » se reperd à la prochaine panne identique.",
+    "difficulty": 1
+  },
+  {
+    "code": "methode-exam-1",
+    "lesson": "n1-methode-diagnostic",
+    "skill": "diagnostic",
+    "prompt": "Lundi 9 h, cinq utilisateurs de l'entrepôt Nordelis signalent en dix minutes que l'application de gestion des stocks affiche « Serveur introuvable ». Les autres applications fonctionnent. Quelle est la meilleure démarche ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Considérer d'emblée une cause commune : vérifier vite si le nom du serveur se résout et répond depuis un poste, regrouper les tickets sous un incident et escalader rapidement avec ces éléments" },
+        { "id": "b", "text": "Traiter chaque poste séparément en commençant par redémarrer et réinstaller l'application" },
+        { "id": "c", "text": "Demander aux utilisateurs de vider le cache de leur navigateur, puis attendre leurs retours" },
+        { "id": "d", "text": "Attendre une heure pour voir si le problème se résout de lui-même" }
+      ],
+      "answer": "a"
+    },
+    "explanation": "Cinq utilisateurs avec le même message au même moment désignent une cause commune : serveur, nom DNS ou réseau. La mesure de l'impact change le périmètre de la recherche : inutile d'agir poste par poste. Un test rapide (nslookup ou Test-NetConnection vers le serveur) donne un fait à transmettre, et l'escalade doit être rapide. Réinstaller sur chaque poste fait perdre du temps et n'agit pas sur la cause. Vider le cache sans hypothèse est un essai au hasard. Attendre laisse l'activité bloquée.",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "code": "methode-exam-2",
+    "lesson": "n1-methode-diagnostic",
+    "skill": "diagnostic",
+    "prompt": "Associez chaque test à la couche qu'il permet d'innocenter ou de mettre en cause.",
+    "data": {
+      "type": "match",
+      "left": [
+        { "id": "voyant", "text": "Vérifier les voyants et changer de câble" },
+        { "id": "ipconfig", "text": "Lire l'adresse IP avec ipconfig /all" },
+        { "id": "nslookup", "text": "nslookup srv-fic01" },
+        { "id": "autrecompte", "text": "Se connecter avec le même compte sur un autre poste" }
+      ],
+      "right": [
+        { "id": "physique", "text": "Physique" },
+        { "id": "reseau", "text": "Réseau (adressage)" },
+        { "id": "nom", "text": "Résolution de noms" },
+        { "id": "identite", "text": "Identité et droits" },
+        { "id": "app", "text": "Code de l'application" }
+      ],
+      "answer": { "voyant": "physique", "ipconfig": "reseau", "nslookup": "nom", "autrecompte": "identite" }
+    },
+    "explanation": "Les voyants et le câble testent la couche physique. ipconfig /all montre si le poste a obtenu une adresse valide, donc l'adressage réseau. nslookup vérifie la traduction d'un nom en adresse. Tester le même compte sur un autre poste montre si le problème suit l'identité. Aucun de ces tests n'examine le code d'une application, qui relève du N3 ou de l'éditeur.",
+    "difficulty": 2,
+    "examOnly": true
+  }
+]

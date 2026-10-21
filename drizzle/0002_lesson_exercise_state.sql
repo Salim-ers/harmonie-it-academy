@@ -1,0 +1,1 @@
+ALTER TABLE "lesson_progress" ADD COLUMN "exercise_state" jsonb DEFAULT '{}'::jsonb NOT NULL;

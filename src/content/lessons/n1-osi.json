@@ -1,0 +1,165 @@
+{
+  "meta": {
+    "slug": "n1-osi",
+    "title": "Modèle OSI et TCP/IP : diagnostiquer par couches",
+    "summary": "Utiliser les sept couches OSI et les quatre couches TCP/IP comme une check-list de diagnostic : savoir quoi vérifier à chaque étage et dans quel ordre, pour ne plus tester au hasard.",
+    "level": "debutant",
+    "prerequisites": ["Connaître l'adresse IP, le masque et la passerelle", "Avoir des notions de DHCP et de DNS"],
+    "objectives": [
+      "Citer les sept couches du modèle OSI dans l'ordre et le rôle de chacune",
+      "Faire correspondre les couches OSI aux quatre couches du modèle TCP/IP",
+      "Expliquer l'encapsulation et nommer l'unité de données de chaque couche",
+      "Associer à chaque couche une vérification concrète que le technicien N1 peut faire",
+      "Choisir entre une démarche ascendante (bottom-up) et descendante (top-down) selon le symptôme"
+    ],
+    "durationMin": 40,
+    "skills": [
+      { "code": "network-fundamentals", "weight": 3 },
+      { "code": "diagnostic", "weight": 2 }
+    ],
+    "next": "n1-tcp-udp"
+  },
+  "blocks": [
+    { "id": "intro", "kind": "paragraph", "text": "Mercredi, 11 h 30. Ticket du service paie du Groupe Valmont : « Le logiciel de paie ne se connecte plus. » Le technicien A redémarre le poste, réinstalle le client, recrée le profil : deux heures plus tard, rien n'a changé. Le technicien B commence par regarder le voyant de la carte réseau : éteint. Le câble a été arraché par l'aspirateur du ménage. Même compétence technique, résultats opposés : B a appliqué une **méthode**, il a vérifié les couches dans l'ordre." },
+    { "id": "intro-enjeu", "kind": "paragraph", "text": "Le modèle OSI a la réputation d'être une théorie à réciter en entretien. Pour un technicien support, c'est surtout une **check-list** : il découpe un problème réseau en étages, du câble jusqu'à l'application, et chaque étage a ses tests. Cette leçon vous apprend à vous en servir pour savoir où chercher, quoi vérifier et comment décrire précisément une panne dans un ticket d'escalade." },
+    { "id": "h-modele", "kind": "heading", "level": 2, "text": "Pourquoi un modèle en couches" },
+    { "id": "def", "kind": "callout", "tone": "definition", "title": "Définition simple", "text": "Le **modèle OSI** (Open Systems Interconnection), normalisé par l'ISO sous la référence ISO/IEC 7498-1, décrit la communication réseau en **sept couches** superposées. Chaque couche rend un service à la couche du dessus et s'appuie sur celle du dessous. Le **modèle TCP/IP**, plus simple, regroupe ces fonctions en **quatre couches** : c'est celui qu'implémentent réellement Internet et Windows." },
+    { "id": "p-modele", "kind": "paragraph", "text": "Découper en couches permet à chacun de faire son travail sans connaître les détails des autres. Le navigateur web ne sait pas si vous êtes en Wi-Fi ou en Ethernet ; la carte réseau ne sait pas si elle transporte un courriel ou une vidéo. Pour le support, la conséquence est précieuse : si une couche basse est cassée, **toutes** les couches au-dessus échouent. Un câble débranché fait tomber le DHCP, le DNS, Teams et le logiciel de paie à la fois." },
+    { "id": "analogie", "kind": "callout", "tone": "analogy", "title": "Analogie", "text": "Pensez à l'envoi d'un colis d'entreprise. Vous rédigez la lettre (application), vous la traduisez dans la langue du destinataire (présentation), vous ouvrez un dossier de suivi avec lui (session), vous numérotez les pages et demandez un accusé de réception (transport), vous écrivez l'adresse de la ville et de la rue (réseau), le livreur note le numéro de l'immeuble et de la boîte aux lettres (liaison), puis le camion roule sur la route (physique). Si la route est coupée, peu importe la qualité de la lettre : rien n'arrive." },
+    { "id": "h-couches", "kind": "heading", "level": 2, "text": "Les sept couches, de bas en haut" },
+    { "id": "diag", "kind": "diagram", "diagram": "osi-layers", "caption": "Les sept couches OSI face aux quatre couches TCP/IP, avec l'unité de données et un exemple de protocole ou d'équipement à chaque niveau." },
+    { "id": "tab-couches", "kind": "table", "caption": "Ce que fait chaque couche et ce que le technicien vérifie", "headers": ["N°", "Couche", "Rôle", "Exemples", "Ce que vous vérifiez"], "rows": [
+      ["1", "Physique", "Transmettre des bits sur un support : signal électrique, lumineux ou radio", "Câble RJ45, fibre, onde Wi-Fi, prise murale", "Voyant de la carte et du port, câble branché et intact, « Média déconnecté », Wi-Fi activé"],
+      ["2", "Liaison de données", "Livrer des trames entre deux équipements du même réseau local, grâce aux adresses MAC", "Ethernet, Wi-Fi (802.11), switch, adresse MAC, VLAN", "Association Wi-Fi, port du switch actif et dans le bon VLAN, table ARP"],
+      ["3", "Réseau", "Acheminer des paquets de réseau en réseau grâce aux adresses IP", "IPv4, IPv6, ICMP, routeur, passerelle", "Adresse IP, masque, passerelle, ping de la passerelle, tracert"],
+      ["4", "Transport", "Transporter les données entre deux programmes, identifiés par des ports", "TCP, UDP, ports 443, 445, 3389", "Port joignable (Test-NetConnection -Port), pare-feu, connexions établies"],
+      ["5", "Session", "Ouvrir, maintenir et fermer un dialogue entre applications", "Sessions SMB, ouverture de session RDP", "Session expirée, déconnexions répétées, authentification"],
+      ["6", "Présentation", "Mettre les données dans un format compréhensible : encodage, compression, chiffrement", "TLS, encodage UTF-8, formats d'images", "Certificat expiré ou non approuvé, caractères mal affichés"],
+      ["7", "Application", "Fournir le service à l'utilisateur ou au logiciel", "HTTP/HTTPS, DNS, DHCP, SMTP, LDAP", "Résolution DNS, message d'erreur de l'application, service arrêté, droits"]
+    ] },
+    { "id": "tip-moyen", "kind": "callout", "tone": "tip", "title": "Moyen mnémotechnique", "text": "De la couche 1 à la couche 7 : **P**hysique, **L**iaison, **R**éseau, **T**ransport, **S**ession, **P**résentation, **A**pplication. En français, une phrase comme « **P**our **L**e **R**éseau, **T**out **S**e **P**asse **A**utomatiquement » aide à retenir l'ordre. Inventez la vôtre : celle qu'on a créée soi-même se retient mieux." },
+    { "id": "p-hautes", "kind": "paragraph", "text": "Dans la pratique, les couches 5, 6 et 7 sont souvent prises en charge ensemble par l'application elle-même. Vous entendrez donc les administrateurs parler surtout des couches 1 à 4, puis de « couche 7 » pour tout ce qui relève de l'application. Ne vous inquiétez pas si vous hésitez à classer un problème en 5 ou en 6 : l'essentiel est de savoir qu'il est **au-dessus du transport**." },
+    { "id": "h-tcpip", "kind": "heading", "level": 2, "text": "Le modèle TCP/IP en quatre couches" },
+    { "id": "tab-tcpip", "kind": "table", "caption": "Correspondance entre OSI et TCP/IP", "headers": ["Couche TCP/IP", "Couches OSI correspondantes", "Protocoles typiques"], "rows": [
+      ["Application", "7 Application, 6 Présentation, 5 Session", "HTTP, HTTPS, DNS, DHCP, SMB, RDP, LDAP, SMTP"],
+      ["Transport", "4 Transport", "TCP, UDP"],
+      ["Internet", "3 Réseau", "IPv4, IPv6, ICMP"],
+      ["Accès réseau (ou liaison)", "2 Liaison de données, 1 Physique", "Ethernet, Wi-Fi, ARP"]
+    ] },
+    { "id": "p-tcpip", "kind": "paragraph", "text": "Le modèle TCP/IP, décrit notamment dans la RFC 1122, est le modèle réel : c'est lui qui est programmé dans Windows. Le modèle OSI reste le **vocabulaire commun** de la profession. Quand un collègue réseau dit « c'est un problème de couche 2 », il parle OSI ; il veut dire que le souci est entre la carte et le switch (VLAN, MAC, Wi-Fi), pas dans l'adressage IP. Certains ouvrages présentent un modèle TCP/IP à cinq couches en séparant physique et liaison : l'idée reste la même." },
+    { "id": "h-encapsulation", "kind": "heading", "level": 2, "text": "L'encapsulation : des enveloppes dans des enveloppes" },
+    { "id": "p-encap", "kind": "paragraph", "text": "Quand vous ouvrez l'intranet, chaque couche ajoute ses propres informations, appelées **en-tête**, devant les données reçues de la couche supérieure. C'est l'**encapsulation**. À l'arrivée, chaque couche retire son en-tête et transmet le reste vers le haut : c'est la **désencapsulation**. Le nom de l'unité de données change à chaque étape, et ce vocabulaire est attendu en entretien." },
+    { "id": "list-encap", "kind": "list", "ordered": true, "items": [
+      "**Application** : le navigateur produit la requête HTTPS. On parle de **données**.",
+      "**Transport** : TCP ajoute les ports source et destination (par exemple 51234 vers 443) et un numéro de séquence. L'ensemble s'appelle un **segment** (un **datagramme** pour UDP).",
+      "**Réseau** : IP ajoute les adresses source et destination (10.20.10.87 vers 10.20.30.15). On obtient un **paquet**.",
+      "**Liaison** : Ethernet ajoute les adresses MAC source et destination (celle de la carte et celle de la passerelle) et un code de contrôle d'erreur à la fin. On obtient une **trame**.",
+      "**Physique** : la carte transforme la trame en **bits**, envoyés sous forme de signal sur le câble."
+    ] },
+    { "id": "info-mac-passerelle", "kind": "callout", "tone": "info", "title": "Un détail qui fait la différence", "text": "Quand la destination est dans un autre réseau, l'adresse IP de destination du paquet est celle du serveur final, mais l'adresse MAC de destination de la trame est celle de **la passerelle**. À chaque routeur, la trame est retirée puis reconstruite pour le tronçon suivant, alors que le paquet IP traverse tout le chemin. C'est pour cela que l'adresse MAC ne sert qu'au réseau local." },
+    { "id": "h-methodes", "kind": "heading", "level": 2, "text": "Deux façons de parcourir les couches" },
+    { "id": "tab-methodes", "kind": "table", "caption": "Démarche ascendante ou descendante : quand utiliser laquelle", "headers": ["Critère", "Ascendante (bottom-up)", "Descendante (top-down)"], "rows": [
+      ["Point de départ", "Couche 1 : le câble, la carte, le Wi-Fi", "Couche 7 : l'application et son message d'erreur"],
+      ["Idéale quand…", "Plus rien ne fonctionne sur le poste, ou plusieurs applications sont touchées", "Une seule application pose problème, le reste fonctionne"],
+      ["Avantage", "Ne rate jamais une cause basique ; chaque couche validée sert de socle", "Rapide quand la cause est applicative ; part du symptôme de l'utilisateur"],
+      ["Risque", "Plus lente si la panne est applicative", "Perdre du temps sur l'application alors que le câble est débranché"],
+      ["Exemple Valmont", "« Plus rien ne marche » : voyant, ipconfig, ping passerelle, DNS…", "« Seul le logiciel de paie refuse de se connecter » : message d'erreur, service, port, puis réseau"]
+    ] },
+    { "id": "p-moitie", "kind": "paragraph", "text": "Il existe une troisième approche, dite « **diviser pour régner** » : commencer au milieu, souvent par un `ping` (couche 3). S'il réussit, les couches 1 à 3 sont validées d'un coup et vous montez ; s'il échoue, vous descendez. C'est la démarche la plus efficace une fois que vous avez de l'expérience. Quelle que soit la méthode, la règle d'or reste la même : **ne jamais tester une couche haute sans avoir une bonne raison de croire que les couches basses fonctionnent**." },
+    { "id": "h-demo", "kind": "heading", "level": 2, "text": "Démonstration : remonter les couches sur un poste" },
+    { "id": "steps-demo", "kind": "steps", "title": "Diagnostic ascendant du poste du service paie", "steps": [
+      { "title": "Couche 1 : le lien physique", "text": "Regardez les voyants de la carte et de la prise, demandez à l'utilisateur de vérifier le câble. Côté système, « Média déconnecté » dans ipconfig ou un statut Disconnected dans PowerShell signe une couche 1 cassée : inutile d'aller plus loin.", "command": "Get-NetAdapter" },
+      { "title": "Couche 2 : le réseau local", "text": "Le lien est actif : la carte annonce une vitesse (1 Gbps). En Wi-Fi, vérifiez que le poste est associé au bon réseau. Une adresse APIPA en 169.254.x.x malgré un lien actif oriente vers le VLAN du port ou le DHCP." },
+      { "title": "Couche 3 : l'adressage et la passerelle", "text": "Contrôlez l'adresse, le masque et la passerelle, puis pinguez la passerelle 10.20.10.1. Si elle répond, le poste sait sortir de son réseau. Tentez ensuite une adresse distante, comme le serveur de paie.", "command": "ping 10.20.10.1" },
+      { "title": "Couche 4 : le port du service", "text": "Le serveur répond au ping, mais l'application a besoin d'un port précis. Testez-le : un échec du test TCP alors que le ping réussit oriente vers un service arrêté ou un pare-feu.", "command": "Test-NetConnection srv-paie01.valmont.local -Port 443" },
+      { "title": "Couches 5 à 7 : l'application", "text": "Si le port répond, le réseau a fait son travail : vérifiez le message d'erreur exact, la résolution DNS, le certificat, les identifiants et les droits de l'utilisateur sur l'application." },
+      { "title": "Rédiger la conclusion par couche", "text": "Dans le ticket, indiquez la dernière couche validée et la première en échec : « Couches 1 à 3 OK (lien 1 Gbps, IP correcte, passerelle et serveur répondent au ping), couche 4 KO : port 443 de srv-paie01 fermé. » Le N2 sait immédiatement où chercher." }
+    ] },
+    { "id": "cmd-netadapter", "kind": "command", "shell": "powershell", "command": "Get-NetAdapter", "explanation": "Liste les cartes réseau avec leur état et leur vitesse de lien : c'est le test logiciel de la couche 1. Status vaut Up (lien actif), Disconnected (pas de lien) ou Disabled (carte désactivée dans Windows).", "output": "Name                      InterfaceDescription                    ifIndex Status       MacAddress             LinkSpeed\n----                      --------------------                    ------- ------       ----------             ---------\nWi-Fi                     Intel(R) Wi-Fi 6E AX211 160MHz               18 Disconnected 7C-21-4A-0E-93-B2          0 bps\nEthernet                  Intel(R) Ethernet Connection I219-LM         12 Up           3C-52-82-4A-19-07         1 Gbps", "outputNotes": [
+      { "match": "Disconnected", "note": "Le Wi-Fi n'est associé à aucun réseau : sans importance ici, le poste travaille en Ethernet." },
+      { "match": "Up", "note": "Couche 1 validée côté poste : le lien Ethernet est établi." },
+      { "match": "1 Gbps", "note": "La vitesse négociée avec le switch. Un lien à 100 Mbps sur un poste récent peut trahir un câble abîmé ou mal serti." },
+      { "match": "MacAddress", "note": "L'adresse MAC de chaque carte : c'est l'identité de couche 2." }
+    ] },
+    { "id": "cmd-tracert", "kind": "command", "shell": "cmd", "command": "tracert -d 10.20.30.15", "explanation": "tracert affiche les routeurs traversés jusqu'à la destination : c'est un outil de couche 3. L'option -d évite la résolution des noms et accélère l'affichage.", "output": "Détermination de l'itinéraire vers 10.20.30.15 avec un maximum de 30 sauts.\n\n  1    <1 ms    <1 ms    <1 ms  10.20.10.1\n  2     1 ms    <1 ms    <1 ms  10.20.30.15\n\nItinéraire déterminé.", "outputNotes": [
+      { "match": "10.20.10.1", "note": "Premier saut : la passerelle du VLAN Bureaux. Si la liste s'arrête ici avec des astérisques, le problème est au-delà de la passerelle." },
+      { "match": "Itinéraire déterminé", "note": "La couche 3 fonctionne de bout en bout : il faut chercher plus haut." }
+    ] },
+    { "id": "h-pannes", "kind": "heading", "level": 2, "text": "Exemples concrets de pannes par couche" },
+    { "id": "tab-pannes", "kind": "table", "caption": "Classer les pannes courantes du support", "headers": ["Couche", "Panne réelle", "Symptôme vu par l'utilisateur"], "rows": [
+      ["1 Physique", "Câble arraché, prise murale non brassée, carte Wi-Fi désactivée par la touche avion", "« Plus rien ne marche », icône réseau barrée"],
+      ["2 Liaison", "Port du switch dans le mauvais VLAN, port désactivé par sécurité, conflit d'adresse IP", "Adresse 169.254.x.x, ou réseau qui coupe par intermittence"],
+      ["3 Réseau", "Passerelle absente ou fausse, mauvais masque, adresse en double", "Les voisins répondent, le reste non"],
+      ["4 Transport", "Port bloqué par un pare-feu, service non démarré sur le serveur", "Le serveur répond au ping mais l'application dit « impossible de se connecter »"],
+      ["5 Session", "Session RDP expirée, session SMB coupée après mise en veille", "Déconnexions, lecteur réseau avec une croix rouge"],
+      ["6 Présentation", "Certificat expiré, horloge du poste fausse qui invalide le certificat", "Avertissement de sécurité du navigateur, caractères accentués illisibles"],
+      ["7 Application", "Nom DNS introuvable, mot de passe expiré, droits insuffisants, application plantée", "Message d'erreur propre au logiciel, « accès refusé »"]
+    ] },
+    { "id": "field-horloge", "kind": "callout", "tone": "field", "title": "Sur le terrain", "text": "Les pannes « hautes » se déguisent souvent en pannes réseau. Un poste dont l'horloge a dérivé de plusieurs heures refuse les certificats des sites HTTPS et ne parvient plus à s'authentifier en Kerberos, qui tolère par défaut un écart de cinq minutes seulement. L'utilisateur dit « Internet ne marche plus » ; le réseau, lui, fonctionne parfaitement. Vérifier l'heure fait partie de vos réflexes." },
+    { "id": "mistakes", "kind": "mistakes", "items": [
+      { "mistake": "Réinstaller l'application avant d'avoir vérifié le lien réseau", "why": "Une couche basse cassée fait échouer toutes les applications ; la réinstallation ne change rien.", "fix": "Valider au minimum les couches 1 à 3 (voyant, ipconfig, ping passerelle) avant de toucher au logiciel." },
+      { "mistake": "Conclure que « le réseau marche » parce que le ping répond", "why": "Le ping valide la couche 3 ; il ne dit rien du port de l'application (couche 4) ni de l'application elle-même.", "fix": "Tester ensuite le port avec Test-NetConnection -Port." },
+      { "mistake": "Conclure qu'un serveur est éteint parce qu'il ne répond pas au ping", "why": "Beaucoup de pare-feu bloquent ICMP : le serveur peut fonctionner normalement.", "fix": "Tester le port du service réellement utilisé." },
+      { "mistake": "Écrire « problème réseau » dans le ticket", "why": "La formule ne dit pas ce qui a été vérifié ; le N2 refait tous les tests.", "fix": "Indiquer la dernière couche validée et la première en échec, avec les commandes et leurs résultats." },
+      { "mistake": "Confondre segment, paquet et trame", "why": "Le vocabulaire précis permet aux équipes de se comprendre et il est attendu en entretien.", "fix": "Segment (couche 4), paquet (couche 3), trame (couche 2), bits (couche 1)." }
+    ] },
+    { "id": "risks", "kind": "risks", "items": [
+      "Ne débranchez pas et ne déplacez pas de câbles dans une baie de brassage pour « tester la couche 1 » : vous pourriez couper d'autres utilisateurs. Testez uniquement côté poste et prise utilisateur.",
+      "Ne désactivez jamais le pare-feu Windows pour vérifier une hypothèse de couche 4 : vous exposez le poste. Utilisez Test-NetConnection et escaladez.",
+      "Ne modifiez pas l'heure d'un poste du domaine à la main : la synchronisation se fait avec les contrôleurs de domaine, signalez l'écart.",
+      "Notez chaque test et son résultat au fil de l'eau : un diagnostic par couches n'a de valeur que s'il est traçable."
+    ] },
+    { "id": "quiz", "kind": "quiz", "title": "Vérifiez votre compréhension", "questions": ["osi-ordre-couches", "osi-unites", "osi-panne-couche", "osi-tcpip-correspondance", "osi-ping-couche4"] },
+    { "id": "exercise", "kind": "exercise", "title": "Classer les tests et conclure", "context": "M. Petit, du service juridique du Groupe Valmont, ne peut plus ouvrir le partage \\\\srv-fic01\\juridique. Vous avez déjà relevé : Get-NetAdapter indique Ethernet Up à 1 Gbps ; ipconfig affiche 10.20.10.133, masque 255.255.255.0, passerelle 10.20.10.1, DNS 10.20.1.10 et 10.20.1.11 ; ping 10.20.10.1 répond ; nslookup srv-fic01.valmont.local renvoie 10.20.30.5 ; ping 10.20.30.5 répond ; Test-NetConnection srv-fic01.valmont.local -Port 445 renvoie TcpTestSucceeded : False. Ses collègues du même bureau accèdent au partage sans problème.", "task": "Classez chaque test dans la couche OSI qu'il valide, identifiez la couche où se situe le problème et proposez la suite du diagnostic ainsi que la note d'escalade.", "hints": [
+      "Get-NetAdapter, ipconfig, ping, nslookup, Test-NetConnection -Port : chacun teste une couche différente. Placez-les de bas en haut.",
+      "Le ping vers 10.20.30.5 répond, mais le port 445 non. Quelle couche se situe juste au-dessus de celle du ping ?",
+      "Les collègues accèdent au partage : le serveur et son service fonctionnent. Qu'est-ce qui peut bloquer le port 445 uniquement depuis le poste de M. Petit ?"
+    ], "solution": [
+      "Classement : Get-NetAdapter Up à 1 Gbps valide la couche 1 (et le lien de couche 2 avec le switch). ipconfig et le ping de la passerelle valident la couche 3 locale ; le ping de 10.20.30.5 valide la couche 3 de bout en bout. nslookup valide la résolution DNS, un service de couche application dont dépend l'accès au partage. Test-NetConnection -Port 445 teste la couche 4 : c'est la première en échec.",
+      "Le problème se situe donc en couche 4 : le port 445 (SMB, partage de fichiers) n'est pas joignable depuis ce poste. Les collègues y accèdent : le service fonctionne sur le serveur. La cause est donc propre au poste ou à son chemin : pare-feu ou logiciel de sécurité local qui bloque le trafic SMB sortant, règle de pare-feu réseau appliquée à cette adresse ou à ce port, ou logiciel tiers.",
+      "Suite du diagnostic sans rien désactiver : vérifier si le logiciel de sécurité a signalé un blocage récent, comparer avec le poste d'un collègue (Test-NetConnection depuis son poste réussit), vérifier si une mise à jour ou un changement récent a eu lieu sur le poste.",
+      "Note d'escalade : « PC-JUR-004, M. Petit : accès \\\\srv-fic01\\juridique impossible. Couches 1 à 3 validées (lien 1 Gbps, IP 10.20.10.133/24, passerelle et serveur 10.20.30.5 répondent au ping, DNS OK). Couche 4 KO : TCP 445 vers srv-fic01 en échec depuis ce poste uniquement, OK depuis PC-JUR-003. Suspicion de blocage local (pare-feu ou sécurité). Escalade au N2. »"
+    ], "rubric": {
+      "criteria": [
+        { "id": "c1", "label": "Associe Get-NetAdapter à la couche physique", "points": 1, "patterns": ["couche 1", "physique"] },
+        { "id": "c3", "label": "Associe le ping à la couche réseau", "points": 1, "patterns": ["couche 3", "couche reseau", "ping valide", "niveau 3"] },
+        { "id": "c4", "label": "Identifie la couche 4 / transport comme couche en échec", "points": 3, "patterns": ["couche 4", "transport", "niveau 4"], "required": true },
+        { "id": "port445", "label": "Relie le port 445 au partage SMB", "points": 2, "patterns": ["445", "smb"], "required": true },
+        { "id": "local", "label": "Exploite le fait que les collègues accèdent au partage", "points": 2, "patterns": ["collegue", "autre poste", "voisin", "propre au poste", "uniquement ce poste", "pare-feu local", "pare feu local", "logiciel de securite"] },
+        { "id": "escalade", "label": "Rédige une escalade indiquant les couches validées", "points": 1, "patterns": ["escalad*", "n2", "ticket"] }
+      ],
+      "redFlags": [
+        { "id": "parefeu-off", "label": "Propose de désactiver le pare-feu", "patterns": ["je desactive le pare-feu", "je desactive le pare feu", "desactiver temporairement le pare-feu", "desactiver temporairement le pare feu", "on desactive le pare-feu", "couper temporairement le pare-feu", "desactive le firewall"], "penalty": 3 }
+      ],
+      "passPercent": 60
+    } },
+    { "id": "interview", "kind": "interview", "questions": [
+      { "question": "Citez les couches du modèle OSI et donnez pour chacune un exemple concret.", "expectedPoints": ["Physique : câble, signal", "Liaison : Ethernet, adresse MAC, switch", "Réseau : IP, routeur", "Transport : TCP, UDP, ports", "Session, présentation (chiffrement TLS), application (HTTP, DNS)"], "modelAnswer": "De bas en haut : la couche physique, avec les câbles et le signal ; la liaison de données, avec Ethernet, les adresses MAC et les switchs ; la couche réseau, avec IP et les routeurs ; le transport, avec TCP, UDP et les ports ; la session, qui gère le dialogue entre applications ; la présentation, qui s'occupe du format et du chiffrement, comme TLS ; et l'application, avec HTTP, DNS ou SMTP. Au support, je m'en sers surtout comme check-list de diagnostic." },
+      { "question": "Comment utilisez-vous le modèle OSI dans votre travail de technicien ?", "expectedPoints": ["Comme méthode de diagnostic ordonnée", "Choix entre démarche ascendante ou descendante selon le symptôme", "Un test par couche (voyant, ipconfig, ping, test de port, application)", "Rédaction de l'escalade en indiquant les couches validées"], "modelAnswer": "Je l'utilise comme une check-list. Si plus rien ne marche, je pars du bas : lien physique, adresse IP, ping de la passerelle, DNS. Si une seule application pose problème, je pars du haut : message d'erreur, port du service, puis réseau. Le ping est un bon point de milieu : s'il répond, les trois premières couches sont validées. Dans le ticket, j'écris la dernière couche validée et la première en échec, avec les commandes : le N2 gagne beaucoup de temps." },
+      { "question": "Quelle est la différence entre un paquet et une trame ?", "expectedPoints": ["Le paquet est l'unité de la couche 3, avec les adresses IP", "La trame est l'unité de la couche 2, avec les adresses MAC", "Le paquet est encapsulé dans la trame", "La trame est reconstruite à chaque routeur, le paquet traverse le chemin"], "modelAnswer": "Le paquet appartient à la couche réseau : il porte les adresses IP de la source et de la destination finale. La trame appartient à la couche liaison : elle encapsule le paquet et porte les adresses MAC du tronçon local, par exemple de mon poste à la passerelle. À chaque routeur, la trame est remplacée par une nouvelle, alors que le paquet continue jusqu'au destinataire." }
+    ] },
+    { "id": "glossary", "kind": "glossary", "terms": [
+      { "term": "Modèle OSI", "en": "Open Systems Interconnection model", "definition": "Modèle de référence ISO qui décrit la communication réseau en sept couches." },
+      { "term": "Encapsulation", "en": "Encapsulation", "definition": "Ajout par chaque couche de son en-tête devant les données de la couche supérieure." },
+      { "term": "En-tête", "en": "Header", "definition": "Informations de contrôle ajoutées par une couche : adresses, ports, numéros de séquence." },
+      { "term": "Unité de données de protocole", "en": "Protocol Data Unit (PDU)", "definition": "Nom générique du bloc de données à une couche : segment, paquet, trame, bits." },
+      { "term": "Trame", "en": "Frame", "definition": "Unité de données de la couche 2, adressée par adresses MAC." },
+      { "term": "Paquet", "en": "Packet", "definition": "Unité de données de la couche 3, adressée par adresses IP." },
+      { "term": "Démarche ascendante", "en": "Bottom-up approach", "definition": "Diagnostic qui part de la couche physique et remonte vers l'application." },
+      { "term": "Démarche descendante", "en": "Top-down approach", "definition": "Diagnostic qui part de l'application et descend vers le physique." }
+    ] },
+    { "id": "summary", "kind": "summary", "points": [
+      "OSI, sept couches : physique, liaison, réseau, transport, session, présentation, application. TCP/IP, quatre : accès réseau, Internet, transport, application.",
+      "Une couche basse en panne fait échouer toutes les couches au-dessus : c'est pourquoi l'ordre des tests compte.",
+      "Encapsulation : données, segment (TCP) ou datagramme (UDP), paquet, trame, bits.",
+      "Un test par couche : voyant et Get-NetAdapter (1), Wi-Fi et VLAN (2), ipconfig, ping et tracert (3), Test-NetConnection -Port (4), message de l'application (7).",
+      "Bottom-up quand plus rien ne marche, top-down quand une seule application est touchée, ping au milieu pour gagner du temps.",
+      "Une bonne escalade indique la dernière couche validée et la première en échec."
+    ] },
+    { "id": "references", "kind": "references", "items": [
+      { "title": "ISO/IEC 7498-1:1994 — Open Systems Interconnection — Basic Reference Model", "url": "https://www.iso.org/standard/20269.html", "publisher": "ISO", "verifiedAt": "2026-10-21" },
+      { "title": "RFC 1122 — Requirements for Internet Hosts: Communication Layers", "url": "https://www.rfc-editor.org/rfc/rfc1122", "publisher": "IETF", "verifiedAt": "2026-10-21" },
+      { "title": "Test-NetConnection", "url": "https://learn.microsoft.com/powershell/module/nettcpip/test-netconnection", "publisher": "Microsoft Learn", "verifiedAt": "2026-10-21" }
+    ] }
+  ]
+}

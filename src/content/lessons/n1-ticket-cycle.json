@@ -1,0 +1,167 @@
+{
+  "meta": {
+    "slug": "n1-ticket-cycle",
+    "title": "Cycle de vie d'un ticket : incident, demande, priorité et SLA",
+    "summary": "Distinguer un incident d'une demande, calculer une priorité à partir de l'impact et de l'urgence, comprendre les SLA et suivre un ticket de son ouverture à sa clôture.",
+    "level": "debutant",
+    "prerequisites": ["Connaître le rôle des niveaux de support (leçon « Le technicien support : rôles N0, N1, N2, N3 »)"],
+    "objectives": [
+      "Distinguer un incident d'une demande de service sur des cas réels",
+      "Qualifier et catégoriser un ticket dès sa création",
+      "Calculer une priorité avec une matrice impact × urgence et justifier son choix",
+      "Expliquer simplement ce que sont un SLA, un OLA et un KPI",
+      "Suivre les statuts d'un ticket et choisir entre escalade fonctionnelle et hiérarchique",
+      "Clôturer un ticket proprement, avec l'accord de l'utilisateur"
+    ],
+    "durationMin": 40,
+    "skills": [
+      { "code": "itsm", "weight": 3 },
+      { "code": "documentation", "weight": 2 }
+    ],
+    "next": "n1-communication"
+  },
+  "blocks": [
+    { "id": "intro", "kind": "paragraph", "text": "Jeudi, 9 h 20. Deux tickets arrivent à trente secondes d'intervalle dans la file du service desk du Groupe Valmont. Le premier : « Besoin d'un deuxième écran pour mon poste, merci ». Le second : « Plus rien ne s'imprime au service paie ». Kevin, en poste depuis deux semaines, les traite dans l'ordre d'arrivée. Il passe vingt minutes à vérifier le stock d'écrans. À 9 h 45, la responsable paie appelle, très tendue : les bulletins doivent partir à 11 h, et personne ne lui a répondu. Kevin n'a pas manqué de compétence technique ; il a manqué d'une étape : la **qualification**. Le premier ticket est une demande sans urgence, le second un incident qui bloque tout un service le jour de la paie. Cette leçon vous apprend à faire ce tri en moins d'une minute." },
+    { "id": "h-ticket", "kind": "heading", "level": 2, "text": "Qu'est-ce qu'un ticket ?" },
+    { "id": "def", "kind": "callout", "tone": "definition", "title": "Définition simple", "text": "Un **ticket** est la fiche qui enregistre une sollicitation de l'utilisateur et tout ce qui s'est passé ensuite : qui a demandé quoi, quand, avec quelle priorité, qui s'en occupe, ce qui a été fait et comment cela s'est terminé. Un ticket a un **cycle de vie** : il naît, il est qualifié, traité, résolu puis clôturé." },
+    { "id": "p-pourquoi", "kind": "paragraph", "text": "Sans ticket, une demande vit dans la mémoire d'un technicien ou dans un courriel perdu. Avec un ticket, elle a un numéro, un responsable et une trace. Le ticket protège l'utilisateur (sa demande ne sera pas oubliée), le technicien (il peut prouver ce qu'il a fait) et l'entreprise (elle peut mesurer la charge, repérer les pannes qui reviennent et vérifier que les engagements sont tenus)." },
+    { "id": "analogie", "kind": "callout", "tone": "analogy", "title": "Analogie", "text": "Un ticket ressemble au dossier de suivi d'un colis. Chaque étape est horodatée : pris en charge, en transit, en attente au dépôt, livré. N'importe qui peut ouvrir le suivi et savoir où en est le colis sans appeler le livreur. Un ticket bien tenu permet la même chose : un collègue qui reprend votre file doit comprendre en trente secondes où en est chaque demande." },
+    { "id": "h-type", "kind": "heading", "level": 2, "text": "Incident ou demande de service ?" },
+    { "id": "p-type", "kind": "paragraph", "text": "C'est la première question à se poser. Un **incident** est une interruption ou une dégradation d'un service qui fonctionnait : quelque chose est cassé ou marche moins bien que prévu. Une **demande de service** est une sollicitation normale, prévue à l'avance, qui ne signale aucune panne : obtenir un accès, un logiciel, du matériel, une information. La distinction compte, parce que les deux suivent souvent des circuits différents : l'incident vise un retour rapide au fonctionnement normal, la demande suit un processus défini, parfois avec une validation du responsable." },
+    { "id": "tab-type", "kind": "table", "caption": "Exemples de tri au Groupe Valmont", "headers": ["Ce que dit l'utilisateur", "Type", "Pourquoi"], "rows": [
+      ["« Outlook se ferme dès que je l'ouvre »", "Incident", "Le service fonctionnait et ne fonctionne plus"],
+      ["« Je voudrais accéder au dossier partagé Contrats »", "Demande", "Rien n'est cassé ; c'est un nouvel accès, soumis à validation"],
+      ["« Le Wi-Fi est très lent en salle Rhône depuis ce matin »", "Incident", "Dégradation d'un service existant"],
+      ["« Un nouvel alternant arrive lundi, il lui faut un poste et un compte »", "Demande", "Processus prévu d'arrivée d'un collaborateur"],
+      ["« Comment partager mon agenda avec mon assistante ? »", "Demande", "Demande d'information ou d'aide, pas de panne"],
+      ["« Je n'ai plus accès au dossier Contrats alors que j'y travaillais hier »", "Incident", "Un accès existant a disparu : c'est une panne, même si la cause peut être un changement de droits"]
+    ] },
+    { "id": "piege-type", "kind": "callout", "tone": "warning", "title": "Le piège de la formulation", "text": "L'utilisateur ne choisit pas le type, c'est vous. « Je voudrais que mon imprimante remarche » est formulé comme une demande, mais c'est un incident. « Mon PC ne marche pas » peut cacher une simple demande de formation. Qualifiez à partir des faits : **est-ce que quelque chose qui fonctionnait a cessé de fonctionner ?**" },
+    { "id": "h-qualif", "kind": "heading", "level": 2, "text": "Qualifier et catégoriser" },
+    { "id": "p-qualif", "kind": "paragraph", "text": "**Qualifier** un ticket, c'est le compléter pour qu'il puisse être traité : type, catégorie, impact, urgence, priorité, demandeur, matériel concerné. **Catégoriser**, c'est le ranger dans l'arborescence de l'outil, par exemple « Poste de travail > Impression » ou « Messagerie > Accès ». La catégorie sert à orienter automatiquement le ticket vers le bon groupe, à retrouver les articles de la base de connaissances associés et à produire des statistiques fiables. Une catégorie « Divers » utilisée pour tout rend ces trois usages impossibles." },
+    { "id": "list-qualif", "kind": "list", "ordered": true, "items": [
+      "**Demandeur** : la personne qui sollicite, avec ses coordonnées et son service.",
+      "**Type** : incident ou demande.",
+      "**Catégorie** : le domaine le plus précis possible.",
+      "**Élément concerné** : nom du poste, de l'imprimante, de l'application.",
+      "**Impact et urgence** : qui est touché, et à quel point c'est pressé.",
+      "**Priorité** : déduite de l'impact et de l'urgence, pas choisie au feeling.",
+      "**Titre et description** : un titre qui dit l'essentiel, une description exploitable (vous la travaillerez dans la leçon sur la communication)."
+    ] },
+    { "id": "h-prio", "kind": "heading", "level": 2, "text": "Priorité = impact × urgence" },
+    { "id": "p-prio", "kind": "paragraph", "text": "L'**impact** mesure l'étendue des dégâts : une personne, un service, un site entier, un client. L'**urgence** mesure la vitesse à laquelle la situation devient grave : l'utilisateur peut-il attendre demain, ou une échéance tombe-t-elle dans l'heure ? La **priorité** combine les deux. On l'obtient en croisant impact et urgence dans une **matrice** définie par l'organisation. L'intérêt est simple : deux techniciens différents donnent la même priorité au même ticket, et l'utilisateur qui crie le plus fort ne passe pas automatiquement devant." },
+    { "id": "diag-matrix", "kind": "diagram", "diagram": "priority-matrix", "caption": "La matrice impact × urgence : la priorité se lit à l'intersection d'une ligne et d'une colonne. Chaque organisation fixe ses propres seuils." },
+    { "id": "tab-matrix", "kind": "table", "caption": "Matrice de priorité fictive du Groupe Valmont (P1 = la plus haute)", "headers": ["Impact \\ Urgence", "Urgence haute (bloquant, échéance proche)", "Urgence moyenne (gênant, contournement possible)", "Urgence basse (peut attendre)"], "rows": [
+      ["Impact élevé (site, service entier, client)", "P1 — Critique", "P2 — Haute", "P3 — Moyenne"],
+      ["Impact moyen (plusieurs personnes, une équipe)", "P2 — Haute", "P3 — Moyenne", "P4 — Basse"],
+      ["Impact faible (une personne)", "P3 — Moyenne", "P4 — Basse", "P5 — Planifiée"]
+    ] },
+    { "id": "p-exemple-prio", "kind": "paragraph", "text": "Reprenons l'histoire de Kevin. « Plus rien ne s'imprime au service paie » : impact moyen (une équipe de six personnes), urgence haute (les bulletins partent à 11 h). La matrice donne **P2**. « Besoin d'un deuxième écran » : impact faible (une personne), urgence basse. La matrice donne **P5**. L'ordre de traitement devient évident. Remarquez que la priorité dépend du contexte : la même panne d'impression un mardi ordinaire, avec une imprimante de secours à l'étage, serait plutôt en urgence moyenne." },
+    { "id": "tip-vip", "kind": "callout", "tone": "tip", "title": "Et les VIP ?", "text": "Beaucoup d'organisations prévoient un traitement particulier pour certains utilisateurs (direction, accueil, utilisateurs dont le poste est critique). Ce traitement est écrit dans la procédure ou le contrat, et il ajuste généralement l'urgence ou le délai. Il ne se décide pas au cas par cas selon le ton de l'appelant. Si vous n'êtes pas sûr, appliquez la matrice et signalez la situation à votre responsable." },
+    { "id": "h-sla", "kind": "heading", "level": 2, "text": "SLA, OLA, KPI : trois sigles, trois idées simples" },
+    { "id": "p-sla", "kind": "paragraph", "text": "Un **SLA** (accord de niveau de service) est un engagement pris envers le client ou les utilisateurs : par exemple « un incident P2 est pris en charge en 30 minutes et résolu en 4 heures ouvrées ». Un **OLA** (accord de niveau opérationnel) est un engagement entre deux équipes internes qui permet de tenir le SLA : par exemple « l'équipe réseau prend en charge un ticket escaladé par le service desk en 15 minutes ». Un **KPI** (indicateur clé de performance) est une mesure qui permet de vérifier que tout cela fonctionne : taux de respect des SLA, délai moyen de résolution, taux de résolution au premier contact, satisfaction des utilisateurs." },
+    { "id": "tab-sla", "kind": "table", "caption": "Exemple fictif d'engagements dans un contrat d'infogérance (heures ouvrées)", "headers": ["Priorité", "Délai de prise en charge", "Délai de résolution cible", "Communication"], "rows": [
+      ["P1 — Critique", "15 min", "4 h", "Point d'avancement toutes les 30 min"],
+      ["P2 — Haute", "30 min", "8 h", "Point d'avancement toutes les 2 h"],
+      ["P3 — Moyenne", "2 h", "2 jours ouvrés", "À chaque changement de statut"],
+      ["P4 — Basse", "4 h", "5 jours ouvrés", "À chaque changement de statut"],
+      ["P5 — Planifiée", "1 jour ouvré", "Date convenue avec l'utilisateur", "À la planification et à la réalisation"]
+    ] },
+    { "id": "info-horloge", "kind": "callout", "tone": "info", "title": "L'horloge du SLA", "text": "Dans la plupart des outils, le délai se mesure à partir de la création du ticket, en **heures ouvrées** définies par un calendrier. Selon la configuration, certains statuts comme « En attente » de l'utilisateur peuvent suspendre le décompte. C'est utile quand l'utilisateur est réellement injoignable, mais mettre un ticket en attente pour « arrêter le chrono » sans raison est une manipulation que les responsables repèrent vite dans les statistiques." },
+    { "id": "h-statuts", "kind": "heading", "level": 2, "text": "Les statuts : où en est le ticket ?" },
+    { "id": "diag-cycle", "kind": "diagram", "diagram": "ticket-lifecycle", "caption": "Le cycle de vie d'un ticket : création, qualification, traitement ou escalade, attente éventuelle, résolution, validation par l'utilisateur puis clôture." },
+    { "id": "tab-statuts", "kind": "table", "caption": "Statuts courants (les libellés exacts varient selon l'outil)", "headers": ["Statut", "Signification", "Qui agit ?"], "rows": [
+      ["Nouveau", "Le ticket vient d'être créé, personne ne l'a encore pris", "Le service desk doit le qualifier et l'attribuer"],
+      ["En cours (attribué)", "Un technicien ou un groupe en est responsable", "Le technicien attribué"],
+      ["En attente", "Le traitement dépend d'un tiers : réponse de l'utilisateur, livraison, fournisseur", "Celui qu'on attend ; le technicien relance"],
+      ["Résolu", "Une solution a été appliquée et communiquée", "L'utilisateur confirme ou conteste"],
+      ["Clos", "L'utilisateur a validé, ou le délai de validation est écoulé", "Plus personne : le ticket est archivé"]
+    ] },
+    { "id": "p-resolu-clos", "kind": "paragraph", "text": "La différence entre **résolu** et **clos** est importante. Résolu signifie « le technicien pense que c'est réglé ». Clos signifie « c'est confirmé ». Entre les deux, l'utilisateur peut dire que le problème persiste, et le ticket repart en traitement. Beaucoup d'outils clôturent automatiquement un ticket résolu après quelques jours sans réponse, selon la configuration. Clôturer vous-même un ticket sans aucune confirmation, c'est prendre le risque d'un ticket rouvert et d'un utilisateur mécontent." },
+    { "id": "h-escalade", "kind": "heading", "level": 2, "text": "Escalade fonctionnelle ou hiérarchique ?" },
+    { "id": "p-escalade", "kind": "paragraph", "text": "Il existe deux façons de faire monter un ticket. L'**escalade fonctionnelle** consiste à transférer le ticket vers une équipe plus compétente ou mieux outillée : du N1 vers l'équipe réseau, vers l'équipe messagerie, vers le fournisseur. L'**escalade hiérarchique** consiste à alerter un responsable parce que la situation l'exige : SLA en danger, utilisateur très mécontent, besoin d'une décision (acheter, déroger à une règle), ou équipe qui ne répond pas. Les deux peuvent se combiner : on transfère au N2 réseau et, parce que l'entrepôt est arrêté, on prévient aussi le responsable du service desk." },
+    { "id": "h-cloture", "kind": "heading", "level": 2, "text": "Clôture et satisfaction" },
+    { "id": "p-cloture", "kind": "paragraph", "text": "Une bonne clôture comprend trois éléments. D'abord une **solution rédigée** : ce qui a été fait, en termes compréhensibles, et la cause si elle est connue. Ensuite une **confirmation** de l'utilisateur, au téléphone ou par la validation dans l'outil. Enfin une **catégorie de clôture** correcte, car elle alimente les statistiques. Beaucoup d'organisations envoient ensuite une **enquête de satisfaction** courte. Les résultats ne servent pas à sanctionner un technicien sur un ticket, mais à repérer les tendances : délais trop longs, explications trop techniques, tickets clos trop vite." },
+    { "id": "h-demo", "kind": "heading", "level": 2, "text": "Démonstration : un ticket de bout en bout" },
+    { "id": "steps-demo", "kind": "steps", "title": "L'incident « imprimante paie » du Groupe Valmont", "steps": [
+      { "title": "Créer et horodater", "text": "9 h 20 : le ticket arrive du portail. Il est au statut Nouveau. L'horloge du SLA démarre." },
+      { "title": "Qualifier", "text": "Type incident, catégorie Poste de travail > Impression, élément IMP-PAIE-01, impact moyen (6 personnes), urgence haute (échéance 11 h) : priorité P2, prise en charge attendue sous 30 minutes." },
+      { "title": "Prendre en charge", "text": "9 h 23 : le technicien s'attribue le ticket (statut En cours) et appelle la responsable paie pour confirmer le symptôme et l'échéance." },
+      { "title": "Diagnostiquer", "text": "L'imprimante répond-elle sur le réseau ? Le test est rapide et se fait depuis le poste du technicien.", "command": "ping IMP-PAIE-01" },
+      { "title": "Contourner puis escalader si besoin", "text": "Pas de réponse : l'imprimante est éteinte ou débranchée, ou son port réseau a un problème. En attendant, le technicien installe l'imprimante voisine sur les postes de la paie (contournement), puis transfère au support de proximité pour vérification physique : escalade fonctionnelle." },
+      { "title": "Résoudre et confirmer", "text": "10 h 05 : la proximité constate un câble réseau arraché lors d'un déménagement de mobilier, le rebranche. Le technicien fait imprimer une page de test à la paie, rédige la solution et passe le ticket en Résolu." },
+      { "title": "Clôturer", "text": "La responsable paie confirme. Le ticket passe en Clos. Une enquête de satisfaction est envoyée selon la configuration de l'outil." }
+    ] },
+    { "id": "cmd-ping", "kind": "command", "shell": "cmd", "command": "ping -n 2 IMP-PAIE-01", "explanation": "`ping` envoie de petits messages de test et attend une réponse. L'option `-n 2` limite l'envoi à deux messages au lieu de quatre par défaut. Le nom IMP-PAIE-01 est d'abord traduit en adresse par le DNS, puis le test est effectué.", "output": "Envoi d'une requête 'ping' sur IMP-PAIE-01.valmont.local [10.20.12.31] avec 32 octets de données :\nDélai d'attente de la demande dépassé.\nDélai d'attente de la demande dépassé.\n\nStatistiques Ping pour 10.20.12.31:\n    Paquets : envoyés = 2, reçus = 0, perdus = 2 (perte 100%),", "outputNotes": [
+      { "match": "[10.20.12.31]", "note": "Le nom a bien été traduit en adresse : le DNS fonctionne et connaît l'imprimante. Le problème n'est pas un nom inconnu." },
+      { "match": "Délai d'attente de la demande dépassé", "note": "Aucune réponse : l'imprimante est éteinte, débranchée ou injoignable sur le réseau. Attention, certains équipements bloquent volontairement le ping ; il faut confirmer par un autre indice (écran de l'imprimante, voyants, page web d'administration)." },
+      { "match": "perte 100%", "note": "Résultat à recopier tel quel dans le ticket : c'est un fait vérifiable, plus utile que « l'imprimante ne marche pas »." }
+    ] },
+    { "id": "field-contournement", "kind": "callout", "tone": "field", "title": "Sur le terrain", "text": "Le **contournement** (une solution temporaire qui permet de continuer à travailler) n'est pas une solution définitive, mais c'est souvent ce qui sauve une échéance. Notez-le dans le ticket comme tel : « Contournement : impression redirigée vers IMP-RH-02 ». Ne passez pas le ticket en Résolu tant que la cause n'est pas traitée, sauf si votre procédure prévoit de suivre la cause dans un autre ticket." },
+    { "id": "mistakes", "kind": "mistakes", "items": [
+      { "mistake": "Traiter les tickets dans l'ordre d'arrivée", "why": "Un incident bloquant peut attendre derrière une demande de confort, et le SLA est dépassé.", "fix": "Qualifier chaque ticket à son arrivée et traiter par priorité." },
+      { "mistake": "Mettre la priorité maximale parce que l'utilisateur insiste", "why": "Si tout est P1, plus rien ne l'est ; les vraies urgences sont noyées.", "fix": "Appliquer la matrice, et noter dans le ticket les éléments d'urgence donnés par l'utilisateur." },
+      { "mistake": "Clôturer un ticket sans confirmation de l'utilisateur", "why": "Le problème peut persister ; le ticket sera rouvert et la satisfaction chutera.", "fix": "Passer en Résolu, demander confirmation, laisser l'outil ou l'utilisateur clôturer." },
+      { "mistake": "Mettre un ticket en attente pour suspendre le SLA sans raison réelle", "why": "C'est une manipulation des indicateurs qui fausse le pilotage et se voit dans les historiques.", "fix": "N'utiliser l'attente que lorsqu'on attend réellement un tiers, et noter qui et quoi." },
+      { "mistake": "Classer tout en catégorie « Divers »", "why": "Les tickets ne sont plus orientés automatiquement et les statistiques deviennent inutilisables.", "fix": "Choisir la catégorie la plus précise et demander la création d'une catégorie manquante." }
+    ] },
+    { "id": "risks", "kind": "risks", "items": [
+      "Une demande d'accès à des données (dossier RH, paie, contrats) suit toujours le circuit de validation prévu, même si l'utilisateur dit que son responsable est d'accord.",
+      "Un incident qui touche plusieurs personnes doit être signalé tôt : mieux vaut une alerte levée pour rien qu'un incident majeur découvert une heure trop tard.",
+      "Ne recopiez jamais un mot de passe, même temporaire, en clair dans un ticket : les tickets sont lus par beaucoup de personnes et conservés longtemps.",
+      "Les données personnelles dans un ticket (santé, situation familiale, motif d'absence) n'ont rien à y faire : notez uniquement ce qui sert au traitement."
+    ] },
+    { "id": "quiz", "kind": "quiz", "title": "Vérifiez votre compréhension", "questions": ["ticket-incident-demande", "ticket-priorite-matrice", "ticket-sla-ola", "ticket-statuts-ordre", "ticket-escalade-type"] },
+    { "id": "exercise", "kind": "exercise", "title": "Qualifier un ticket de l'entrepôt", "context": "Il est 6 h 40. Le chef d'équipe de l'entrepôt de Nordelis Logistique appelle le centre de services. Depuis 6 h 15, l'imprimante d'étiquettes du quai 3 n'imprime plus aucune étiquette d'expédition. Les autres quais fonctionnent, mais le quai 3 traite les commandes d'un grand client dont le camion part à 8 h. Les préparateurs du quai 3 (quatre personnes) sont à l'arrêt. La matrice du contrat Nordelis est la même que celle présentée dans la leçon, et le contrat prévoit un SLA de prise en charge de 30 minutes pour un P2.", "task": "Qualifiez ce ticket : type, catégorie, impact, urgence, priorité, et expliquez ce que vous faites dans les trente premières minutes, y compris qui vous prévenez.", "hints": [
+      "Commencez par le type : quelque chose qui fonctionnait a-t-il cessé de fonctionner ?",
+      "Pour l'impact, comptez les personnes bloquées et regardez si tout le site est touché. Pour l'urgence, regardez l'heure du camion.",
+      "Un impact moyen avec une urgence haute donne P2 dans la matrice. Pensez au contournement : un autre quai pourrait-il imprimer les étiquettes du quai 3 ?"
+    ], "solution": [
+      "Type : **incident**, car l'imprimante fonctionnait et ne fonctionne plus. Catégorie : impression, plus précisément imprimante d'étiquettes ou matériel d'entrepôt selon l'arborescence. L'élément concerné est l'imprimante du quai 3, dont on note le nom ou le numéro d'inventaire.",
+      "Impact **moyen** : quatre personnes et un quai sont bloqués, mais pas tout l'entrepôt. Urgence **haute** : le camion part à 8 h, soit dans 1 h 20, et l'activité est arrêtée. La matrice donne **P2**. On peut discuter d'un P1 si le contrat considère ce client comme critique ; dans ce cas, on le justifie dans le ticket et on prévient le responsable plutôt que de décider seul.",
+      "Dans les trente premières minutes : prendre en charge immédiatement le ticket, confirmer le symptôme (message sur l'imprimante, voyants, rouleau d'étiquettes, ruban), tester la connexion réseau de l'imprimante, et proposer un **contournement** : imprimer les étiquettes du quai 3 depuis l'imprimante d'un autre quai, si le logiciel le permet. Ce contournement sauve le camion de 8 h.",
+      "Si le diagnostic à distance ne suffit pas, escalade **fonctionnelle** vers le support de proximité ou le technicien de l'entrepôt pour une intervention physique, avec une note complète. Escalade **hiérarchique** en parallèle : prévenir le responsable du centre de services ou le référent du contrat, car une expédition d'un client important est en jeu. Tous les horaires (6 h 15 début, 6 h 40 appel, heure de prise en charge) sont notés dans le ticket."
+    ], "rubric": {
+      "criteria": [
+        { "id": "incident", "label": "Identifie un incident", "points": 2, "patterns": ["incident"], "required": true },
+        { "id": "priorite", "label": "Attribue une priorité haute (P2, ou P1 justifiée)", "points": 3, "patterns": ["p2", "priorite 2", "priorite haute", "haute priorite", "p1", "priorite critique"], "required": true },
+        { "id": "impact", "label": "Justifie par l'impact (quatre personnes, un quai)", "points": 2, "patterns": ["impact", "quatre personnes", "4 personnes", "quatre preparateurs", "4 preparateurs", "un quai", "quai 3"] },
+        { "id": "urgence", "label": "Justifie par l'urgence (camion de 8 h)", "points": 2, "patterns": ["urgence", "camion", "8 h", "8h", "echeance", "depart"] },
+        { "id": "contournement", "label": "Propose un contournement (autre imprimante, autre quai)", "points": 2, "patterns": ["contournement", "autre quai", "autre imprimante", "imprimante d'un autre", "solution temporaire", "rediriger"] },
+        { "id": "escalade", "label": "Prévoit l'escalade fonctionnelle et/ou hiérarchique", "points": 2, "patterns": ["escalad*", "proximite", "responsable", "n2", "manager", "referent"] }
+      ],
+      "redFlags": [
+        { "id": "basse", "label": "Attribue une priorité basse", "patterns": ["p4", "p5"], "penalty": 2 },
+        { "id": "demande", "label": "Classe le ticket comme une demande de service", "patterns": ["c'est une demande"], "penalty": 2 }
+      ],
+      "passPercent": 60
+    } },
+    { "id": "interview", "kind": "interview", "questions": [
+      { "question": "Quelle est la différence entre un incident et une demande de service ? Donnez un exemple de chaque.", "expectedPoints": ["Incident : interruption ou dégradation d'un service qui fonctionnait", "Demande : sollicitation prévue, sans panne (accès, matériel, information)", "Un exemple concret de chaque", "C'est le technicien qui qualifie, pas la formulation de l'utilisateur"], "modelAnswer": "Un incident, c'est quelque chose qui fonctionnait et qui ne fonctionne plus, ou moins bien : par exemple Outlook qui se ferme à l'ouverture. Une demande de service, c'est une sollicitation normale, sans panne : par exemple un accès à un dossier partagé ou un poste pour un nouvel arrivant. La distinction est importante parce que les circuits sont différents : l'incident vise un retour rapide au fonctionnement normal, la demande suit un processus défini, souvent avec une validation. C'est à moi de qualifier, parce que les utilisateurs formulent souvent un incident comme une demande, et inversement." },
+      { "question": "Comment déterminez-vous la priorité d'un ticket ?", "expectedPoints": ["Croiser impact et urgence", "Utiliser la matrice de l'organisation", "Impact : nombre de personnes ou services touchés", "Urgence : délai avant que la situation devienne grave", "Ne pas céder à la pression de l'appelant"], "modelAnswer": "J'évalue deux choses. L'impact : combien de personnes ou quel service sont touchés. L'urgence : à quelle vitesse la situation devient grave, par exemple une échéance dans l'heure ou un travail complètement bloqué. Je croise les deux dans la matrice de priorité de l'organisation, ce qui garantit que deux techniciens arrivent au même résultat. Je note dans le ticket les éléments qui justifient mon choix, et si l'utilisateur conteste, je peux expliquer ou faire arbitrer par mon responsable." },
+      { "question": "Qu'est-ce qu'un SLA, et que faites-vous si vous voyez qu'un ticket va le dépasser ?", "expectedPoints": ["Engagement de délai envers le client ou les utilisateurs", "Prévenir avant le dépassement, pas après", "Escalade hiérarchique et information de l'utilisateur", "Documenter la raison"], "modelAnswer": "Un SLA est un engagement de niveau de service, par exemple un délai de prise en charge et de résolution selon la priorité. Si je vois qu'un ticket va dépasser son SLA, je n'attends pas : je préviens mon responsable, c'est une escalade hiérarchique, je relance l'équipe concernée si le ticket est chez elle, et j'informe l'utilisateur de la situation et du prochain point. Je documente la raison du retard dans le ticket, parce que c'est ce qui permettra ensuite d'améliorer le processus." }
+    ] },
+    { "id": "glossary", "kind": "glossary", "terms": [
+      { "term": "Incident", "en": "Incident", "definition": "Interruption ou dégradation non prévue d'un service." },
+      { "term": "Demande de service", "en": "Service request", "definition": "Sollicitation prévue d'un utilisateur : accès, matériel, logiciel, information." },
+      { "term": "Priorité", "en": "Priority", "definition": "Ordre de traitement, déduit de l'impact et de l'urgence." },
+      { "term": "Accord de niveau de service", "en": "Service Level Agreement (SLA)", "definition": "Engagement de qualité ou de délai envers le client ou les utilisateurs." },
+      { "term": "Accord de niveau opérationnel", "en": "Operational Level Agreement (OLA)", "definition": "Engagement entre équipes internes qui permet de tenir le SLA." },
+      { "term": "Indicateur clé de performance", "en": "Key Performance Indicator (KPI)", "definition": "Mesure suivie pour vérifier qu'un objectif est atteint." },
+      { "term": "Contournement", "en": "Workaround", "definition": "Solution temporaire qui réduit l'impact d'un incident en attendant la correction." }
+    ] },
+    { "id": "summary", "kind": "summary", "points": [
+      "Un ticket enregistre toute la vie d'une sollicitation : il protège l'utilisateur, le technicien et l'entreprise.",
+      "Incident = quelque chose qui fonctionnait ne fonctionne plus ; demande = sollicitation prévue sans panne. C'est le technicien qui qualifie.",
+      "Priorité = impact × urgence, lue dans la matrice de l'organisation, jamais choisie selon le ton de l'appelant.",
+      "SLA = engagement envers l'utilisateur ; OLA = engagement entre équipes ; KPI = mesure du résultat.",
+      "Résolu ≠ clos : on attend la confirmation de l'utilisateur. Escalade fonctionnelle = vers plus compétent ; hiérarchique = vers un responsable."
+    ] },
+    { "id": "references", "kind": "references", "items": [
+      { "title": "Matrice de calcul de la priorité", "url": "https://glpi-user-documentation.readthedocs.io/fr/latest/modules/assistance/prioritymatrix.html", "publisher": "Documentation GLPI", "verifiedAt": "2026-10-21" },
+      { "title": "Cycle de vie du ticket", "url": "https://glpi-user-documentation.readthedocs.io/fr/latest/modules/assistance/tickets/ticketlifecycle.html", "publisher": "Documentation GLPI", "verifiedAt": "2026-10-21" },
+      { "title": "ITIL 4 Foundation", "url": "https://www.peoplecert.org/browse-certifications/it-governance-and-service-management/ITIL-1/itil-4-foundation-2565", "publisher": "PeopleCert", "verifiedAt": "2026-10-21" },
+      { "title": "Commande ping", "url": "https://learn.microsoft.com/windows-server/administration/windows-commands/ping", "publisher": "Microsoft Learn", "verifiedAt": "2026-10-21" }
+    ] }
+  ]
+}

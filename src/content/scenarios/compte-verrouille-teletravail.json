@@ -1,0 +1,651 @@
+{
+  "slug": "compte-verrouille-teletravail",
+  "title": "Verrouillé toutes les demi-heures",
+  "summary": "Depuis qu'il a changé son mot de passe hier, le compte d'un commercial en télétravail se verrouille sans cesse. Trouvez la source des échecs sans jamais compromettre la sécurité du compte.",
+  "sector": "bureau",
+  "difficulty": 1,
+  "requiredTier": 1,
+  "estimatedMinutes": 15,
+  "skills": [
+    "identity",
+    "security-hygiene",
+    "communication",
+    "diagnostic",
+    "documentation"
+  ],
+  "company": {
+    "name": "Solvane Équipements (entreprise fictive)",
+    "description": "Distributeur de matériel de cuisine professionnelle, 420 salariés dont 60 commerciaux itinérants ou en télétravail. Domaine Active Directory solvane.local, messagerie Exchange sur site (serveur EXCH-01) accessible aux smartphones professionnels par ActiveSync. Le support N1 dispose d'une console déléguée de gestion des comptes (lecture des verrouillages, déverrouillage) mais pas d'accès direct aux contrôleurs de domaine."
+  },
+  "ticket": {
+    "reference": "INC-2026-05207",
+    "reporter": {
+      "name": "Thomas Mercier",
+      "role": "Commercial grands comptes",
+      "site": "Télétravail (Angers)"
+    },
+    "channel": "telephone",
+    "title": "Compte bloqué en boucle depuis le changement de mot de passe",
+    "description": "« J'ai changé mon mot de passe hier en fin de journée parce que Windows me le demandait. Depuis ce matin, toutes les demi-heures environ, le VPN me déconnecte et on me dit que mon compte est verrouillé. J'attends un peu, ça remarche, puis ça recommence. J'ai trois rendez-vous clients en visio aujourd'hui. »",
+    "impact": "individuel",
+    "urgency": "haute",
+    "slaMinutes": 45
+  },
+  "startFlags": [],
+  "clues": [
+    {
+      "id": "c-mdp-change",
+      "label": "Mot de passe changé hier à 17 h 42 depuis le portail libre-service"
+    },
+    {
+      "id": "c-tel-mail",
+      "label": "Le smartphone professionnel ne reçoit plus d'e-mails depuis hier soir et affiche une demande de mot de passe ignorée"
+    },
+    {
+      "id": "c-identite",
+      "label": "Identité vérifiée : rappel au numéro de l'annuaire et contrôle du matricule"
+    },
+    {
+      "id": "c-politique",
+      "label": "Politique : verrouillage après 10 échecs, déverrouillage automatique au bout de 30 minutes"
+    },
+    {
+      "id": "c-rythme",
+      "label": "Verrouillages réguliers depuis hier 17 h 51, toutes les 32 minutes environ, y compris la nuit, portable éteint"
+    },
+    {
+      "id": "c-appelant-exch",
+      "label": "Évènement 4740 : ordinateur appelant EXCH-01 (serveur de messagerie), et non le portable PC-SOL-0821"
+    },
+    {
+      "id": "c-mobile-echec",
+      "label": "Appareil ActiveSync du compte : dernière synchronisation réussie hier 17 h 31, échecs d'authentification répétés depuis"
+    },
+    {
+      "id": "c-portable-ok",
+      "label": "Le portable ouvre la session VPN avec le nouveau mot de passe : il n'est pas la source des échecs"
+    },
+    {
+      "id": "c-reverrouille",
+      "label": "Déverrouillé, le compte se verrouille de nouveau en moins de 3 minutes"
+    }
+  ],
+  "actions": [
+    {
+      "id": "interroger-changement",
+      "label": "Faire préciser quand et comment le mot de passe a été changé",
+      "category": "interroger",
+      "minutes": 2,
+      "relevance": "useful",
+      "outcomes": [
+        {
+          "text": "« Hier vers 17 h 40, Windows m'a prévenu que mon mot de passe expirait. Je l'ai changé sur le portail mot de passe, depuis le portable, avec le VPN. Ensuite j'ai éteint le portable vers 18 h. Ce matin, ça a coupé dès 9 h. »",
+          "reveals": [
+            "c-mdp-change"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "verifier-identite",
+      "label": "Vérifier l'identité de l'appelant (rappel au numéro de l'annuaire, matricule)",
+      "category": "interroger",
+      "minutes": 3,
+      "relevance": "key",
+      "outcomes": [
+        {
+          "when": {
+            "all": [
+              "identite-verifiee"
+            ]
+          },
+          "text": "L'identité de M. Mercier a déjà été vérifiée et tracée dans le ticket."
+        },
+        {
+          "text": "Vous raccrochez et rappelez le numéro mobile professionnel inscrit dans l'annuaire : c'est bien Thomas Mercier qui décroche. Il vous donne son matricule (S-04172), conforme à sa fiche. Vous notez la vérification dans le ticket.",
+          "reveals": [
+            "c-identite"
+          ],
+          "setFlags": [
+            "identite-verifiee"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "interroger-appareils",
+      "label": "Demander quels appareils utilisent son compte (portable, téléphone, tablette)",
+      "category": "interroger",
+      "minutes": 2,
+      "relevance": "useful",
+      "outcomes": [
+        {
+          "when": {
+            "all": [
+              "compte-stabilise"
+            ]
+          },
+          "text": "« Le téléphone reçoit de nouveau mes e-mails, et je n'ai plus été coupé depuis. »"
+        },
+        {
+          "text": "« Le portable, et mon téléphone pro pour les mails et l'agenda. Maintenant que vous le dites, le téléphone ne m'a rien remonté depuis hier soir. Il m'a affiché un message pour le mot de passe, je l'ai fermé, je pensais que ça passerait tout seul. »",
+          "reveals": [
+            "c-tel-mail"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "kb-verrouillage",
+      "label": "Consulter la fiche « Verrouillages répétés » de la base de connaissances",
+      "category": "consulter",
+      "minutes": 2,
+      "relevance": "useful",
+      "outcomes": [
+        {
+          "text": "Fiche KB-0347 : politique du domaine — verrouillage après 10 tentatives erronées, déverrouillage automatique au bout de 30 minutes. Verrouillages répétés après un changement de mot de passe : rechercher l'appareil ou le service qui utilise encore l'ancien mot de passe (téléphone, lecteur réseau, tâche planifiée). Lire l'ordinateur appelant de l'évènement 4740 dans la console déléguée. Ne jamais déverrouiller ni réinitialiser sans vérification d'identité.",
+          "reveals": [
+            "c-politique"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "historique-verrouillages",
+      "label": "Afficher l'historique des verrouillages du compte dans la console déléguée",
+      "category": "consulter",
+      "minutes": 3,
+      "relevance": "key",
+      "outcomes": [
+        {
+          "when": {
+            "all": [
+              "compte-stabilise"
+            ]
+          },
+          "text": "Aucun nouveau verrouillage depuis la mise à jour du téléphone. Le compte est déverrouillé, compteur d'échecs à 0.",
+          "terminal": {
+            "shell": "text",
+            "lines": [
+              "CONSOLE SUPPORT COMPTES – tmercier (Thomas Mercier)",
+              "État ................. Déverrouillé",
+              "Échecs (compteur) .... 0",
+              "Dernier verrouillage . 21/10/2026 10:34:26",
+              "Dernier succès ....... 21/10/2026 10:52:40 (EXCH-01)"
+            ]
+          }
+        },
+        {
+          "text": "Les verrouillages se succèdent à un rythme régulier depuis hier 17 h 51, y compris pendant la nuit, alors que le portable était éteint. Une source automatique réessaie en permanence.",
+          "terminal": {
+            "shell": "text",
+            "lines": [
+              "CONSOLE SUPPORT COMPTES – tmercier (Thomas Mercier)",
+              "État ................. VERROUILLÉ (déverrouillage auto 11:04)",
+              "Mot de passe modifié . 20/10/2026 17:42:05",
+              "",
+              "HISTORIQUE DES VERROUILLAGES (DC01 / DC02)",
+              "20/10/2026 17:51:33",
+              "20/10/2026 18:23:40",
+              "20/10/2026 18:55:47",
+              "  … 26 verrouillages entre 19:27 et 08:58 …",
+              "21/10/2026 09:30:12",
+              "21/10/2026 10:02:19",
+              "21/10/2026 10:34:26"
+            ]
+          },
+          "reveals": [
+            "c-rythme"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lire-4740",
+      "label": "Lire le détail de l'évènement 4740 le plus récent (ordinateur appelant)",
+      "category": "consulter",
+      "minutes": 3,
+      "relevance": "key",
+      "outcomes": [
+        {
+          "when": {
+            "all": [
+              "compte-stabilise"
+            ]
+          },
+          "text": "Le dernier évènement 4740 date de 10 h 34 ; aucun nouveau verrouillage n'a été enregistré depuis la correction."
+        },
+        {
+          "text": "La console affiche l'évènement remonté par le contrôleur de domaine. L'ordinateur appelant n'est pas le portable de M. Mercier mais le serveur de messagerie, par lequel passent les synchronisations des smartphones.",
+          "terminal": {
+            "shell": "text",
+            "lines": [
+              "Journal : Security    Source : Microsoft-Windows-Security-Auditing",
+              "ID de l'évènement : 4740    Ordinateur : DC01.solvane.local",
+              "Date : 21/10/2026 10:34:26",
+              "",
+              "Un compte d'utilisateur a été verrouillé.",
+              "",
+              "Sujet :",
+              "    ID de sécurité :          Système",
+              "    Nom du compte :           DC01$",
+              "    Domaine du compte :       SOLVANE",
+              "",
+              "Compte verrouillé :",
+              "    ID de sécurité :          SOLVANE\\tmercier",
+              "    Nom du compte :           tmercier",
+              "",
+              "Informations supplémentaires :",
+              "    Nom de l'ordinateur appelant :  EXCH-01"
+            ]
+          },
+          "reveals": [
+            "c-appelant-exch"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "appareils-mobiles",
+      "label": "Consulter les appareils mobiles synchronisés avec la boîte de l'utilisateur",
+      "category": "consulter",
+      "minutes": 3,
+      "relevance": "key",
+      "outcomes": [
+        {
+          "when": {
+            "all": [
+              "compte-stabilise"
+            ]
+          },
+          "text": "Le smartphone se synchronise de nouveau normalement.",
+          "terminal": {
+            "shell": "text",
+            "lines": [
+              "APPAREILS MOBILES – tmercier",
+              "Appareil ........... Smartphone Android (appli de messagerie)",
+              "Dernière synchro OK . 21/10/2026 10:52:40",
+              "Dernier échec ....... 21/10/2026 10:48:03",
+              "État ............... Synchronisé"
+            ]
+          }
+        },
+        {
+          "text": "Un seul appareil mobile est associé au compte. Sa dernière synchronisation réussie date d'hier 17 h 31, onze minutes avant le changement de mot de passe ; depuis, chaque tentative échoue sur une erreur d'authentification.",
+          "terminal": {
+            "shell": "text",
+            "lines": [
+              "APPAREILS MOBILES – tmercier",
+              "Appareil ........... Smartphone Android (appli de messagerie)",
+              "Protocole .......... ActiveSync via EXCH-01",
+              "Dernière synchro OK . 20/10/2026 17:31:08",
+              "Dernier échec ....... 21/10/2026 10:36:51",
+              "Motif .............. 401 – Échec d'authentification",
+              "Tentatives (24 h) ... 612"
+            ]
+          },
+          "reveals": [
+            "c-mobile-echec"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "verifier-portable",
+      "label": "Vérifier avec l'utilisateur que le portable accepte le nouveau mot de passe",
+      "category": "tester",
+      "minutes": 3,
+      "relevance": "useful",
+      "outcomes": [
+        {
+          "text": "Pendant une fenêtre où le compte est déverrouillé, M. Mercier verrouille sa session (Windows + L) et la rouvre avec son nouveau mot de passe, puis relance le VPN : tout passe du premier coup. Le portable a bien le nouveau mot de passe, et il était éteint cette nuit pendant les verrouillages.",
+          "reveals": [
+            "c-portable-ok"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "deverrouiller-seul",
+      "label": "Déverrouiller le compte dans la console déléguée, sans autre action",
+      "category": "corriger",
+      "minutes": 2,
+      "relevance": "neutral",
+      "availableWhen": {
+        "all": [
+          "identite-verifiee"
+        ]
+      },
+      "outcomes": [
+        {
+          "when": {
+            "all": [
+              "compte-stabilise"
+            ]
+          },
+          "text": "Le compte est déjà déverrouillé et stable."
+        },
+        {
+          "text": "Le compte est déverrouillé. Deux minutes plus tard, la console affiche de nouveau VERROUILLÉ : la source des échecs continue de réessayer avec l'ancien mot de passe. Déverrouiller traite le symptôme, pas la cause.",
+          "reveals": [
+            "c-reverrouille"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "deverrouiller-sans-verifier",
+      "label": "Déverrouiller immédiatement le compte à la demande de l'appelant, sans vérifier son identité",
+      "category": "corriger",
+      "minutes": 1,
+      "relevance": "irrelevant",
+      "availableWhen": {
+        "none": [
+          "identite-verifiee"
+        ]
+      },
+      "risk": {
+        "level": "dangerous",
+        "explanation": "Déverrouiller ou réinitialiser un compte sur simple appel est la porte d'entrée classique de l'ingénierie sociale : n'importe qui peut se faire passer pour un commercial pressé. Un attaquant qui aurait provoqué les verrouillages en essayant des mots de passe obtiendrait de nouvelles tentatives, voire l'accès. La procédure impose une vérification d'identité tracée avant toute action sur le compte."
+      },
+      "outcomes": [
+        {
+          "text": "Le compte est déverrouillé… et se verrouille de nouveau deux minutes plus tard. Vous n'avez aucune trace prouvant que vous parliez bien à M. Mercier : en cas d'audit, l'action est injustifiable.",
+          "reveals": [
+            "c-reverrouille"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "reinitialiser-mdp",
+      "label": "Réinitialiser le mot de passe et le dicter à l'utilisateur (identité vérifiée)",
+      "category": "corriger",
+      "minutes": 4,
+      "relevance": "neutral",
+      "availableWhen": {
+        "all": [
+          "identite-verifiee"
+        ]
+      },
+      "risk": {
+        "level": "caution",
+        "explanation": "Une réinitialisation n'est pas nécessaire ici : l'utilisateur connaît son mot de passe. Elle crée un mot de passe temporaire à transmettre, oblige à un nouveau changement et ne règle rien tant que l'appareil fautif garde l'ancien."
+      },
+      "outcomes": [
+        {
+          "text": "Le mot de passe est réinitialisé avec changement obligatoire à la prochaine ouverture de session. M. Mercier en choisit un nouveau. Vingt minutes plus tard, le compte est de nouveau verrouillé : le téléphone essaie toujours l'ancien mot de passe, qui est maintenant doublement périmé."
+        }
+      ]
+    },
+    {
+      "id": "mdp-par-mail",
+      "label": "Réinitialiser le mot de passe et l'envoyer sur l'adresse e-mail personnelle de l'utilisateur",
+      "category": "corriger",
+      "minutes": 3,
+      "relevance": "irrelevant",
+      "risk": {
+        "level": "dangerous",
+        "explanation": "Un mot de passe envoyé par e-mail, de surcroît vers une messagerie personnelle hors de contrôle de l'entreprise, reste lisible indéfiniment dans les boîtes d'envoi et de réception et peut être intercepté. C'est une fuite d'identifiant au sens de la politique de sécurité : le compte devrait être considéré comme compromis. Un mot de passe ne se transmet jamais par écrit."
+      },
+      "outcomes": [
+        {
+          "text": "Le message part vers une adresse grand public. Le mot de passe y restera en clair. Et le compte se verrouille de nouveau vingt minutes plus tard : le téléphone n'a pas changé."
+        }
+      ]
+    },
+    {
+      "id": "desactiver-verrouillage",
+      "label": "Demander au N2 d'exclure ce compte de la politique de verrouillage",
+      "category": "escalader",
+      "minutes": 3,
+      "relevance": "irrelevant",
+      "risk": {
+        "level": "dangerous",
+        "explanation": "Sans verrouillage, un attaquant peut essayer un nombre illimité de mots de passe sur ce compte, qui a accès à la messagerie et au VPN depuis Internet. Assouplir une politique de sécurité pour masquer un symptôme exige une analyse de risque et l'accord du responsable sécurité : ce n'est pas une solution de support."
+      },
+      "outcomes": [
+        {
+          "text": "Le N2 refuse et vous rappelle la politique : l'exclusion d'un compte nomade de la politique de verrouillage est interdite. Le téléphone continuerait d'échouer en silence, et le vrai problème resterait entier."
+        }
+      ]
+    },
+    {
+      "id": "vider-identifiants-portable",
+      "label": "Faire vider le Gestionnaire d'identification Windows du portable",
+      "category": "corriger",
+      "minutes": 4,
+      "relevance": "neutral",
+      "outcomes": [
+        {
+          "text": "Le Gestionnaire d'identification ne contient qu'une entrée pour le proxy et une pour Teams, toutes deux mises à jour ce matin. Les supprimer oblige M. Mercier à se réauthentifier dans Teams, sans effet sur les verrouillages : la source n'est pas le portable."
+        }
+      ]
+    },
+    {
+      "id": "reinstaller-vpn",
+      "label": "Réinstaller le client VPN du portable",
+      "category": "corriger",
+      "minutes": 15,
+      "relevance": "irrelevant",
+      "outcomes": [
+        {
+          "text": "Quinze minutes de réinstallation, puis M. Mercier se reconnecte : le VPN fonctionne… jusqu'au verrouillage suivant. Le VPN ne fait que subir le verrouillage, il ne le provoque pas."
+        }
+      ]
+    },
+    {
+      "id": "controle-stabilite",
+      "label": "Contrôler l'état du compte un quart d'heure plus tard et confirmer avec l'utilisateur",
+      "category": "tester",
+      "minutes": 4,
+      "relevance": "useful",
+      "outcomes": [
+        {
+          "when": {
+            "all": [
+              "compte-stabilise"
+            ]
+          },
+          "text": "Quinze minutes après la correction, la console affiche « Déverrouillé », compteur d'échecs à 0, et le smartphone s'est synchronisé à 10 h 52. Vous rappelez M. Mercier : le VPN tient, ses e-mails arrivent sur son téléphone, il peut assurer ses rendez-vous."
+        },
+        {
+          "text": "La console affiche de nouveau VERROUILLÉ, compteur d'échecs à 10. La source des échecs est toujours active."
+        }
+      ]
+    }
+  ],
+  "diagnoses": [
+    {
+      "id": "d-smartphone",
+      "label": "L'application de messagerie du smartphone utilise encore l'ancien mot de passe : ses tentatives de synchronisation via EXCH-01 verrouillent le compte en boucle",
+      "correct": true,
+      "requiresClues": [
+        "c-rythme",
+        "c-appelant-exch",
+        "c-mobile-echec"
+      ],
+      "feedback": "Exact. Depuis le changement de mot de passe, le téléphone réessaie de se synchroniser toutes les quelques minutes avec l'ancien mot de passe. Les échecs passent par le serveur de messagerie, d'où l'ordinateur appelant EXCH-01, et le seuil de 10 échecs est atteint juste après chaque déverrouillage automatique."
+    },
+    {
+      "id": "d-attaque",
+      "label": "Quelqu'un tente de pirater le compte par force brute",
+      "correct": false,
+      "feedback": "L'hypothèse mérite d'être envisagée, mais les échecs viennent tous d'un seul appareil connu, l'appareil ActiveSync de l'utilisateur, qui fonctionnait jusqu'au changement de mot de passe. Une attaque ne commencerait pas précisément onze minutes après un changement de mot de passe légitime."
+    },
+    {
+      "id": "d-portable",
+      "label": "Le portable a gardé l'ancien mot de passe en cache et verrouille le compte",
+      "correct": false,
+      "feedback": "Le portable ouvre la session et le VPN avec le nouveau mot de passe, et les verrouillages ont continué toute la nuit alors qu'il était éteint. L'ordinateur appelant n'est d'ailleurs pas PC-SOL-0821."
+    },
+    {
+      "id": "d-vpn",
+      "label": "Le client VPN est défectueux et coupe la connexion",
+      "correct": false,
+      "feedback": "Le VPN se coupe parce que le compte est verrouillé, pas l'inverse : la console montre des verrouillages même quand aucun VPN n'est connecté."
+    },
+    {
+      "id": "d-replication",
+      "label": "Le nouveau mot de passe ne s'est pas répliqué sur tous les contrôleurs de domaine",
+      "correct": false,
+      "feedback": "Un défaut de réplication ne durerait pas toute une nuit et ne produirait pas des échecs venant d'un seul serveur de messagerie à intervalle régulier ; le portable s'authentifie d'ailleurs sans problème."
+    }
+  ],
+  "resolutions": [
+    {
+      "id": "r-maj-telephone",
+      "label": "Identité vérifiée, guider l'utilisateur pour saisir le nouveau mot de passe dans l'application de messagerie du smartphone, puis déverrouiller le compte et surveiller",
+      "correct": true,
+      "setFlags": [
+        "compte-stabilise"
+      ],
+      "feedback": "Bonne résolution : vous supprimez la source des échecs avant de déverrouiller, sans toucher à la politique de sécurité ni au mot de passe. M. Mercier saisit lui-même le mot de passe sur son téléphone : il ne quitte jamais sa tête.",
+      "requires": {
+        "all": [
+          "identite-verifiee"
+        ],
+        "message": "Procédure non respectée : avant de déverrouiller un compte ou de guider l'utilisateur sur son mot de passe, vérifiez son identité selon la procédure (rappel sur le numéro de l'annuaire, question de contrôle)."
+      }
+    },
+    {
+      "id": "r-reset",
+      "label": "Réinitialiser le mot de passe de l'utilisateur",
+      "correct": false,
+      "feedback": "Le téléphone continuerait d'essayer l'ancien mot de passe : le compte se reverrouillerait dans la demi-heure. Vous auriez en plus créé un mot de passe temporaire à transmettre, sans raison."
+    },
+    {
+      "id": "r-deverrouiller",
+      "label": "Déverrouiller le compte et conseiller à l'utilisateur de patienter",
+      "correct": false,
+      "feedback": "Le déverrouillage seul ne dure que quelques minutes : la source des échecs n'est pas traitée. L'utilisateur rappellera dans l'heure."
+    },
+    {
+      "id": "r-exclusion",
+      "label": "Faire exclure le compte de la politique de verrouillage",
+      "correct": false,
+      "feedback": "Vous masqueriez le symptôme en affaiblissant la sécurité d'un compte exposé sur Internet ; le téléphone continuerait d'échouer sans que personne ne le voie."
+    }
+  ],
+  "fixedFlag": "compte-stabilise",
+  "verificationActionId": "controle-stabilite",
+  "closureRubric": {
+    "criteria": [
+      {
+        "id": "cause",
+        "label": "Cause expliquée (smartphone avec l'ancien mot de passe, échecs via le serveur de messagerie)",
+        "points": 3,
+        "patterns": [
+          "telephone",
+          "smartphone",
+          "mobile",
+          "activesync",
+          "ancien mot de passe",
+          "exch-01",
+          "messagerie"
+        ],
+        "required": true
+      },
+      {
+        "id": "action",
+        "label": "Action réalisée (identité vérifiée, mot de passe mis à jour sur le téléphone, déverrouillage)",
+        "points": 3,
+        "patterns": [
+          "mis a jour",
+          "mise a jour",
+          "saisi*",
+          "deverrouill*",
+          "identite verifiee",
+          "verification d identite"
+        ]
+      },
+      {
+        "id": "validation",
+        "label": "Validation (plus de verrouillage après contrôle, synchronisation OK)",
+        "points": 2,
+        "patterns": [
+          "plus de verrouillage",
+          "aucun verrouillage",
+          "stable",
+          "compteur",
+          "synchronis*",
+          "controle*",
+          "confirme*"
+        ]
+      },
+      {
+        "id": "prevention",
+        "label": "Prévention (mettre à jour tous les appareils après un changement de mot de passe)",
+        "points": 2,
+        "patterns": [
+          "prevention",
+          "conseil*",
+          "a l avenir",
+          "tous les appareils",
+          "apres chaque changement",
+          "sensibilis*",
+          "kb"
+        ]
+      }
+    ],
+    "redFlags": [
+      {
+        "id": "mdp-ecrit",
+        "label": "Mot de passe transmis ou noté dans le ticket",
+        "patterns": [
+          "mot de passe envoye",
+          "mot de passe provisoire :",
+          "nouveau mot de passe :"
+        ],
+        "penalty": 3
+      }
+    ],
+    "passPercent": 60
+  },
+  "hints": [
+    "Un verrouillage n'est que la conséquence d'échecs répétés. Qu'est-ce qui, en dehors de l'utilisateur lui-même, essaie de s'authentifier avec son compte ?",
+    "Regardez quand les verrouillages ont lieu, y compris quand le portable est éteint, puis quel ordinateur la console désigne comme appelant.",
+    "L'ordinateur appelant est le serveur de messagerie : c'est le smartphone qui se synchronise avec l'ancien mot de passe. Vérifiez l'identité, faites mettre à jour le téléphone, puis déverrouillez."
+  ],
+  "debrief": {
+    "cause": "Après le changement de mot de passe d'hier à 17 h 42, l'application de messagerie du smartphone professionnel a continué de se synchroniser avec l'ancien mot de passe. Chaque série d'échecs, relayée par le serveur Exchange EXCH-01, atteint le seuil de 10 tentatives et verrouille le compte dès la fin du déverrouillage automatique de 30 minutes.",
+    "clues": [
+      "Les verrouillages commencent neuf minutes après le changement de mot de passe et se répètent à intervalle fixe, même la nuit",
+      "L'évènement 4740 désigne EXCH-01, le serveur de messagerie, comme ordinateur appelant",
+      "Le seul appareil mobile du compte échoue en authentification depuis le changement de mot de passe",
+      "Le portable, lui, accepte le nouveau mot de passe"
+    ],
+    "relevantTests": [
+      "Historique des verrouillages (rythme et horaires)",
+      "Lecture de l'ordinateur appelant dans l'évènement 4740",
+      "Liste des appareils mobiles synchronisés et de leur dernière synchronisation réussie"
+    ],
+    "wrongHypotheses": [
+      {
+        "hypothesis": "Attaque par force brute",
+        "why": "Tous les échecs viennent de l'appareil de l'utilisateur, à partir du changement de mot de passe : une attaque n'aurait pas ce profil. À signaler au N2 sécurité si la source était inconnue."
+      },
+      {
+        "hypothesis": "Identifiants en cache sur le portable",
+        "why": "Le portable accepte le nouveau mot de passe, il était éteint pendant les verrouillages de la nuit, et il n'est pas l'ordinateur appelant."
+      },
+      {
+        "hypothesis": "Problème de VPN",
+        "why": "Le VPN coupe parce que le compte est verrouillé ; il ne cause pas les échecs."
+      }
+    ],
+    "procedure": [
+      "Vérifier l'identité de l'appelant selon la procédure (rappel au numéro de l'annuaire, matricule) et le tracer",
+      "Consulter l'historique des verrouillages et l'ordinateur appelant de l'évènement 4740 dans la console déléguée",
+      "Identifier l'appareil qui échoue (appareils mobiles synchronisés)",
+      "Faire saisir le nouveau mot de passe dans l'application de messagerie du téléphone par l'utilisateur lui-même",
+      "Déverrouiller le compte, puis contrôler un quart d'heure plus tard que le compteur d'échecs reste à 0",
+      "Conseiller l'utilisateur et documenter le ticket"
+    ],
+    "prevention": [
+      "Après chaque changement de mot de passe, mettre à jour immédiatement tous les appareils : téléphone, tablette, lecteurs réseau mémorisés",
+      "Ajouter ce rappel au message affiché par le portail de changement de mot de passe et à la fiche KB-0347"
+    ],
+    "exampleClosingNote": "Cause : l'application de messagerie du smartphone professionnel utilisait encore l'ancien mot de passe depuis le changement du 20/10 à 17 h 42 ; ses échecs de synchronisation ActiveSync via EXCH-01 (ordinateur appelant de l'évènement 4740) verrouillaient le compte toutes les 32 minutes. Action : identité vérifiée par rappel au numéro de l'annuaire et matricule ; nouveau mot de passe saisi par l'utilisateur dans l'application du téléphone, puis compte déverrouillé. Validation : contrôle 15 minutes plus tard, aucun verrouillage, compteur d'échecs à 0, synchronisation du téléphone OK, confirmé avec M. Mercier. Prévention : conseil donné de mettre à jour tous les appareils après chaque changement de mot de passe ; proposition d'ajout du rappel à la KB-0347."
+  }
+}

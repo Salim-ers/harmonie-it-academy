@@ -1,0 +1,174 @@
+{
+  "meta": {
+    "slug": "n1-virtualisation",
+    "title": "Virtualisation : notions pour le support",
+    "summary": "Comprendre hyperviseurs, machines virtuelles, snapshots et VDI, reconnaître une machine virtuelle et savoir ce que le N1 peut constater sans mettre la production en danger.",
+    "level": "debutant",
+    "prerequisites": [
+      "Connaître les composants d'un ordinateur : processeur, mémoire, disque (leçon « Anatomie d'un ordinateur »)",
+      "Savoir ouvrir une invite de commandes et PowerShell (leçon « PowerShell et ligne de commande »)"
+    ],
+    "objectives": [
+      "Expliquer ce qu'est une machine virtuelle et un hyperviseur",
+      "Distinguer hyperviseur de type 1 et de type 2, avec des exemples",
+      "Comprendre le partage des ressources et ses effets sur les performances",
+      "Expliquer pourquoi un snapshot n'est pas une sauvegarde",
+      "Situer VDI, bureau à distance et conteneurs par rapport aux machines virtuelles",
+      "Vérifier avec systeminfo et Get-ComputerInfo si une machine est virtuelle ou prête pour Hyper-V",
+      "Appliquer les bons réflexes du N1 face à une machine virtuelle de production"
+    ],
+    "durationMin": 40,
+    "skills": [
+      { "code": "virtualization", "weight": 3 }
+    ]
+  },
+  "blocks": [
+    { "id": "intro", "kind": "paragraph", "text": "Mardi, 11 h 20, Nordelis Logistique. L'application de préparation de commandes est très lente. Un technicien trouve dans la console de virtualisation, à laquelle il a un accès en lecture, que la machine virtuelle de l'application « consomme 100 % de processeur ». Il pense bien faire : il clique sur « Redémarrer ». Pendant six minutes, les 40 préparateurs de l'entrepôt sont à l'arrêt, deux camions partent en retard, et la lenteur revient dix minutes après le redémarrage, car la cause était une sauvegarde mal planifiée sur le même serveur physique. Dans cette leçon, vous apprendrez ce qu'est la virtualisation, ce que vous pouvez observer, et pourquoi la bonne réaction était de constater, documenter et escalader." },
+    { "id": "h-pourquoi", "kind": "heading", "level": 2, "text": "Pourquoi virtualiser" },
+    { "id": "p-pourquoi", "kind": "paragraph", "text": "Il y a vingt ans, chaque application tournait sur son propre serveur physique : un serveur pour la messagerie, un pour la comptabilité, un pour les fichiers. La plupart passaient leurs journées à 5 ou 10 % d'utilisation, occupaient de la place, consommaient de l'électricité et tombaient en panne avec leur matériel. La **virtualisation** permet de faire fonctionner **plusieurs ordinateurs logiques sur un seul ordinateur physique**, chacun avec son propre système d'exploitation, isolé des autres. On gagne en place, en énergie, en souplesse (créer un serveur prend quelques minutes) et en résilience (une machine virtuelle peut être déplacée vers un autre serveur physique)." },
+    { "id": "def", "kind": "callout", "tone": "definition", "title": "Définition simple", "text": "Une **machine virtuelle** (VM) est un ordinateur simulé par logiciel : elle a son processeur, sa mémoire, ses disques et ses cartes réseau virtuels, et on y installe un système d'exploitation comme sur un PC réel. L'**hyperviseur** est le logiciel qui crée ces machines virtuelles, leur distribue les ressources du serveur physique (appelé **hôte**) et les isole les unes des autres. Les VM sont appelées **invités**." },
+    { "id": "analogie", "kind": "callout", "tone": "analogy", "title": "Analogie", "text": "Un serveur physique avec un hyperviseur, c'est un immeuble découpé en appartements. L'immeuble (l'hôte) a une charpente, une arrivée d'eau et d'électricité communes (processeur, mémoire, disques, réseau). Le syndic (l'hyperviseur) répartit ces ressources entre les appartements et s'assure qu'aucun locataire n'entre chez le voisin. Chaque appartement (une VM) est aménagé comme son occupant le souhaite. Mais si un locataire fait tourner trois machines à laver à la fois, la pression d'eau baisse chez tout le monde." },
+    { "id": "diag-virt", "kind": "diagram", "diagram": "virtualization-layers", "caption": "Les couches de la virtualisation : le matériel, l'hyperviseur (directement sur le matériel ou au-dessus d'un système hôte), puis les machines virtuelles et leurs applications." },
+    { "id": "h-types", "kind": "heading", "level": 2, "text": "Hyperviseur de type 1 et de type 2" },
+    { "id": "p-type1", "kind": "paragraph", "text": "Un hyperviseur de **type 1**, dit « bare metal », s'installe **directement sur le matériel** du serveur, à la place d'un système d'exploitation classique. C'est le modèle des datacenters et des salles serveurs : il est optimisé pour la performance et la stabilité, et s'administre souvent à distance, via une console web ou un outil de gestion centralisé. Exemples : **VMware ESXi** (piloté par vCenter dans l'offre vSphere), **Microsoft Hyper-V** (rôle de Windows Server), **Proxmox VE** (distribution basée sur Debian qui s'appuie sur KVM, généralement classée en type 1)." },
+    { "id": "p-type2", "kind": "paragraph", "text": "Un hyperviseur de **type 2**, dit « hébergé », s'installe **comme une application** sur un système existant (Windows, macOS, Linux). Il est parfait pour un usage personnel ou de test : monter un lab sur son portable, tester un logiciel, ouvrir un vieux système. Exemples : **Oracle VirtualBox**, **VMware Workstation**. Les performances sont un peu inférieures, car chaque accès au matériel passe aussi par le système hôte." },
+    { "id": "tab-types", "kind": "table", "caption": "Comparaison des deux types d'hyperviseurs", "headers": ["Critère", "Type 1 (bare metal)", "Type 2 (hébergé)"], "rows": [
+      ["Installation", "Directement sur le matériel", "Comme une application sur un système existant"],
+      ["Usage typique", "Serveurs de production, datacenter, VDI", "Lab personnel, tests, formation"],
+      ["Exemples", "VMware ESXi / vSphere, Hyper-V, Proxmox VE", "VirtualBox, VMware Workstation"],
+      ["Performances", "Meilleures, accès direct au matériel", "Un peu inférieures, dépend du système hôte"],
+      ["Qui s'en occupe en entreprise", "N2/N3, administrateurs systèmes", "L'utilisateur lui-même (souvent un technicien)"]
+    ] },
+    { "id": "hyperv-info", "kind": "callout", "tone": "info", "title": "Le cas particulier de Hyper-V sur Windows 10 et 11", "text": "Hyper-V peut aussi être activé sur les éditions Professionnel, Entreprise et Éducation de Windows 10 et 11. On pourrait croire à un type 2, puisqu'on l'active depuis Windows. En réalité, une fois activé, l'hyperviseur démarre **sous** Windows, qui devient lui-même une sorte de machine privilégiée : c'est donc une architecture de type 1. Retenez surtout la conséquence pratique : quand Hyper-V est actif, d'autres logiciels de virtualisation peuvent se comporter différemment." },
+    { "id": "lab-tip", "kind": "callout", "tone": "tip", "title": "Pour votre lab personnel", "text": "VirtualBox est gratuit et suffit largement pour vous entraîner : installer un Windows Server d'évaluation, créer un petit domaine de test, jouer avec le DHCP et le DNS sans risque. Activez la virtualisation dans le BIOS/UEFI de votre ordinateur si l'hyperviseur vous indique qu'elle est désactivée. Et ne branchez jamais un lab sur le réseau de votre entreprise sans autorisation : un serveur DHCP de test sur le réseau de production fait des dégâts." },
+    { "id": "h-ressources", "kind": "heading", "level": 2, "text": "Des ressources partagées" },
+    { "id": "p-ressources", "kind": "paragraph", "text": "Toutes les VM d'un hôte se partagent **le même processeur, la même mémoire, les mêmes disques et le même réseau**. L'hyperviseur peut attribuer à l'ensemble des VM plus de processeurs virtuels qu'il n'y a de cœurs physiques, en pariant qu'elles ne seront pas toutes chargées en même temps : c'est le **surengagement**. Cela fonctionne bien… jusqu'au moment où plusieurs VM ont besoin de puissance en même temps. Une VM peut alors être lente **sans que rien n'ait changé à l'intérieur d'elle**, simplement parce qu'une voisine consomme beaucoup. C'est l'effet du « voisin bruyant »." },
+    { "id": "tab-ressources", "kind": "table", "caption": "Ressources virtuelles et symptômes de contention", "headers": ["Ressource", "Ce que voit la VM", "Symptôme si l'hôte est saturé"], "rows": [
+      ["Processeur", "Un ou plusieurs processeurs virtuels (vCPU)", "Lenteur générale alors que la VM semble peu chargée de l'intérieur"],
+      ["Mémoire", "Une quantité de RAM attribuée, parfois dynamique", "Ralentissements, utilisation importante du fichier d'échange"],
+      ["Disque", "Un ou plusieurs disques virtuels (fichiers .vhdx, .vmdk, .qcow2…)", "Lenteurs à l'ouverture des fichiers, applications qui « figent »"],
+      ["Réseau", "Une ou plusieurs cartes réseau virtuelles reliées à un switch virtuel", "Débit réduit, latence accrue"]
+    ] },
+    { "id": "h-snapshot", "kind": "heading", "level": 2, "text": "Snapshots : utiles, mais ce n'est pas une sauvegarde" },
+    { "id": "p-snapshot", "kind": "paragraph", "text": "Un **snapshot** (appelé **point de contrôle** ou checkpoint dans Hyper-V) fige l'état d'une VM à un instant donné : ses disques et, selon le type, sa mémoire. On peut ensuite **revenir** à cet état en quelques secondes. C'est très pratique avant une mise à jour risquée : si elle échoue, on revient en arrière. Mais techniquement, la plupart des snapshots fonctionnent en enregistrant **les différences** par rapport au disque d'origine, dans des fichiers stockés **au même endroit** que la VM." },
+    { "id": "snapshot-danger", "kind": "callout", "tone": "danger", "title": "Pourquoi un snapshot n'est pas une sauvegarde", "text": "Un snapshot **dépend du disque d'origine** : si le stockage de l'hôte tombe en panne ou est chiffré par un rançongiciel, la VM et ses snapshots disparaissent ensemble. Une vraie sauvegarde est une **copie indépendante**, stockée ailleurs, testée et conservée selon une politique définie. De plus, un snapshot oublié grossit au fil des écritures, dégrade les performances et peut remplir le stockage. Enfin, revenir à un ancien snapshot d'un serveur qui réplique des données, comme un contrôleur de domaine, peut provoquer des incohérences graves." },
+    { "id": "tab-snap", "kind": "table", "caption": "Snapshot, sauvegarde et modèle : trois outils différents", "headers": ["Outil", "À quoi il sert", "Durée de vie", "Protège d'une panne de stockage ?"], "rows": [
+      ["Snapshot / point de contrôle", "Revenir rapidement en arrière juste après une opération risquée", "Quelques heures à quelques jours", "Non"],
+      ["Sauvegarde", "Restaurer des données ou une VM après une perte, une panne ou une attaque", "Selon la politique (semaines, mois, années)", "Oui, si elle est stockée ailleurs"],
+      ["Modèle (template)", "Créer rapidement de nouvelles VM identiques et à jour", "Permanent, mis à jour régulièrement", "Sans objet"]
+    ] },
+    { "id": "p-modeles", "kind": "paragraph", "text": "Un **modèle** est une VM « de référence », préparée une fois pour toutes (système installé, mis à jour, outils de l'entreprise), puis figée. On s'en sert pour créer de nouvelles VM en quelques minutes, toutes configurées de la même façon. Sous Windows, le modèle est généralement généralisé avec l'outil Sysprep pour que chaque copie reçoive son propre identifiant et puisse rejoindre le domaine sans conflit." },
+    { "id": "h-vdi", "kind": "heading", "level": 2, "text": "Bureau virtuel et bureau à distance" },
+    { "id": "p-vdi", "kind": "paragraph", "text": "La virtualisation ne concerne pas que les serveurs. Avec la **VDI** (Virtual Desktop Infrastructure, infrastructure de bureaux virtuels), le bureau Windows de l'utilisateur tourne dans une VM du datacenter ou du cloud ; l'utilisateur s'y connecte depuis un client léger, un portable ou même une tablette, et ne reçoit que l'image de l'écran. Les **services Bureau à distance** (RDS) proposent une variante : plusieurs utilisateurs partagent un même serveur Windows, chacun dans sa propre session. On trouve sur le marché des solutions comme Azure Virtual Desktop, Citrix ou les services Bureau à distance de Windows Server." },
+    { "id": "vdi-field", "kind": "callout", "tone": "field", "title": "Sur le terrain", "text": "Avec un bureau virtuel, il y a **deux machines** dans chaque ticket : le poste physique de l'utilisateur et la session distante. Posez toujours la question : « Le problème est-il dans la fenêtre du bureau virtuel, ou sur votre ordinateur ? » Une souris qui saccade, une image floue ou des coupures pointent souvent vers le réseau entre les deux ; une application qui plante à l'intérieur pointe vers la session ou l'image virtuelle." },
+    { "id": "h-conteneurs", "kind": "heading", "level": 2, "text": "Et les conteneurs ?" },
+    { "id": "p-conteneurs", "kind": "paragraph", "text": "Vous entendrez parler de **conteneurs** (Docker, Kubernetes). Un conteneur emballe une application avec ses bibliothèques, mais **partage le noyau** du système hôte au lieu d'embarquer un système d'exploitation complet. Il est donc beaucoup plus léger et démarre en quelques secondes, mais l'isolation est moins forte qu'entre deux VM. Les deux approches se combinent souvent : des conteneurs qui tournent dans des VM." },
+    { "id": "tab-conteneurs", "kind": "table", "caption": "Machine virtuelle ou conteneur", "headers": ["Critère", "Machine virtuelle", "Conteneur"], "rows": [
+      ["Contient", "Un système d'exploitation complet + applications", "Une application + ses dépendances"],
+      ["Noyau", "Le sien", "Celui de l'hôte, partagé"],
+      ["Taille et démarrage", "Plusieurs Go, démarrage en dizaines de secondes ou minutes", "Quelques Mo à centaines de Mo, démarrage en secondes"],
+      ["Isolation", "Forte", "Plus légère"],
+      ["Interlocuteurs côté support", "Équipe systèmes / infrastructure", "Équipes de développement ou plateforme (DevOps)"]
+    ] },
+    { "id": "h-n1", "kind": "heading", "level": 2, "text": "Ce que fait le N1 face à la virtualisation" },
+    { "id": "list-n1", "kind": "list", "ordered": false, "items": [
+      "**Constater** : symptôme exact, heure de début, utilisateurs touchés, nom du serveur ou de la VM concernés.",
+      "**Identifier** si la machine en cause est physique ou virtuelle, et sur quel environnement (Hyper-V, vSphere, Proxmox…), grâce à la documentation ou aux commandes ci-dessous.",
+      "**Comparer** : d'autres applications hébergées sur la même infrastructure sont-elles lentes aussi ? C'est un indice précieux de contention sur l'hôte.",
+      "**Ne pas agir sur une VM de production** (redémarrer, arrêter, restaurer un snapshot, modifier les ressources) sans l'accord du responsable et, le plus souvent, une demande de changement.",
+      "**Escalader** au N2 systèmes avec ces éléments, en indiquant l'impact métier."
+    ] },
+    { "id": "cmd-systeminfo", "kind": "command", "shell": "cmd", "command": "systeminfo", "explanation": "Affiche de nombreuses informations sur le système. Pour la virtualisation, on regarde le fabricant et le modèle (une VM s'annonce souvent comme telle) et la section « Configuration requise pour Hyper-V ». Extrait d'un poste physique où Hyper-V n'est pas activé ; les libellés exacts peuvent légèrement varier selon la version de Windows.", "output": "Nom de l’hôte:                              PC-LOG-042\nNom du système d’exploitation:              Microsoft Windows 11 Professionnel\nFabricant du système:                       LENOVO\nModèle du système:                          21AH00BXFR\nType du système:                            x64-based PC\nMémoire physique totale:                    16 088 Mo\nDomaine:                                    nordelis.local\nConfiguration requise pour Hyper-V:         Extensions de mode du moniteur d’ordinateur virtuel : Oui\n                                            Virtualisation activée dans le microprogramme : Oui\n                                            Traduction d’adresse de second niveau : Oui\n                                            Prévention de l’exécution des données disponible : Oui", "outputNotes": [
+      { "match": "Fabricant du système", "note": "Un vrai fabricant de matériel : le poste est physique. Une VM afficherait plutôt « Microsoft Corporation » (Hyper-V), « VMware, Inc. » ou « QEMU » selon l'hyperviseur." },
+      { "match": "Modèle du système", "note": "Sur une VM Hyper-V, le modèle indique « Virtual Machine » ; sur VMware, un libellé contenant « VMware »." },
+      { "match": "Virtualisation activée dans le microprogramme : Oui", "note": "La virtualisation matérielle est activée dans le BIOS/UEFI. « Non » est la cause n° 1 d'un hyperviseur qui refuse de démarrer une VM sur un poste de lab." },
+      { "match": "Configuration requise pour Hyper-V", "note": "Si un hyperviseur est déjà actif (Hyper-V activé, ou poste lui-même virtuel), Windows remplace ces lignes par un message indiquant qu'un hyperviseur a été détecté." }
+    ] },
+    { "id": "cmd-gci", "kind": "command", "shell": "powershell", "command": "Get-ComputerInfo -Property \"HyperV*\"", "explanation": "Get-ComputerInfo renvoie un objet décrivant le système ; le paramètre -Property accepte des caractères génériques. Ici, on affiche uniquement les propriétés liées à Hyper-V. Exemple sur un poste où Hyper-V est activé : l'hyperviseur est présent et les prérequis ne sont plus détaillés.", "output": "HyperVisorPresent                                 : True\nHyperVRequirementDataExecutionPreventionAvailable :\nHyperVRequirementSecondLevelAddressTranslation    :\nHyperVRequirementVirtualizationFirmwareEnabled    :\nHyperVRequirementVMMonitorModeExtensions          :", "outputNotes": [
+      { "match": "HyperVisorPresent                                 : True", "note": "Un hyperviseur fonctionne sous ce système : soit Hyper-V (ou une fonction qui s'appuie sur lui) est activé sur le poste, soit le système est lui-même une VM." },
+      { "match": "HyperVRequirementVirtualizationFirmwareEnabled", "note": "Champs vides quand un hyperviseur est déjà présent. Sur un poste sans hyperviseur, ils valent True ou False et indiquent si Hyper-V pourrait être activé." }
+    ] },
+    { "id": "cmd-cim", "kind": "command", "shell": "powershell", "command": "Get-CimInstance -ClassName Win32_ComputerSystem | Select-Object Manufacturer, Model", "explanation": "Méthode rapide et scriptable pour savoir si un serveur est physique ou virtuel : on lit le fabricant et le modèle déclarés. Exemple sur une VM hébergée par Hyper-V.", "output": "Manufacturer          Model\n------------          -----\nMicrosoft Corporation Virtual Machine", "outputNotes": [
+      { "match": "Virtual Machine", "note": "Ce serveur est une VM Hyper-V : une lenteur peut venir de l'hôte, pas seulement de la VM. Information à joindre à l'escalade." }
+    ] },
+    { "id": "cmd-getvm", "kind": "command", "shell": "powershell", "command": "Get-VM", "explanation": "Ce que vous verrez le N2 faire : sur un hôte Hyper-V, cette cmdlet du module Hyper-V liste les VM, leur état et leur consommation. Elle nécessite des droits d'administration sur l'hôte ; elle est présentée ici en lecture seule pour comprendre l'information. Sortie simplifiée.", "output": "Name           State   CPUUsage(%) MemoryAssigned(M) Uptime           Status\n----           -----   ----------- ----------------- ------           ------\nSRV-PREPA-01   Running 97          8192              12.04:11:52      Fonctionnement normal\nSRV-BACKUP-02  Running 88          16384             00:42:10         Fonctionnement normal\nSRV-FIC-01     Running 6           4096              31.02:15:07      Fonctionnement normal", "outputNotes": [
+      { "match": "SRV-PREPA-01", "note": "La VM de l'application de préparation de commandes est très chargée…" },
+      { "match": "SRV-BACKUP-02", "note": "…en même temps qu'une VM de sauvegarde démarrée il y a 42 minutes, sur le même hôte. C'est exactement la piste que le redémarrage de l'introduction n'aurait jamais révélée." }
+    ] },
+    { "id": "h-demo", "kind": "heading", "level": 2, "text": "Démonstration : l'application de l'entrepôt est lente" },
+    { "id": "steps-demo", "kind": "steps", "title": "Qualifier une lenteur sur un serveur virtualisé", "steps": [
+      { "title": "Mesurer l'impact", "text": "Tous les préparateurs sont touchés depuis 10 h 40, l'application répond en 15 secondes au lieu d'une. La messagerie et Internet fonctionnent normalement : le réseau du site n'est pas en cause." },
+      { "title": "Identifier le serveur", "text": "La documentation indique que l'application tourne sur SRV-PREPA-01, une VM Hyper-V. Si vous avez un accès en lecture, vérifiez-le ; sinon, la documentation suffit.", "command": "Get-CimInstance -ClassName Win32_ComputerSystem | Select-Object Manufacturer, Model" },
+      { "title": "Comparer avec les voisines", "text": "Le partage de fichiers SRV-FIC-01, hébergé sur la même infrastructure, est aussi plus lent que d'habitude : indice d'une contention au niveau de l'hôte ou du stockage." },
+      { "title": "Ne rien redémarrer", "text": "Même si la console montre un processeur à 97 %, le redémarrage d'une VM de production n'est pas une action N1 : il couperait 40 personnes sans garantie de résultat." },
+      { "title": "Escalader avec les faits", "text": "« Lenteur de l'application de préparation depuis 10 h 40, 40 utilisateurs impactés, SRV-PREPA-01 (VM Hyper-V). Partage SRV-FIC-01 également plus lent. Réseau du site OK. Suspicion de contention sur l'hôte. Aucune action réalisée sur les VM. Impact : retard des expéditions. »" }
+    ] },
+    { "id": "mistakes", "kind": "mistakes", "items": [
+      { "mistake": "Redémarrer une VM de production parce qu'elle « semble bloquée »", "why": "Vous coupez tous ses utilisateurs, risquez de corrompre des données en cours d'écriture et effacez des indices utiles au diagnostic.", "fix": "Constater, documenter et escalader ; le redémarrage se décide par le responsable, souvent via une demande de changement." },
+      { "mistake": "Considérer un snapshot comme une sauvegarde", "why": "Il dépend du disque d'origine et disparaît avec lui en cas de panne de stockage ou d'attaque.", "fix": "Pour protéger des données, s'appuyer sur la sauvegarde de l'entreprise ; le snapshot sert à un retour arrière court." },
+      { "mistake": "Laisser des snapshots s'accumuler sur sa VM de lab ou de test", "why": "Ils grossissent, ralentissent la VM et remplissent le disque.", "fix": "Supprimer (fusionner) les snapshots dont on n'a plus besoin, une fois l'opération validée." },
+      { "mistake": "Chercher la cause d'une lenteur uniquement à l'intérieur de la VM", "why": "La VM peut subir la charge d'une voisine sur le même hôte.", "fix": "Comparer avec d'autres services hébergés sur la même infrastructure et le signaler au N2." }
+    ] },
+    { "id": "risks", "kind": "risks", "items": [
+      "Ne redémarrez, n'arrêtez, ne suspendez ni ne restaurez jamais une VM de production sans l'accord explicite du responsable et une demande de changement validée, même si l'interface vous le permet.",
+      "Un accès en lecture à une console de virtualisation ne donne pas le droit d'agir : appliquez le moindre privilège et refusez un accès plus large dont vous n'avez pas besoin.",
+      "Ne restaurez jamais un ancien snapshot d'un contrôleur de domaine ou d'un serveur de base de données : cela peut provoquer des incohérences difficiles à réparer.",
+      "Ne connectez pas une VM de lab au réseau de l'entreprise sans autorisation : un serveur DHCP ou DNS de test peut perturber toute la production.",
+      "Une VM inconnue ou un snapshot inattendu dans une console peuvent signaler une action non autorisée : signalez-le plutôt que de le supprimer."
+    ] },
+    { "id": "quiz", "kind": "quiz", "title": "Vérifiez votre compréhension", "questions": ["virt-type-hyperviseur", "virt-snapshot-sauvegarde", "virt-exemples", "virt-ressources-partagees", "virt-conteneur-vm"] },
+    { "id": "exercise", "kind": "exercise", "title": "« Il suffit de revenir au snapshot d'hier »", "context": "Chez Groupe Valmont, la VM SRV-COMPTA-01 héberge l'application comptable et sa base de données. Ce matin, après une mise à jour de l'application installée hier soir par l'éditeur, plusieurs comptables signalent des écrans d'erreur. Un collègue vous montre, dans la console de virtualisation où vous avez un accès en lecture, un snapshot nommé « avant-maj-20-10 » créé hier à 19 h, et vous dit : « On restaure le snapshot, ça prend deux minutes, personne ne verra rien. » Les comptables ont saisi des écritures toute la matinée, malgré les erreurs.", "task": "Expliquez pourquoi vous ne restaurez pas ce snapshot vous-même, quels risques cela comporterait, et ce que vous faites à la place.", "hints": [
+      "Que contient le snapshot d'hier à 19 h, et que s'est-il passé dans la base de données depuis ?",
+      "Qui a le droit de décider d'une action sur une VM de production ? Quel processus encadre ce type d'opération ?",
+      "Restaurer ferait perdre toutes les écritures de la matinée. La décision revient au responsable de l'application, avec l'éditeur, dans le cadre d'un changement."
+    ], "solution": [
+      "Le snapshot fige l'état de la VM hier à 19 h. Le restaurer ramènerait la base de données à cet instant : toutes les écritures saisies ce matin par les comptables seraient perdues, et personne ne s'en apercevrait forcément tout de suite.",
+      "Il s'agit d'une VM de production : toute action (restauration, redémarrage) doit être décidée par le responsable de l'application, idéalement avec l'éditeur, et encadrée par une demande de changement. Un accès en lecture à la console ne donne pas le droit d'agir, et ce n'est pas au N1 d'arbitrer entre la perte de données et la correction de la mise à jour.",
+      "À la place : documenter précisément les erreurs (captures, messages, heures, utilisateurs touchés), demander aux comptables de noter leurs saisies si la procédure le prévoit, et ouvrir un incident à fort impact vers le N2 systèmes et le responsable de l'application, en mentionnant la mise à jour d'hier soir et l'existence du snapshot.",
+      "Note de ticket attendue : « Erreurs dans l'application comptable depuis ce matin, après la mise à jour éditeur du 20/10 au soir. X utilisateurs touchés. Snapshot « avant-maj-20-10 » existant, mais des écritures ont été saisies depuis : une restauration entraînerait une perte de données. Aucune action réalisée sur la VM. Décision à prendre par le responsable applicatif et l'éditeur. »"
+    ], "rubric": {
+      "criteria": [
+        { "id": "perte", "label": "Identifie la perte des données saisies depuis le snapshot", "points": 3, "patterns": ["perte de donnees", "perdre les ecritures", "ecritures perdues", "donnees de ce matin", "saisies de ce matin", "perte des saisies", "perdre les saisies"], "required": true },
+        { "id": "production", "label": "Rappelle qu'il s'agit d'une VM de production", "points": 2, "patterns": ["production", "prod"] },
+        { "id": "changement", "label": "Évoque l'accord du responsable ou la demande de changement", "points": 2, "patterns": ["changement", "responsable", "accord", "validation", "editeur"], "required": true },
+        { "id": "droits", "label": "Note qu'un accès en lecture ne donne pas le droit d'agir", "points": 1, "patterns": ["lecture", "pas le droit", "pas mon role", "pas au n1", "moindre privilege"] },
+        { "id": "doc", "label": "Documente les erreurs (captures, heures, utilisateurs)", "points": 1, "patterns": ["capture*", "message* d'erreur", "heure*", "document*"] },
+        { "id": "escalade", "label": "Escalade au N2 / responsable applicatif avec les éléments", "points": 2, "patterns": ["escalad*", "n2", "incident", "responsable applicatif"] }
+      ],
+      "redFlags": [
+        { "id": "restaurer", "label": "Propose de restaurer le snapshot soi-même", "patterns": ["je restaure", "restaurer le snapshot moi", "je reviens au snapshot", "on restaure"], "penalty": 3 }
+      ],
+      "passPercent": 60
+    } },
+    { "id": "interview", "kind": "interview", "questions": [
+      { "question": "Quelle est la différence entre un hyperviseur de type 1 et de type 2 ? Donnez des exemples.", "expectedPoints": ["Type 1 : installé directement sur le matériel", "Type 2 : installé comme application sur un système existant", "Exemples type 1 : ESXi, Hyper-V, Proxmox VE", "Exemples type 2 : VirtualBox, VMware Workstation", "Type 1 pour la production, type 2 pour les tests et le lab"], "modelAnswer": "Un hyperviseur de type 1 s'installe directement sur le matériel du serveur, sans système d'exploitation classique en dessous : c'est le cas de VMware ESXi, de Hyper-V ou de Proxmox VE, utilisés en production dans les salles serveurs. Un hyperviseur de type 2 s'installe comme une application sur Windows, macOS ou Linux, comme VirtualBox ou VMware Workstation : il est idéal pour un lab ou des tests, avec des performances un peu inférieures. Moi, j'utilise VirtualBox pour mon lab personnel." },
+      { "question": "Un snapshot est-il une sauvegarde ?", "expectedPoints": ["Non", "Le snapshot dépend du disque d'origine et est stocké au même endroit", "Une sauvegarde est une copie indépendante, stockée ailleurs", "Un snapshot sert à un retour arrière court, puis doit être supprimé", "Risques : performances, espace disque, incohérences sur certains serveurs"], "modelAnswer": "Non. Un snapshot enregistre l'état d'une VM et les différences par rapport à son disque d'origine, généralement sur le même stockage : si ce stockage tombe en panne ou est chiffré par un rançongiciel, on perd tout. Une sauvegarde est une copie indépendante, stockée ailleurs et testée. Le snapshot sert à revenir en arrière juste après une opération risquée, puis on le supprime, parce qu'il grossit et ralentit la VM. Et on évite d'en restaurer sur des serveurs comme les contrôleurs de domaine." },
+      { "question": "Un serveur virtuel de production semble bloqué. Que faites-vous ?", "expectedPoints": ["Ne pas redémarrer sans accord", "Mesurer l'impact et le symptôme exact", "Vérifier si d'autres services de la même infrastructure sont touchés", "Escalader au N2 avec les éléments", "Respecter la gestion des changements"], "modelAnswer": "Je ne le redémarre pas moi-même, même si j'en ai techniquement la possibilité. Je qualifie l'incident : symptôme exact, heure de début, nombre d'utilisateurs touchés, impact métier. Je vérifie si d'autres services hébergés sur la même infrastructure sont touchés, ce qui orienterait vers l'hôte. Puis j'escalade rapidement au N2 systèmes avec ces éléments ; le redémarrage éventuel est décidé par le responsable, dans le cadre de la gestion des changements ou de la procédure d'incident majeur." }
+    ] },
+    { "id": "glossary", "kind": "glossary", "terms": [
+      { "term": "Machine virtuelle", "en": "Virtual Machine (VM)", "definition": "Ordinateur simulé par logiciel, avec son propre système d'exploitation." },
+      { "term": "Hyperviseur", "en": "Hypervisor", "definition": "Logiciel qui crée les machines virtuelles et leur répartit les ressources de l'hôte." },
+      { "term": "Hôte", "en": "Host", "definition": "Machine physique sur laquelle fonctionne l'hyperviseur." },
+      { "term": "Invité", "en": "Guest", "definition": "Machine virtuelle qui fonctionne sur un hôte." },
+      { "term": "Instantané / point de contrôle", "en": "Snapshot / checkpoint", "definition": "État figé d'une VM permettant un retour arrière rapide ; ce n'est pas une sauvegarde." },
+      { "term": "Modèle", "en": "Template", "definition": "VM de référence servant à créer rapidement des VM identiques." },
+      { "term": "Infrastructure de bureaux virtuels", "en": "Virtual Desktop Infrastructure (VDI)", "definition": "Bureaux utilisateurs exécutés dans des VM du datacenter ou du cloud." },
+      { "term": "Conteneur", "en": "Container", "definition": "Application emballée avec ses dépendances, partageant le noyau de l'hôte." },
+      { "term": "Surengagement", "en": "Overcommitment", "definition": "Attribution aux VM de plus de ressources virtuelles que l'hôte n'en possède physiquement." }
+    ] },
+    { "id": "summary", "kind": "summary", "points": [
+      "Une VM est un ordinateur simulé ; l'hyperviseur la crée, lui attribue des ressources de l'hôte et l'isole des autres.",
+      "Type 1 sur le matériel (ESXi, Hyper-V, Proxmox VE) pour la production ; type 2 comme application (VirtualBox, VMware Workstation) pour le lab.",
+      "Les VM partagent les ressources de l'hôte : une VM peut être lente à cause d'une voisine.",
+      "Un snapshot permet un retour arrière court, mais ce n'est pas une sauvegarde ; un modèle sert à créer des VM identiques.",
+      "VDI et bureau à distance déplacent le poste de travail dans le datacenter ; les conteneurs sont plus légers que des VM et partagent le noyau de l'hôte.",
+      "Le N1 constate, identifie, compare et escalade ; il ne redémarre jamais une VM de production sans accord et changement validé."
+    ] },
+    { "id": "references", "kind": "references", "items": [
+      { "title": "Virtualisation Hyper-V dans Windows Server et Windows", "url": "https://learn.microsoft.com/windows-server/virtualization/hyper-v/hyper-v-overview", "publisher": "Microsoft Learn", "verifiedAt": "2026-10-21" },
+      { "title": "Utiliser les points de contrôle pour rétablir un état antérieur des machines virtuelles", "url": "https://learn.microsoft.com/virtualization/hyper-v-on-windows/user-guide/checkpoints", "publisher": "Microsoft Learn", "verifiedAt": "2026-10-21" },
+      { "title": "Proxmox VE Administration Guide", "url": "https://pve.proxmox.com/pve-docs/pve-admin-guide.html", "publisher": "Proxmox Server Solutions", "verifiedAt": "2026-10-21" },
+      { "title": "Commande systeminfo", "url": "https://learn.microsoft.com/windows-server/administration/windows-commands/systeminfo", "publisher": "Microsoft Learn", "verifiedAt": "2026-10-21" }
+    ] }
+  ]
+}

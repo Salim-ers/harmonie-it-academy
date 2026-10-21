@@ -1,0 +1,184 @@
+{
+  "meta": {
+    "slug": "n1-adressage-ip",
+    "title": "Adresse IP, masque et passerelle",
+    "summary": "Lire une adresse IPv4 et son masque, distinguer adresse privée et publique, comprendre le rôle de la passerelle et repérer en deux minutes un poste mal configuré.",
+    "level": "debutant",
+    "prerequisites": ["Savoir ouvrir une invite de commandes sous Windows", "Aucune connaissance réseau préalable n'est exigée"],
+    "objectives": [
+      "Expliquer qu'une adresse IP se compose d'une partie réseau et d'une partie hôte, délimitées par le masque",
+      "Reconnaître les plages privées de la RFC 1918 et les adresses spéciales (bouclage, APIPA)",
+      "Expliquer pourquoi un poste sans passerelle joint ses voisins mais pas le reste du réseau",
+      "Lire une adresse IPv6 de liaison locale (fe80::) et l'adresse de bouclage ::1 sans paniquer",
+      "Distinguer adresse MAC et adresse IP et dire à quoi sert chacune"
+    ],
+    "durationMin": 40,
+    "skills": [
+      { "code": "network-ip", "weight": 3 },
+      { "code": "network-fundamentals", "weight": 2 }
+    ],
+    "next": "n1-cidr"
+  },
+  "blocks": [
+    { "id": "intro", "kind": "paragraph", "text": "Jeudi, 10 h 15, siège du Groupe Valmont. M. Garnier, du service achats, ouvre un ticket : « Je peux imprimer, mais je n'ai plus Internet, plus Teams et plus le lecteur réseau. » La veille, un prestataire a remplacé sa carte réseau et a saisi l'adresse « à la main, pour aller plus vite ». Un technicien débutant pourrait passer une heure à réinstaller le navigateur. Un technicien qui sait lire une configuration IP trouve la cause en deux minutes : il manque une seule ligne, la **passerelle par défaut**." },
+    { "id": "intro-enjeu", "kind": "paragraph", "text": "Cette leçon pose les bases que vous utiliserez dans presque tous les tickets réseau : ce qu'est une adresse IP, à quoi sert le masque, pourquoi la passerelle est indispensable, quelles adresses sont « normales » dans une entreprise et lesquelles doivent vous alerter. Pas de théorie gratuite : chaque notion débouche sur un réflexe de diagnostic." },
+    { "id": "h-adresse", "kind": "heading", "level": 2, "text": "Une adresse IP, c'est un réseau et un hôte" },
+    { "id": "def", "kind": "callout", "tone": "definition", "title": "Définition simple", "text": "Une **adresse IP** (Internet Protocol) est le numéro qui identifie une interface réseau sur un réseau IP. Elle contient deux informations : le **réseau** auquel appartient l'appareil et le numéro de l'**hôte** (l'appareil) dans ce réseau. Le **masque de sous-réseau** indique où s'arrête la partie réseau et où commence la partie hôte." },
+    { "id": "p-reseau-hote", "kind": "paragraph", "text": "Prenons le poste de M. Garnier une fois réparé : `10.20.10.87` avec le masque `255.255.255.0`. Les trois premiers nombres, `10.20.10`, désignent le réseau : c'est le VLAN Bureaux du siège. Le dernier, `87`, désigne le poste lui-même. Tous les appareils dont l'adresse commence par `10.20.10` sont ses **voisins directs** : il leur parle sans intermédiaire. Pour tout le reste, il doit passer par un routeur." },
+    { "id": "analogie", "kind": "callout", "tone": "analogy", "title": "Analogie", "text": "Pensez à une adresse postale : « 87, rue des Bureaux ». La rue, c'est le réseau ; le numéro, c'est l'hôte. Le facteur de la rue distribue lui-même le courrier entre voisins de la même rue. Pour une lettre destinée à une autre ville, il la dépose au **bureau de poste** du quartier, qui sait l'acheminer : c'est la passerelle. Le masque, lui, est la règle qui dit combien de mots de l'adresse forment le nom de la rue." },
+    { "id": "diag", "kind": "diagram", "diagram": "ip-anatomy", "caption": "Anatomie de l'adresse 10.20.10.87/24 : les 24 premiers bits (10.20.10) forment la partie réseau, les 8 derniers (87) la partie hôte. Le masque 255.255.255.0 trace la frontière." },
+    { "id": "h-ipv4", "kind": "heading", "level": 2, "text": "IPv4 : quatre nombres, trente-deux bits" },
+    { "id": "p-ipv4", "kind": "paragraph", "text": "Une adresse IPv4 est un nombre de **32 bits**. Pour qu'un humain puisse la lire, on la découpe en quatre **octets** (groupes de 8 bits) écrits en décimal et séparés par des points : c'est la **notation décimale pointée**. Chaque octet vaut de 0 à 255, car 8 bits permettent 2⁸ = 256 valeurs. Une adresse comme `10.20.300.4` est donc impossible : 300 ne tient pas dans un octet. C'est une faute de frappe fréquente dans les configurations manuelles." },
+    { "id": "tab-binaire", "kind": "table", "caption": "L'adresse 10.20.10.87 et son masque, octet par octet", "headers": ["Ligne", "1er octet", "2e octet", "3e octet", "4e octet"], "rows": [
+      ["Adresse (décimal)", "10", "20", "10", "87"],
+      ["Adresse (binaire)", "00001010", "00010100", "00001010", "01010111"],
+      ["Masque (décimal)", "255", "255", "255", "0"],
+      ["Masque (binaire)", "11111111", "11111111", "11111111", "00000000"],
+      ["Rôle", "réseau", "réseau", "réseau", "hôte"]
+    ] },
+    { "id": "p-binaire", "kind": "paragraph", "text": "Vous n'avez pas besoin de convertir en binaire au quotidien, mais il faut comprendre une idée : chaque bit d'un octet a un poids, de gauche à droite **128, 64, 32, 16, 8, 4, 2, 1**. Pour écrire 87, on additionne les poids nécessaires : 64 + 16 + 4 + 2 + 1 = 87, d'où `01010111`. Pour 255, tous les bits sont à 1 : 128 + 64 + 32 + 16 + 8 + 4 + 2 + 1 = 255. Retenez simplement ces huit poids : ils serviront dans la leçon sur le CIDR." },
+    { "id": "h-masque", "kind": "heading", "level": 2, "text": "Le masque : la frontière entre réseau et hôte" },
+    { "id": "p-masque", "kind": "paragraph", "text": "Le masque est lui aussi un nombre de 32 bits, mais il a une forme imposée : une suite de 1 (la partie réseau) suivie d'une suite de 0 (la partie hôte), jamais mélangés. `255.255.255.0` contient 24 bits à 1 : on l'écrit aussi **/24** (notation CIDR). `255.255.0.0` vaut /16, `255.0.0.0` vaut /8. Un masque comme `255.255.0.255` n'existe pas : si vous le voyez, c'est une erreur de saisie." },
+    { "id": "p-et-logique", "kind": "paragraph", "text": "Comment le poste utilise-t-il ce masque ? Avant d'envoyer un paquet, il compare la partie réseau de **sa propre adresse** avec celle de **l'adresse de destination**. Si elles sont identiques, la destination est un voisin : envoi direct. Sinon, le paquet part vers la passerelle. Avec /24, la comparaison est facile : on regarde les trois premiers octets. `10.20.10.21` (l'imprimante) est un voisin de `10.20.10.87` ; `10.20.1.10` (le serveur DNS) ne l'est pas, car le troisième octet diffère (1 au lieu de 10)." },
+    { "id": "tip-masque", "kind": "callout", "tone": "tip", "title": "Réflexe de lecture", "text": "Sur un poste du VLAN Bureaux du Groupe Valmont, vous devez lire `10.20.10.x`, masque `255.255.255.0`, passerelle `10.20.10.1`, DNS `10.20.1.10` et `10.20.1.11`. Mémorisez la configuration « normale » de votre parc : toute différence saute alors aux yeux." },
+    { "id": "h-prive", "kind": "heading", "level": 2, "text": "Adresses privées, adresses publiques et NAT" },
+    { "id": "p-prive", "kind": "paragraph", "text": "Il n'existe qu'environ 4,3 milliards d'adresses IPv4 (2³² = 4 294 967 296), bien moins que d'appareils connectés. Pour économiser, la **RFC 1918** réserve trois plages **privées** que toute organisation peut utiliser librement en interne, sans demander d'autorisation. Ces adresses ne sont jamais routées sur Internet : deux entreprises peuvent utiliser `10.20.10.87` en même temps sans conflit, chacune chez elle." },
+    { "id": "tab-plages", "kind": "table", "caption": "Plages d'adresses IPv4 que le technicien support doit reconnaître", "headers": ["Plage", "Notation", "Nature", "Où la rencontrer"], "rows": [
+      ["10.0.0.0 à 10.255.255.255", "10.0.0.0/8", "Privée (RFC 1918)", "Grandes entreprises : Groupe Valmont (10.20.0.0/16), Nordelis Logistique (10.30.0.0/16)"],
+      ["172.16.0.0 à 172.31.255.255", "172.16.0.0/12", "Privée (RFC 1918)", "Entreprises, certains réseaux de virtualisation"],
+      ["192.168.0.0 à 192.168.255.255", "192.168.0.0/16", "Privée (RFC 1918)", "Box Internet domestiques, petites structures"],
+      ["127.0.0.0 à 127.255.255.255", "127.0.0.0/8", "Bouclage (loopback)", "Le poste lui-même : 127.0.0.1"],
+      ["169.254.0.0 à 169.254.255.255", "169.254.0.0/16", "Liaison locale (APIPA)", "Poste en DHCP qui n'a reçu aucune réponse"],
+      ["Toutes les autres (hors plages réservées)", "—", "Publique", "Serveurs sur Internet, adresse publique de la box ou du pare-feu"]
+    ] },
+    { "id": "p-piege-172", "kind": "paragraph", "text": "Attention au piège de la plage du milieu : elle va de `172.16` à `172.31`, pas au-delà. `172.20.5.1` est privée, mais `172.32.0.5` est une adresse publique. De même, `169.254.x.x` n'est **pas** une adresse privée RFC 1918 : c'est une adresse de liaison locale, le signe qu'aucun serveur DHCP n'a répondu." },
+    { "id": "nat", "kind": "callout", "tone": "info", "title": "Le NAT en une phrase", "text": "Le **NAT** (Network Address Translation) est la fonction du pare-feu ou de la box qui remplace l'adresse privée de vos postes par une adresse publique quand ils sortent sur Internet, puis fait l'opération inverse pour les réponses. C'est pour cela que 300 postes du siège peuvent naviguer avec une seule adresse publique, par exemple `203.0.113.10`." },
+    { "id": "field-public", "kind": "callout", "tone": "field", "title": "Sur le terrain", "text": "Un collaborateur vous dit que « son IP » est `203.0.113.10` parce qu'un site web la lui a affichée ? C'est l'adresse publique du pare-feu de l'entreprise, partagée par tout le monde. Pour le diagnostic, c'est l'adresse **privée** du poste, visible avec `ipconfig`, qui vous intéresse." },
+    { "id": "h-passerelle", "kind": "heading", "level": 2, "text": "La passerelle : la porte de sortie du réseau" },
+    { "id": "p-passerelle", "kind": "paragraph", "text": "La **passerelle par défaut** est l'adresse du routeur de votre réseau local. Au Groupe Valmont, c'est `10.20.10.1` pour le VLAN Bureaux. Le poste lui confie tous les paquets dont la destination n'est pas un voisin. Deux règles à retenir : la passerelle doit appartenir **au même réseau** que le poste (sinon il ne peut pas la joindre) et elle ne sert **jamais** pour parler aux voisins." },
+    { "id": "p-sans-passerelle", "kind": "paragraph", "text": "Revenons à M. Garnier. Sans passerelle, son poste sait parler à tout ce qui commence par `10.20.10` : l'imprimante `10.20.10.21` fonctionne. Mais le serveur DNS `10.20.1.10`, le serveur de fichiers `10.20.30.5` et tout Internet sont hors de son réseau. Le poste n'a aucune porte de sortie : il abandonne immédiatement. Et comme le serveur DNS est lui aussi hors du réseau, même la traduction des noms échoue. Résultat : « l'imprimante marche, rien d'autre ». C'est la signature typique d'une passerelle absente ou fausse." },
+    { "id": "h-demo", "kind": "heading", "level": 2, "text": "Démonstration : prouver qu'il manque la passerelle" },
+    { "id": "steps-demo", "kind": "steps", "title": "Diagnostiquer le poste de M. Garnier en cinq étapes", "steps": [
+      { "title": "Afficher la configuration", "text": "Ouvrez une invite de commandes (aucun droit administrateur requis) et affichez la configuration complète. Repérez la carte active, puis les lignes Adresse IPv4, Masque, Passerelle et DNS.", "command": "ipconfig /all" },
+      { "title": "Comparer avec la configuration de référence", "text": "Adresse en 10.20.10.x : correcte. Masque 255.255.255.0 : correct. Passerelle vide : anomalie. DHCP activé « Non » : le poste a été configuré à la main, ce qui explique l'oubli." },
+      { "title": "Tester un voisin", "text": "Un ping vers l'imprimante du même réseau doit répondre. Si c'est le cas, la carte, le câble et le switch fonctionnent : le problème n'est pas physique.", "command": "ping 10.20.10.21" },
+      { "title": "Tester une destination hors du réseau", "text": "Un ping vers le serveur DNS échoue immédiatement avec « Défaillance générale » : Windows n'a même pas essayé d'envoyer le paquet, faute de route.", "command": "ping 10.20.1.10" },
+      { "title": "Corriger proprement", "text": "La bonne correction n'est pas d'ajouter la passerelle à la main, mais de repasser la carte en DHCP (« Obtenir une adresse IP automatiquement ») comme le reste du parc, puis de vérifier qu'ipconfig affiche à nouveau une passerelle et un bail. Cette modification demande des droits administrateur sur le poste." }
+    ] },
+    { "id": "cmd-ipconfig", "kind": "command", "shell": "cmd", "command": "ipconfig /all", "explanation": "Affiche la configuration IP détaillée de chaque carte. Sur un poste configuré manuellement, la ligne « DHCP activé » vaut « Non » et les informations de bail n'apparaissent pas.", "output": "Carte Ethernet Ethernet :\n\n   Suffixe DNS propre à la connexion. . . :\n   Description. . . . . . . . . . . . . . : Intel(R) Ethernet Connection I219-LM\n   Adresse physique . . . . . . . . . . . : 3C-52-82-4A-21-9D\n   DHCP activé. . . . . . . . . . . . . . : Non\n   Configuration automatique activée. . . : Oui\n   Adresse IPv6 de liaison locale. . . . .: fe80::9a1c:4e2f:b03d:71c8%12(préféré)\n   Adresse IPv4. . . . . . . . . . . . . .: 10.20.10.150(préféré)\n   Masque de sous-réseau. . . . . . . . . : 255.255.255.0\n   Passerelle par défaut. . . . . . . . . :\n   Serveurs DNS. . .  . . . . . . . . . . : 10.20.1.10", "outputNotes": [
+      { "match": "DHCP activé", "note": "« Non » : configuration manuelle. Sur un parc géré par DHCP, c'est déjà une anomalie à noter dans le ticket." },
+      { "match": "Adresse physique", "note": "L'adresse MAC de la carte : elle est gravée dans le matériel et ne dépend pas du réseau." },
+      { "match": "liaison locale", "note": "Adresse IPv6 fe80:: que Windows génère seul sur chaque carte. Sa présence est normale et ne prouve pas qu'IPv6 est déployé." },
+      { "match": "Adresse IPv4", "note": "Elle est bien dans le réseau 10.20.10.0/24. L'adresse elle-même n'est pas en cause." },
+      { "match": "Passerelle par défaut", "note": "Vide : le poste n'a aucune sortie vers les autres réseaux. Voilà la cause du ticket." },
+      { "match": "Serveurs DNS", "note": "10.20.1.10 est dans un autre réseau (10.20.1.x) : sans passerelle, ce DNS est injoignable, d'où l'échec de tous les noms." }
+    ] },
+    { "id": "cmd-ping-voisin", "kind": "command", "shell": "cmd", "command": "ping 10.20.10.21", "explanation": "ping envoie quatre demandes d'écho ICMP et attend les réponses. Ici la cible est l'imprimante, voisine directe du poste : la passerelle n'intervient pas.", "output": "Envoi d'une requête 'Ping'  10.20.10.21 avec 32 octets de données :\nRéponse de 10.20.10.21 : octets=32 temps<1ms TTL=64\nRéponse de 10.20.10.21 : octets=32 temps<1ms TTL=64\nRéponse de 10.20.10.21 : octets=32 temps=1 ms TTL=64\nRéponse de 10.20.10.21 : octets=32 temps<1ms TTL=64\n\nStatistiques Ping pour 10.20.10.21:\n    Paquets : envoyés = 4, reçus = 4, perdus = 0 (perte 0%),\nDurée approximative des boucles en millisecondes :\n    Minimum = 0ms, Maximum = 1ms, Moyenne = 0ms", "outputNotes": [
+      { "match": "Réponse de 10.20.10.21", "note": "L'imprimante répond : le lien physique et le réseau local fonctionnent." },
+      { "match": "perte 0%", "note": "Aucune perte : le problème n'est ni le câble ni le switch." }
+    ] },
+    { "id": "cmd-ping-dns", "kind": "command", "shell": "cmd", "command": "ping 10.20.1.10", "explanation": "Même test vers une adresse hors du réseau local. Le message « Défaillance générale » apparaît quand Windows ne trouve aucune route pour envoyer le paquet : il ne sort même pas de la carte.", "output": "Envoi d'une requête 'Ping'  10.20.1.10 avec 32 octets de données :\nPING : échec de la transmission. Défaillance générale.\nPING : échec de la transmission. Défaillance générale.\nPING : échec de la transmission. Défaillance générale.\nPING : échec de la transmission. Défaillance générale.\n\nStatistiques Ping pour 10.20.1.10:\n    Paquets : envoyés = 4, reçus = 0, perdus = 4 (perte 100%),", "outputNotes": [
+      { "match": "Défaillance générale", "note": "Échec local et immédiat : aucune route vers ce réseau. À ne pas confondre avec « Délai d'attente de la demande dépassé », qui signifie que le paquet est parti mais qu'aucune réponse n'est revenue." },
+      { "match": "perte 100%", "note": "Toutes les destinations hors du réseau 10.20.10.0/24 donneront le même résultat." }
+    ] },
+    { "id": "cmd-route", "kind": "command", "shell": "cmd", "command": "route print -4", "explanation": "Affiche la table de routage IPv4 du poste. Une route 0.0.0.0 avec masque 0.0.0.0 représente la passerelle par défaut : « tout le reste part par là ». Son absence confirme le diagnostic.", "output": "IPv4 Table de routage\n===========================================================================\nItinéraires actifs :\nDestination réseau    Masque réseau  Adr. passerelle   Adr. interface Métrique\n        10.20.10.0    255.255.255.0         Sur lien     10.20.10.150    281\n      10.20.10.150  255.255.255.255         Sur lien     10.20.10.150    281\n      10.20.10.255  255.255.255.255         Sur lien     10.20.10.150    281\n         127.0.0.0        255.0.0.0         Sur lien        127.0.0.1    331\n         127.0.0.1  255.255.255.255         Sur lien        127.0.0.1    331\n===========================================================================\nItinéraires persistants :\n  Aucun", "outputNotes": [
+      { "match": "10.20.10.0    255.255.255.0", "note": "Le réseau local : « Sur lien » signifie que ces adresses sont jointes directement, sans routeur." },
+      { "match": "127.0.0.0", "note": "La plage de bouclage, toujours présente." },
+      { "match": "Itinéraires persistants", "note": "Aucune route 0.0.0.0 / 0.0.0.0 ni dans les itinéraires actifs ni ici (c'est là qu'apparaît une passerelle saisie à la main) : pas de route par défaut, donc pas de sortie." }
+    ] },
+    { "id": "h-bouclage", "kind": "heading", "level": 2, "text": "L'adresse de bouclage : se parler à soi-même" },
+    { "id": "p-bouclage", "kind": "paragraph", "text": "L'adresse `127.0.0.1` (et plus largement toute la plage `127.0.0.0/8`) désigne **le poste lui-même**. Un paquet envoyé vers elle ne quitte jamais la machine : il ne passe ni par le câble, ni par le switch. Le nom `localhost` y correspond. En support, un `ping 127.0.0.1` qui échoue indique un problème grave de la pile réseau du poste (logiciel de sécurité, pilote, corruption) : inutile alors de chercher du côté du réseau. À l'inverse, s'il répond, cela prouve seulement que la pile TCP/IP locale fonctionne, rien de plus." },
+    { "id": "h-ipv6", "kind": "heading", "level": 2, "text": "IPv6 : ce qu'il faut savoir pour ne pas être surpris" },
+    { "id": "p-ipv6", "kind": "paragraph", "text": "IPv6 a été conçu parce que les 4,3 milliards d'adresses IPv4 ne suffisent plus : le stock central de l'IANA a été épuisé en 2011. Une adresse IPv6 compte **128 bits**, soit un nombre d'adresses astronomique. Elle s'écrit en **hexadécimal** (chiffres 0 à 9 et lettres a à f), en huit groupes de quatre caractères séparés par deux-points. Deux règles d'abréviation la rendent plus courte : on supprime les zéros en tête de chaque groupe, et on remplace **une seule fois** une suite de groupes nuls par `::`." },
+    { "id": "list-ipv6", "kind": "list", "ordered": false, "items": [
+      "`2001:0db8:0000:0000:0000:0000:0000:0001` s'abrège en `2001:db8::1`. La plage `2001:db8::/32` est réservée à la documentation, comme `192.0.2.0/24` en IPv4.",
+      "`fe80::…` est une adresse de **liaison locale** : chaque carte en génère une automatiquement. Elle ne sert qu'à parler aux voisins et ne traverse jamais un routeur. Le suffixe `%12` affiché par Windows est le numéro de l'interface, pas une partie de l'adresse.",
+      "`::1` est l'adresse de bouclage IPv6, l'équivalent de `127.0.0.1`.",
+      "Une adresse commençant par `2` ou `3` (plage `2000::/3`) est une adresse **globale**, routable sur Internet : elle indique qu'IPv6 est réellement déployé sur le réseau.",
+      "En IPv6, la notion de masque s'écrit toujours en longueur de préfixe : un réseau local typique est un `/64`."
+    ] },
+    { "id": "tip-ipv6", "kind": "callout", "tone": "tip", "title": "Pas de panique devant fe80::", "text": "Un poste qui n'affiche qu'une adresse `fe80::` en IPv6 est parfaitement normal dans une entreprise qui n'a pas déployé IPv6. Ne désactivez pas IPv6 « pour simplifier » : Microsoft le déconseille, car certains composants de Windows s'appuient dessus." },
+    { "id": "h-mac", "kind": "heading", "level": 2, "text": "Adresse MAC et adresse IP : deux identités différentes" },
+    { "id": "p-mac", "kind": "paragraph", "text": "L'**adresse MAC** (ou adresse physique) est inscrite dans la carte réseau par le fabricant : `3C-52-82-4A-21-9D` dans notre exemple. Elle sert à livrer les trames **à l'intérieur d'un même réseau local**, de carte à carte, via le switch. L'**adresse IP**, elle, est logique : elle dépend du réseau où l'on se branche et permet d'acheminer les paquets **de réseau en réseau**. Si M. Garnier emporte son portable à l'entrepôt de Nordelis Logistique, son adresse MAC reste la même, mais il recevra une adresse IP en `10.30.x.x`." },
+    { "id": "tab-mac-ip", "kind": "table", "caption": "Comparer adresse MAC et adresse IP", "headers": ["Critère", "Adresse MAC", "Adresse IPv4"], "rows": [
+      ["Taille", "48 bits (12 caractères hexadécimaux)", "32 bits (4 octets décimaux)"],
+      ["Exemple", "3C-52-82-4A-21-9D", "10.20.10.87"],
+      ["Attribuée par", "Le fabricant de la carte", "L'administrateur ou le serveur DHCP"],
+      ["Change si l'on déménage ?", "Non (sauf adresse aléatoire du Wi-Fi)", "Oui, elle dépend du réseau"],
+      ["Portée", "Le réseau local uniquement", "De bout en bout, à travers les routeurs"],
+      ["Couche du modèle OSI", "Couche 2 (liaison)", "Couche 3 (réseau)"],
+      ["Commande pour la voir", "ipconfig /all ou getmac", "ipconfig"]
+    ] },
+    { "id": "cmd-ps", "kind": "command", "shell": "powershell", "command": "Get-NetIPAddress -InterfaceAlias Ethernet -AddressFamily IPv4", "explanation": "Équivalent PowerShell qui affiche l'adresse IPv4 d'une carte. PrefixLength donne la longueur du masque en notation CIDR et PrefixOrigin indique d'où vient l'adresse : Manual (saisie à la main), Dhcp ou WellKnown (APIPA).", "output": "IPAddress         : 10.20.10.150\nInterfaceIndex    : 12\nInterfaceAlias    : Ethernet\nAddressFamily     : IPv4\nType              : Unicast\nPrefixLength      : 24\nPrefixOrigin      : Manual\nSuffixOrigin      : Manual\nAddressState      : Preferred\nValidLifetime     : Infinite ([TimeSpan]::MaxValue)\nPreferredLifetime : Infinite ([TimeSpan]::MaxValue)\nSkipAsSource      : False\nPolicyStore       : ActiveStore", "outputNotes": [
+      { "match": "PrefixLength", "note": "24 correspond au masque 255.255.255.0." },
+      { "match": "PrefixOrigin", "note": "« Manual » confirme la saisie manuelle par le prestataire." },
+      { "match": "ValidLifetime", "note": "Durée infinie : une adresse manuelle n'a pas de bail." }
+    ] },
+    { "id": "mistakes", "kind": "mistakes", "items": [
+      { "mistake": "Conclure « le réseau marche » parce que le ping vers l'imprimante répond", "why": "Un voisin du même réseau ne passe jamais par la passerelle : ce test ne prouve rien sur la sortie du réseau.", "fix": "Tester aussi une adresse hors du réseau local (serveur DNS, serveur de fichiers)." },
+      { "mistake": "Croire que 169.254.x.x ou 172.32.x.x sont des adresses privées RFC 1918", "why": "La plage privée du milieu s'arrête à 172.31.255.255 et 169.254.0.0/16 est une plage de liaison locale.", "fix": "Mémoriser les trois plages exactes : 10/8, 172.16/12, 192.168/16." },
+      { "mistake": "Donner l'adresse publique affichée par un site web pour décrire le poste", "why": "C'est l'adresse du pare-feu après NAT, partagée par tout le site.", "fix": "Relever l'adresse privée avec ipconfig." },
+      { "mistake": "Saisir une passerelle d'un autre réseau, par exemple 10.20.11.1 pour un poste en 10.20.10.x/24", "why": "Le poste ne peut joindre directement que ses voisins : une passerelle hors de son réseau est injoignable.", "fix": "La passerelle doit toujours appartenir au réseau du poste ; en entreprise, laisser le DHCP la fournir." },
+      { "mistake": "Désactiver IPv6 en voyant une adresse fe80::", "why": "Cette adresse est normale et Windows s'appuie sur IPv6 pour certains services.", "fix": "Laisser IPv6 actif et se concentrer sur la configuration IPv4 si le réseau n'utilise pas IPv6." }
+    ] },
+    { "id": "risks", "kind": "risks", "items": [
+      "Ne configurez jamais une adresse IP fixe sur un poste « pour dépanner » : vous risquez un conflit d'adresse avec un appareil existant et vous masquez la vraie panne.",
+      "Modifier la configuration IP d'un poste pendant une prise en main à distance peut couper la session : prévenez l'utilisateur et prévoyez un moyen de reprendre la main.",
+      "Les plans d'adressage (quels réseaux, quelles passerelles) sont décidés par l'équipe réseau : signalez toute anomalie plutôt que de l'« arranger » localement.",
+      "Une adresse IP relevée dans un ticket est une donnée d'exploitation interne : ne la communiquez pas à un tiers qui n'a pas à la connaître."
+    ] },
+    { "id": "quiz", "kind": "quiz", "title": "Vérifiez votre compréhension", "questions": ["ip-plages-privees", "ip-sans-passerelle", "ip-bouclage", "ip-mac-ou-ip", "ip-ipv6-fe80"] },
+    { "id": "exercise", "kind": "exercise", "title": "Trois postes, trois configurations : lesquelles posent problème ?", "context": "Trois collaborateurs du VLAN Bureaux du Groupe Valmont (réseau 10.20.10.0/24, passerelle 10.20.10.1, DNS 10.20.1.10 et 10.20.1.11) se plaignent d'un accès réseau défaillant. Vous relevez leur ipconfig. Poste A : adresse 10.20.10.112, masque 255.255.255.0, passerelle 10.20.10.1, DNS 10.20.1.10. Poste B : adresse 192.168.1.34, masque 255.255.255.0, passerelle 192.168.1.1, serveur DHCP 192.168.1.1. Poste C : adresse 10.20.10.160, masque 255.255.255.0, passerelle 10.20.11.1, DHCP désactivé.", "task": "Pour chacun des trois postes, dites si la configuration IP est correcte, expliquez ce qui cloche le cas échéant et indiquez ce que vous faites ou ce que vous écrivez dans le ticket.", "hints": [
+      "Comparez chaque ligne à la configuration de référence du VLAN Bureaux : réseau, masque, passerelle, DNS.",
+      "Pour le poste B, regardez qui lui a fourni son adresse : est-ce un serveur de l'entreprise ?",
+      "Pour le poste C, la passerelle 10.20.11.1 appartient-elle au réseau 10.20.10.0/24 ? Que se passe-t-il si le poste ne peut pas la joindre directement ?"
+    ], "solution": [
+      "Poste A : configuration conforme (bon réseau, bon masque, bonne passerelle, DNS interne). Le problème n'est pas l'adressage IP : il faut chercher ailleurs (DNS, application, droits), en commençant par un ping de la passerelle et un test de nom.",
+      "Poste B : l'adresse 192.168.1.34 n'appartient pas au plan d'adressage du Groupe Valmont et le serveur DHCP 192.168.1.1 n'est pas un serveur de l'entreprise. Il s'agit très probablement d'une box ou d'un routeur personnel branché sur le réseau, qui distribue ses propres adresses : un serveur DHCP pirate. C'est une alerte à escalader immédiatement au N2 réseau, car d'autres postes du même réseau peuvent être touchés.",
+      "Poste C : l'adresse et le masque sont corrects, mais la passerelle 10.20.11.1 n'est pas dans le réseau 10.20.10.0/24. Le poste ne peut pas la joindre directement : il parle à ses voisins, mais rien ne sort du réseau. Le DHCP est désactivé, signe d'une saisie manuelle erronée. Correction : repasser la carte en DHCP (avec des droits administrateur), puis vérifier que la passerelle 10.20.10.1 apparaît.",
+      "Dans le ticket, notez pour chaque poste les valeurs relevées, l'écart avec la référence et l'action menée. Exemple : « PC-ACH-022 : passerelle 10.20.11.1 hors réseau, DHCP désactivé. Carte repassée en DHCP, passerelle 10.20.10.1 obtenue, accès rétabli. »"
+    ], "rubric": {
+      "criteria": [
+        { "id": "a-ok", "label": "Reconnaît que le poste A est correctement configuré", "points": 1, "patterns": ["a est correct", "poste a correct", "a est conforme", "poste a conforme", "a est bon", "a est normal", "rien d anormal", "configuration conforme", "a : conforme", "a : correct", "a : ok", "a ok"] },
+        { "id": "b-reseau", "label": "Repère que l'adresse du poste B est hors du plan d'adressage", "points": 2, "patterns": ["192.168", "autre reseau", "pas le bon reseau", "hors du plan", "hors plan"], "required": true },
+        { "id": "b-pirate", "label": "Soupçonne une box ou un serveur DHCP non autorisé", "points": 3, "patterns": ["dhcp pirate", "box", "routeur personnel", "serveur dhcp non autorise", "dhcp non autorise", "rogue", "serveur dhcp inconnu"] },
+        { "id": "c-passerelle", "label": "Repère que la passerelle du poste C n'est pas dans son réseau", "points": 3, "patterns": ["10.20.11.1", "passerelle hors", "pas dans le meme reseau", "pas dans le reseau", "mauvaise passerelle", "passerelle incorrecte", "passerelle fausse"], "required": true },
+        { "id": "c-dhcp", "label": "Propose de repasser le poste C en DHCP", "points": 2, "patterns": ["repasser en dhcp", "remettre en dhcp", "activer le dhcp", "reactiver le dhcp", "carte en dhcp", "poste en dhcp", "c en dhcp", "repasse en dhcp", "remet en dhcp", "automatiquement", "obtenir une adresse"] },
+        { "id": "escalade", "label": "Prévoit d'escalader ou de documenter dans le ticket", "points": 1, "patterns": ["escalad*", "n2", "ticket", "equipe reseau", "signaler"] }
+      ],
+      "redFlags": [
+        { "id": "ipfixe", "label": "Propose de fixer une adresse IP à la main", "patterns": ["ip fixe", "adresse fixe", "adresse statique", "ip statique"], "penalty": 2 }
+      ],
+      "passPercent": 60
+    } },
+    { "id": "interview", "kind": "interview", "questions": [
+      { "question": "À quoi sert la passerelle par défaut ? Que se passe-t-il si elle est absente ?", "expectedPoints": ["C'est l'adresse du routeur du réseau local", "Elle sert pour toutes les destinations hors du réseau du poste", "Sans elle, le poste parle à ses voisins mais pas aux autres réseaux ni à Internet", "Elle doit être dans le même réseau que le poste"], "modelAnswer": "La passerelle par défaut est l'adresse du routeur de mon réseau local. Quand le poste veut joindre une adresse qui n'est pas dans son réseau, il lui confie le paquet. Si elle est absente, le poste continue à joindre ses voisins, par exemple une imprimante du même réseau, mais plus rien d'autre : ni les serveurs des autres réseaux, ni Internet, et souvent même plus les noms si le DNS est dans un autre réseau. Je le vérifie avec ipconfig et en comparant un ping vers un voisin et un ping vers une adresse extérieure." },
+      { "question": "Quelle différence faites-vous entre une adresse IP privée et une adresse IP publique ?", "expectedPoints": ["Les adresses privées sont les plages RFC 1918 : 10/8, 172.16/12, 192.168/16", "Elles ne sont pas routées sur Internet et peuvent être réutilisées par chaque organisation", "Les adresses publiques sont uniques sur Internet", "Le NAT traduit les adresses privées en adresse publique à la sortie"], "modelAnswer": "Les adresses privées sont réservées à l'usage interne par la RFC 1918 : 10.0.0.0/8, 172.16.0.0/12 et 192.168.0.0/16. Chaque entreprise peut les réutiliser librement, car elles ne circulent pas sur Internet. Les adresses publiques, elles, sont uniques au niveau mondial. Pour que les postes en adresse privée accèdent à Internet, le pare-feu ou la box fait du NAT : il remplace leur adresse par son adresse publique." },
+      { "question": "Un utilisateur voit une adresse fe80:: dans son ipconfig et vous demande si c'est grave. Que lui répondez-vous ?", "expectedPoints": ["C'est une adresse IPv6 de liaison locale générée automatiquement", "Elle est normale et présente sur toutes les cartes", "Elle ne sert qu'au réseau local", "Il ne faut pas désactiver IPv6 pour autant"], "modelAnswer": "Ce n'est pas grave : fe80:: est une adresse IPv6 de liaison locale que Windows crée automatiquement sur chaque carte. Elle ne sert qu'à communiquer avec les voisins immédiats et ne sort pas du réseau local. Sa présence ne signifie ni une panne ni un piratage. Je ne désactive pas IPv6 pour autant, et je me concentre sur l'adresse IPv4 si le problème concerne l'accès aux ressources." }
+    ] },
+    { "id": "glossary", "kind": "glossary", "terms": [
+      { "term": "Adresse IP", "en": "IP address", "definition": "Numéro logique qui identifie une interface sur un réseau IP, composé d'une partie réseau et d'une partie hôte." },
+      { "term": "Masque de sous-réseau", "en": "Subnet mask", "definition": "Nombre de 32 bits qui indique quelle partie de l'adresse désigne le réseau." },
+      { "term": "Passerelle par défaut", "en": "Default gateway", "definition": "Adresse du routeur local auquel le poste confie tout paquet destiné à un autre réseau." },
+      { "term": "Adresse privée", "en": "Private address", "definition": "Adresse des plages RFC 1918, utilisable librement en interne et non routée sur Internet." },
+      { "term": "Traduction d'adresses", "en": "Network Address Translation (NAT)", "definition": "Remplacement des adresses privées par une adresse publique à la sortie vers Internet." },
+      { "term": "Adresse de bouclage", "en": "Loopback address", "definition": "127.0.0.1 en IPv4, ::1 en IPv6 : désigne le poste lui-même." },
+      { "term": "Adresse de liaison locale", "en": "Link-local address", "definition": "Adresse valable uniquement sur le réseau local : fe80:: en IPv6, 169.254.x.x en IPv4." },
+      { "term": "Adresse MAC", "en": "MAC address", "definition": "Identifiant physique de 48 bits d'une carte réseau, utilisé au sein du réseau local." }
+    ] },
+    { "id": "summary", "kind": "summary", "points": [
+      "Une adresse IPv4 compte 32 bits, écrits en quatre octets de 0 à 255 : une partie réseau et une partie hôte.",
+      "Le masque (255.255.255.0 = /24) trace la frontière entre réseau et hôte ; le poste s'en sert pour savoir si une destination est un voisin.",
+      "La passerelle est la sortie vers les autres réseaux : sans elle, on joint ses voisins mais ni les serveurs distants ni Internet.",
+      "Plages privées RFC 1918 : 10/8, 172.16/12, 192.168/16. 127.0.0.1 = le poste lui-même ; 169.254.x.x = pas de réponse DHCP.",
+      "IPv6 : 128 bits en hexadécimal, fe80:: = liaison locale normale, ::1 = bouclage.",
+      "L'adresse MAC identifie la carte sur le réseau local ; l'adresse IP permet d'aller de réseau en réseau."
+    ] },
+    { "id": "references", "kind": "references", "items": [
+      { "title": "RFC 1918 — Address Allocation for Private Internets", "url": "https://www.rfc-editor.org/rfc/rfc1918", "publisher": "IETF", "verifiedAt": "2026-10-21" },
+      { "title": "RFC 4291 — IP Version 6 Addressing Architecture", "url": "https://www.rfc-editor.org/rfc/rfc4291", "publisher": "IETF", "verifiedAt": "2026-10-21" },
+      { "title": "RFC 6890 — Special-Purpose IP Address Registries", "url": "https://www.rfc-editor.org/rfc/rfc6890", "publisher": "IETF", "verifiedAt": "2026-10-21" },
+      { "title": "TCP/IP addressing and subnetting", "url": "https://learn.microsoft.com/troubleshoot/windows-client/networking/tcpip-addressing-and-subnetting", "publisher": "Microsoft Learn", "verifiedAt": "2026-10-21" }
+    ] }
+  ]
+}

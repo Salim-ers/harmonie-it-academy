@@ -1,0 +1,371 @@
+{
+  "slug": "apipa-bureau-demenage",
+  "title": "Plus rien depuis le déménagement de bureau",
+  "summary": "Après un déménagement interne, le poste d'une comptable n'accède plus à rien alors que celui de son voisin fonctionne. Remettez-la au travail sans bricolage et transmettez ce qui doit l'être.",
+  "sector": "bureau",
+  "difficulty": 1,
+  "requiredTier": 0,
+  "estimatedMinutes": 15,
+  "skills": ["network-ip", "network-services", "vlan", "diagnostic", "itsm"],
+  "company": {
+    "name": "Groupe Valmont (entreprise fictive)",
+    "description": "Groupe de services immobiliers. Siège de 260 collaborateurs sur quatre étages ; réseau segmenté en VLAN (Postes, Imprimantes, Téléphonie, Invités), DHCP centralisé sur deux serveurs. Les switchs, les baies de brassage et le plan de brassage sont gérés par l'équipe N2 réseau ; le N1 a accès au plan en lecture."
+  },
+  "ticket": {
+    "reference": "INC-2026-05132",
+    "reporter": { "name": "Sophie Marchetti", "role": "Comptable fournisseurs", "site": "Siège – 2e étage, bureau 2.14" },
+    "channel": "telephone",
+    "title": "Poste sans réseau après déménagement au bureau 2.14",
+    "description": "« J'ai changé de bureau ce matin : les déménageurs ont installé mon poste au 2.14. Il démarre, mais je n'ai plus rien : ni Internet, ni le logiciel de comptabilité, ni le lecteur partagé. Julien, avec qui je partage le bureau, travaille normalement. Je dois saisir les factures fournisseurs avant la clôture de 16 h. »",
+    "impact": "individuel",
+    "urgency": "moyenne",
+    "slaMinutes": 45
+  },
+  "startFlags": [],
+  "clues": [
+    { "id": "c-demenagement", "label": "Déménagement ce matin du bureau 3.05 vers le bureau 2.14, câblage fait par les déménageurs" },
+    { "id": "c-ancien-copieur", "label": "Un copieur était branché sur la prise 2.14-B jusqu'à la semaine dernière" },
+    { "id": "c-lien-ok", "label": "Câble clipsé, voyants de la carte allumés : la liaison physique est établie" },
+    { "id": "c-apipa", "label": "Adresse 169.254.38.211 (APIPA), aucune passerelle : le poste n'a obtenu aucun bail DHCP" },
+    { "id": "c-dhcp-timeout", "label": "ipconfig /renew échoue : impossible de contacter le serveur DHCP" },
+    { "id": "c-voisin-ok", "label": "Le poste du voisin (prise 2.14-A) a obtenu son bail ce matin : le DHCP fonctionne" },
+    { "id": "c-portable-apipa", "label": "Le portable de test du support obtient lui aussi une adresse 169.254.x.x sur la prise 2.14-B" },
+    { "id": "c-kb-apipa", "label": "Procédure : le N1 ne modifie pas le brassage ; contournement sur une prise documentée et escalade N2 réseau" },
+    { "id": "c-brassage-vlan40", "label": "Plan de brassage : la prise 2.14-B arrive sur un port du VLAN 40 Imprimantes, sans DHCP" },
+    { "id": "c-prise-c-postes", "label": "Plan de brassage : les prises 2.14-A et 2.14-C sont dans le VLAN 10 Postes" },
+    { "id": "c-autre-prise-ok", "label": "Branché sur une prise du VLAN Postes, le poste obtient une adresse valide et tout fonctionne" }
+  ],
+  "actions": [
+    {
+      "id": "interroger-utilisatrice",
+      "label": "Demander à l'utilisatrice ce qui a changé et comment le poste a été branché",
+      "category": "interroger",
+      "minutes": 3,
+      "relevance": "useful",
+      "outcomes": [
+        { "text": "« Je suis arrivée ce matin, les déménageurs avaient déjà tout branché. Au 3.05, tout marchait vendredi. Ici, il y avait le gros copieur du service jusqu'à la semaine dernière, ils l'ont mis dans le couloir. Mon câble est branché sur la prise de droite, celle marquée 2.14-B. »", "reveals": ["c-demenagement", "c-ancien-copieur"] }
+      ]
+    },
+    {
+      "id": "observer-poste",
+      "label": "Observer le câble, les voyants de la carte réseau et l'icône réseau",
+      "category": "observer",
+      "minutes": 2,
+      "relevance": "useful",
+      "outcomes": [
+        { "when": { "all": ["poste-operationnel-escalade"] }, "text": "Le câble est branché sur la prise 2.14-C, voyants allumés. L'icône réseau de la barre des tâches est normale : le poste est connecté au réseau de l'entreprise." },
+        { "when": { "all": ["sur-prise-c"] }, "text": "Le câble est maintenant branché sur la prise 2.14-C, voyants allumés. L'icône réseau n'affiche plus d'avertissement." },
+        { "text": "Le câble est bien clipsé côté poste et côté prise murale (étiquette 2.14-B). Les voyants de la carte réseau sont allumés : vert fixe et orange clignotant. Dans la barre des tâches, l'icône réseau affiche un globe barré : « Pas d'accès à Internet ».", "reveals": ["c-lien-ok"] }
+      ]
+    },
+    {
+      "id": "ipconfig-all",
+      "label": "Relever la configuration IP du poste (ipconfig /all)",
+      "category": "tester",
+      "minutes": 2,
+      "relevance": "key",
+      "outcomes": [
+        {
+          "when": { "all": ["poste-operationnel-escalade"] },
+          "text": "Le poste dispose d'une adresse valide dans le VLAN Postes, d'une passerelle et des DNS de l'entreprise.",
+          "terminal": { "shell": "cmd", "lines": ["C:\\> ipconfig /all", "", "Carte Ethernet Ethernet :", "", "   DHCP activé. . . . . . . . . . . . . . : Oui", "   Adresse IPv4. . . . . . . . . . . . . .: 10.20.10.112(préféré)", "   Masque de sous-réseau. . . . . . . . . : 255.255.255.0", "   Passerelle par défaut. . . . . . . . . : 10.20.10.1", "   Serveur DHCP . . . . . . . . . . . . . : 10.20.1.10", "   Serveurs DNS. . . . . . . . . . . . .  : 10.20.1.10", "                                       10.20.1.11"] }
+        },
+        {
+          "when": { "all": ["sur-prise-c"] },
+          "text": "Sur la prise 2.14-C, le poste a obtenu une adresse du VLAN Postes.",
+          "terminal": { "shell": "cmd", "lines": ["C:\\> ipconfig /all", "", "Carte Ethernet Ethernet :", "", "   DHCP activé. . . . . . . . . . . . . . : Oui", "   Adresse IPv4. . . . . . . . . . . . . .: 10.20.10.112(préféré)", "   Masque de sous-réseau. . . . . . . . . : 255.255.255.0", "   Passerelle par défaut. . . . . . . . . : 10.20.10.1", "   Serveur DHCP . . . . . . . . . . . . . : 10.20.1.10"] }
+        },
+        {
+          "text": "La carte est en DHCP et la liaison est établie (aucune ligne « Média déconnecté »), mais le poste s'est attribué une adresse 169.254.x.x : aucun serveur DHCP ne lui a répondu. Sans passerelle ni DNS, il ne peut joindre aucun serveur.",
+          "terminal": {
+            "shell": "cmd",
+            "lines": [
+              "C:\\> ipconfig /all",
+              "",
+              "Configuration IP de Windows",
+              "",
+              "   Nom de l'hôte . . . . . . . . . . : PC-VAL-0457",
+              "   Suffixe DNS principal . . . . . . : valmont.local",
+              "",
+              "Carte Ethernet Ethernet :",
+              "",
+              "   Suffixe DNS propre à la connexion. . . :",
+              "   Description. . . . . . . . . . . . . . : Intel(R) Ethernet Connection (17) I219-LM",
+              "   Adresse physique . . . . . . . . . . . : 3C-52-82-1A-7F-04",
+              "   DHCP activé. . . . . . . . . . . . . . : Oui",
+              "   Configuration automatique activée. . . : Oui",
+              "   Adresse IPv6 de liaison locale. . . . .: fe80::8d3c:2a1f:91e4:6b07%12(préféré)",
+              "   Adresse d'autoconfiguration IPv4 . . . : 169.254.38.211(préféré)",
+              "   Masque de sous-réseau. . . . . . . . . : 255.255.0.0",
+              "   Passerelle par défaut. . . . . . . . . :",
+              "   Serveurs DNS. . . . . . . . . . . . .  : fec0:0:0:ffff::1%1",
+              "                                       fec0:0:0:ffff::2%1",
+              "                                       fec0:0:0:ffff::3%1",
+              "   NetBIOS sur Tcpip. . . . . . . . . . . : Activé"
+            ]
+          },
+          "reveals": ["c-apipa"]
+        }
+      ]
+    },
+    {
+      "id": "renouveler-bail",
+      "label": "Redemander une adresse au DHCP (ipconfig /renew)",
+      "category": "tester",
+      "minutes": 2,
+      "relevance": "useful",
+      "outcomes": [
+        {
+          "when": { "all": ["poste-operationnel-escalade"] },
+          "text": "Le bail est renouvelé immédiatement auprès du serveur DHCP 10.20.1.10.",
+          "terminal": { "shell": "cmd", "lines": ["C:\\> ipconfig /renew", "", "Carte Ethernet Ethernet :", "", "   Adresse IPv4. . . . . . . . . . . . . .: 10.20.10.112", "   Masque de sous-réseau. . . . . . . . . : 255.255.255.0", "   Passerelle par défaut. . . . . . . . . : 10.20.10.1"] }
+        },
+        {
+          "when": { "all": ["sur-prise-c"] },
+          "text": "Sur la prise 2.14-C, le bail est renouvelé sans délai.",
+          "terminal": { "shell": "cmd", "lines": ["C:\\> ipconfig /renew", "", "Carte Ethernet Ethernet :", "", "   Adresse IPv4. . . . . . . . . . . . . .: 10.20.10.112", "   Passerelle par défaut. . . . . . . . . : 10.20.10.1"] }
+        },
+        {
+          "text": "Après une longue attente, le renouvellement échoue : aucune réponse DHCP ne parvient au poste sur cette prise.",
+          "terminal": { "shell": "cmd", "lines": ["C:\\> ipconfig /renew", "", "Configuration IP de Windows", "", "Une erreur s'est produite lors du renouvellement de l'interface Ethernet : impossible de contacter votre serveur DHCP. Le délai d'attente de la demande a expiré."] },
+          "reveals": ["c-dhcp-timeout"]
+        }
+      ]
+    },
+    {
+      "id": "poste-voisin",
+      "label": "Comparer avec le poste du voisin de bureau, sans le débrancher",
+      "category": "observer",
+      "minutes": 3,
+      "relevance": "useful",
+      "outcomes": [
+        {
+          "text": "Julien Ferrand accepte que vous regardiez sa configuration. Son poste, branché sur la prise 2.14-A, a obtenu ce matin un bail du serveur 10.20.1.10 et accède à tout : le DHCP et le réseau de l'étage fonctionnent.",
+          "terminal": { "shell": "cmd", "lines": ["C:\\> ipconfig", "", "Carte Ethernet Ethernet :", "", "   Adresse IPv4. . . . . . . . . . . . . .: 10.20.10.63", "   Masque de sous-réseau. . . . . . . . . : 255.255.255.0", "   Passerelle par défaut. . . . . . . . . : 10.20.10.1"] },
+          "reveals": ["c-voisin-ok"]
+        }
+      ]
+    },
+    {
+      "id": "kb-apipa",
+      "label": "Consulter la base de connaissances (adresse 169.254 sur un poste filaire)",
+      "category": "consulter",
+      "minutes": 2,
+      "relevance": "useful",
+      "outcomes": [
+        { "text": "Article KB-0212 « Adresse 169.254.x.x sur un poste filaire » : 1) vérifier la liaison ; 2) comparer avec un poste voisin ; 3) tester la prise avec un autre équipement ; 4) consulter le plan de brassage. Le N1 peut basculer l'utilisateur sur une prise documentée dans le VLAN Postes à titre de contournement. Il ne modifie ni le brassage ni la configuration des switchs : escalade au groupe N2-Réseau avec le numéro de prise, le nom du poste, l'adresse MAC et les tests réalisés.", "reveals": ["c-kb-apipa"] }
+      ]
+    },
+    {
+      "id": "portable-test",
+      "label": "Brancher le portable de test du support sur la prise 2.14-B",
+      "category": "tester",
+      "minutes": 5,
+      "relevance": "useful",
+      "outcomes": [
+        { "when": { "all": ["poste-operationnel-escalade"] }, "text": "Le portable de test obtient toujours une adresse 169.254.x.x sur la prise 2.14-B : c'est attendu, la prise reste mal brassée tant que le N2 n'est pas intervenu. Elle est signalée dans l'escalade." },
+        {
+          "text": "Le portable de test, qui fonctionne partout ailleurs, s'attribue lui aussi une adresse APIPA sur la prise 2.14-B : le poste de Mme Marchetti n'est pas en cause, c'est la prise.",
+          "terminal": { "shell": "cmd", "lines": ["C:\\> ipconfig", "", "Carte Ethernet Ethernet :", "", "   Adresse d'autoconfiguration IPv4 . . . : 169.254.112.9(préféré)", "   Masque de sous-réseau. . . . . . . . . : 255.255.0.0", "   Passerelle par défaut. . . . . . . . . :"] },
+          "reveals": ["c-portable-apipa"]
+        }
+      ]
+    },
+    {
+      "id": "plan-brassage",
+      "label": "Consulter le plan de brassage du 2e étage (prises du bureau 2.14)",
+      "category": "consulter",
+      "minutes": 4,
+      "relevance": "key",
+      "outcomes": [
+        {
+          "text": "La prise 2.14-B est restée brassée sur le port du copieur, dans le VLAN des imprimantes : aucune étendue DHCP n'y distribue d'adresses. Les prises 2.14-A et 2.14-C sont dans le VLAN Postes.",
+          "terminal": {
+            "shell": "text",
+            "lines": [
+              "PLAN DE BRASSAGE – SIÈGE 2e ÉTAGE (lecture seule)",
+              "PRISE   BANDEAU  SWITCH          PORT      VLAN  DESCRIPTION",
+              "2.14-A  B2-13    SW-VAL-ET2-01   Gi1/0/37  10    POSTES",
+              "2.14-B  B2-14    SW-VAL-ET2-01   Gi1/0/38  40    IMPRIMANTES (ex-COP-2-14)",
+              "2.14-C  B2-15    SW-VAL-ET2-01   Gi1/0/39  10    POSTES",
+              "2.14-D  B2-16    SW-VAL-ET2-02   Gi1/0/12  20    TELEPHONIE",
+              "",
+              "VLAN 10  POSTES       10.20.10.0/24  DHCP 10.20.1.10 / 10.20.1.11",
+              "VLAN 40  IMPRIMANTES  10.20.40.0/24  adresses fixes, aucune étendue DHCP"
+            ]
+          },
+          "reveals": ["c-brassage-vlan40", "c-prise-c-postes"]
+        }
+      ]
+    },
+    {
+      "id": "tester-prise-c",
+      "label": "Brancher le poste sur la prise libre 2.14-C et redemander une adresse",
+      "category": "tester",
+      "minutes": 4,
+      "relevance": "key",
+      "outcomes": [
+        { "when": { "all": ["poste-operationnel-escalade"] }, "text": "Le poste est déjà branché sur la prise 2.14-C et fonctionne : rien à changer." },
+        { "when": { "all": ["sur-prise-c"] }, "text": "Le poste est déjà sur la prise 2.14-C, avec l'adresse 10.20.10.112." },
+        {
+          "text": "Avec l'accord de Mme Marchetti, vous déplacez son câble sur la prise libre 2.14-C, documentée dans le VLAN Postes, et relancez ipconfig /renew. Le poste obtient une adresse en quelques secondes ; le logiciel de comptabilité s'ouvre. Vous laissez le poste branché ainsi, mais rien n'est encore transmis ni documenté.",
+          "terminal": { "shell": "cmd", "lines": ["C:\\> ipconfig /renew", "", "Carte Ethernet Ethernet :", "", "   Adresse IPv4. . . . . . . . . . . . . .: 10.20.10.112", "   Masque de sous-réseau. . . . . . . . . : 255.255.255.0", "   Passerelle par défaut. . . . . . . . . : 10.20.10.1"] },
+          "reveals": ["c-autre-prise-ok"],
+          "setFlags": ["sur-prise-c"]
+        }
+      ]
+    },
+    {
+      "id": "ping-passerelle",
+      "label": "Tester la passerelle du VLAN Postes (ping 10.20.10.1)",
+      "category": "tester",
+      "minutes": 1,
+      "relevance": "neutral",
+      "outcomes": [
+        {
+          "when": { "all": ["poste-operationnel-escalade"] },
+          "text": "La passerelle répond.",
+          "terminal": { "shell": "cmd", "lines": ["C:\\> ping 10.20.10.1", "Réponse de 10.20.10.1 : octets=32 temps<1ms TTL=255", "Réponse de 10.20.10.1 : octets=32 temps<1ms TTL=255", "    Paquets : envoyés = 4, reçus = 4, perdus = 0 (perte 0%),"] }
+        },
+        {
+          "when": { "all": ["sur-prise-c"] },
+          "text": "Depuis la prise 2.14-C, la passerelle répond.",
+          "terminal": { "shell": "cmd", "lines": ["C:\\> ping 10.20.10.1", "Réponse de 10.20.10.1 : octets=32 temps<1ms TTL=255", "    Paquets : envoyés = 4, reçus = 4, perdus = 0 (perte 0%),"] }
+        },
+        {
+          "text": "Sans adresse valide ni passerelle, le poste ne sait même pas où envoyer le paquet. Ce test confirme le symptôme sans en donner la cause.",
+          "terminal": { "shell": "cmd", "lines": ["C:\\> ping 10.20.10.1", "", "Envoi d'une requête 'Ping'  10.20.10.1 avec 32 octets de données :", "PING : échec de la transmission. Défaillance générale.", "PING : échec de la transmission. Défaillance générale.", "PING : échec de la transmission. Défaillance générale.", "PING : échec de la transmission. Défaillance générale.", "", "Statistiques Ping pour 10.20.10.1:", "    Paquets : envoyés = 4, reçus = 0, perdus = 4 (perte 100%),"] }
+        }
+      ]
+    },
+    {
+      "id": "ip-fixe",
+      "label": "Saisir une adresse IP fixe sur la carte (10.20.10.200, « libre » car elle ne répond pas au ping)",
+      "category": "corriger",
+      "minutes": 4,
+      "relevance": "irrelevant",
+      "risk": { "level": "dangerous", "explanation": "10.20.10.200 appartient à l'étendue distribuée par le DHCP du siège : qu'elle ne réponde pas au ping ne prouve pas qu'elle est libre (poste éteint, pare-feu). Vous créez un risque de conflit d'adresse pour un autre collaborateur, une configuration non documentée qui suivra le poste à son prochain déplacement, et vous contournez la gestion des adresses réservée au N2. Ici, c'est en plus inefficace : la prise n'est pas dans le VLAN Postes." },
+      "outcomes": [
+        { "text": "Le poste prend l'adresse 10.20.10.200 mais ne joint ni la passerelle ni les serveurs : la prise reste dans le VLAN Imprimantes, la configuration IP du poste n'y change rien. Vous remettez la carte en DHCP. Oubliée, cette adresse en dur aurait pu entrer en conflit avec le poste d'un collègue dès le lendemain." }
+      ]
+    },
+    {
+      "id": "debrancher-voisin",
+      "label": "Débrancher le poste du voisin pour tester sur sa prise 2.14-A",
+      "category": "tester",
+      "minutes": 3,
+      "relevance": "neutral",
+      "risk": { "level": "caution", "explanation": "Débrancher un collègue interrompt son travail (appel Teams, saisie en cours, fichiers ouverts sur le réseau). Demandez toujours son accord et préférez une prise libre documentée." },
+      "outcomes": [
+        { "text": "Julien était en visioconférence avec un fournisseur : l'appel coupe net. Sur la prise 2.14-A, le poste de Mme Marchetti obtient bien une adresse 10.20.10.x. Vous rebranchez chacun à sa place : le test est probant, mais il a coûté une interruption évitable.", "reveals": ["c-autre-prise-ok"] }
+      ]
+    },
+    {
+      "id": "reinstaller-office",
+      "label": "Réparer puis réinstaller Office (Outlook ne se connecte plus)",
+      "category": "corriger",
+      "minutes": 20,
+      "relevance": "irrelevant",
+      "outcomes": [
+        { "text": "La réparation en ligne d'Office échoue d'emblée : elle a besoin d'Internet. Vous lancez la réparation rapide : vingt minutes plus tard, rien n'a changé. Outlook, la comptabilité et le lecteur partagé ont tous besoin du réseau, que le poste n'a pas." }
+      ]
+    },
+    {
+      "id": "changer-cordon",
+      "label": "Remplacer le cordon réseau du poste par un neuf",
+      "category": "corriger",
+      "minutes": 3,
+      "relevance": "neutral",
+      "outcomes": [
+        { "when": { "all": ["poste-operationnel-escalade"] }, "text": "Le poste fonctionne avec le nouveau cordon sur la prise 2.14-C, comme avec l'ancien." },
+        { "when": { "all": ["sur-prise-c"] }, "text": "Le poste fonctionne avec le nouveau cordon sur la prise 2.14-C, comme avec l'ancien : le cordon n'a jamais été en cause." },
+        { "text": "Le cordon neuf ne change rien : liaison établie, toujours une adresse 169.254.x.x. Le câble n'était pas en cause." }
+      ]
+    },
+    {
+      "id": "redemarrer-poste",
+      "label": "Redémarrer le poste",
+      "category": "corriger",
+      "minutes": 4,
+      "relevance": "neutral",
+      "outcomes": [
+        { "when": { "all": ["poste-operationnel-escalade"] }, "text": "Le poste redémarre et retrouve immédiatement son adresse 10.20.10.112 sur la prise 2.14-C." },
+        { "when": { "all": ["sur-prise-c"] }, "text": "Le poste redémarre et retrouve son adresse sur la prise 2.14-C." },
+        { "text": "Le poste redémarre. Trois minutes plus tard, même situation : globe barré, adresse 169.254.x.x. Le redémarrage ne change rien à la prise sur laquelle il est branché." }
+      ]
+    },
+    {
+      "id": "verifier-usage",
+      "label": "Vérifier avec l'utilisatrice la comptabilité, le lecteur partagé et la messagerie",
+      "category": "tester",
+      "minutes": 3,
+      "relevance": "useful",
+      "outcomes": [
+        { "when": { "all": ["poste-operationnel-escalade"] }, "text": "Mme Marchetti ouvre le logiciel de comptabilité, le lecteur partagé F: et Outlook : tout répond. Elle pourra saisir ses factures avant 16 h. La demande N2-Réseau est référencée dans l'incident ; vous lui expliquez que le N2 corrigera la prise 2.14-B et qu'elle ne doit pas y rebrancher son poste d'ici là." },
+        { "when": { "all": ["sur-prise-c"] }, "text": "Tout fonctionne sur la prise 2.14-C. Mais rien n'est encore transmis au N2 : la prise 2.14-B reste brassée sur le VLAN Imprimantes, et le prochain occupant du bureau aura exactement la même panne." },
+        { "text": "Rien ne répond : ni Internet, ni le logiciel de comptabilité, ni le lecteur partagé F:." }
+      ]
+    }
+  ],
+  "diagnoses": [
+    { "id": "d-vlan-prise", "label": "La prise 2.14-B est brassée sur le VLAN Imprimantes, où aucune adresse n'est distribuée aux postes : le poste ne reçoit pas de bail DHCP et s'attribue une adresse APIPA", "correct": true, "requiresClues": ["c-apipa", "c-brassage-vlan40", "c-autre-prise-ok"], "feedback": "Exact. Le copieur qui occupait le bureau était sur un port du VLAN 40. Le port n'a pas été réaffecté après son départ : sur ce VLAN sans étendue DHCP pour les postes, la demande d'adresse reste sans réponse, d'où l'adresse 169.254.x.x. Le poste lui-même fonctionne parfaitement sur une prise du VLAN Postes." },
+    { "id": "d-dhcp-panne", "label": "Le serveur DHCP du siège est en panne", "correct": false, "feedback": "Le poste du voisin a obtenu son bail ce matin auprès du même serveur, et le poste de Mme Marchetti en obtient un dès qu'il est branché sur une autre prise : le DHCP fonctionne. Le problème ne touche qu'une prise." },
+    { "id": "d-carte", "label": "La carte réseau du poste a été endommagée pendant le déménagement", "correct": false, "feedback": "La liaison est établie (voyants allumés, pas de « Média déconnecté »), le poste fonctionne sur une prise du VLAN Postes, et le portable de test échoue lui aussi sur la prise 2.14-B : la carte n'est pas en cause." },
+    { "id": "d-cable", "label": "Le câble réseau a été abîmé par les déménageurs", "correct": false, "feedback": "Un câble abîmé empêcherait la liaison ou la rendrait instable. Ici la liaison est établie, et le même câble fonctionne sur la prise 2.14-C." },
+    { "id": "d-parefeu", "label": "Le pare-feu Windows bloque le réseau depuis le changement d'emplacement", "correct": false, "feedback": "Le pare-feu filtre des flux une fois l'adresse obtenue ; il n'empêche pas le poste d'obtenir un bail DHCP. Une adresse 169.254.x.x signifie qu'aucun serveur DHCP n'a répondu sur ce segment." }
+  ],
+  "resolutions": [
+    { "id": "r-contournement-escalade", "label": "Laisser le poste sur la prise 2.14-C (VLAN Postes), valider avec l'utilisatrice, et escalader au N2 réseau la correction de la prise 2.14-B (poste, MAC, port, tests joints)", "correct": true, "setFlags": ["poste-operationnel-escalade"], "feedback": "Bonne résolution : l'utilisatrice travaille de nouveau, sans configuration bricolée, et la vraie correction (réaffecter le port Gi1/0/38 au VLAN Postes ou modifier le brassage) est confiée à l'équipe qui en a la responsabilité, avec tous les éléments pour agir sans refaire le diagnostic." },
+    { "id": "r-ip-fixe", "label": "Configurer une adresse IP fixe sur le poste", "correct": false, "feedback": "Inefficace et risqué : la prise n'étant pas dans le VLAN Postes, une adresse 10.20.10.x n'y fonctionne pas ; et une adresse saisie à la main dans l'étendue DHCP finit en conflit d'adresse. Vous masqueriez le vrai problème, qui reste en place pour le prochain occupant." },
+    { "id": "r-rebrasser", "label": "Aller dans le local technique et déplacer soi-même le cordon de la prise 2.14-B vers un port du VLAN Postes", "correct": false, "feedback": "Hors du périmètre N1 : les baies et les switchs sont gérés par le N2 réseau. Un cordon déplacé sans plan à jour peut couper un autre équipement (le copieur a peut-être été repris ailleurs), et toute modification du brassage passe par une demande de changement qui met à jour le plan." },
+    { "id": "r-remplacer-poste", "label": "Remplacer le poste de l'utilisatrice", "correct": false, "feedback": "Le poste fonctionne parfaitement sur une prise du VLAN Postes : le remplacer coûterait du temps et un matériel pour rien, et le nouveau poste aurait la même panne sur la prise 2.14-B." }
+  ],
+  "fixedFlag": "poste-operationnel-escalade",
+  "verificationActionId": "verifier-usage",
+  "closureRubric": {
+    "criteria": [
+      { "id": "cause", "label": "Cause expliquée (prise brassée sur le VLAN Imprimantes, pas de DHCP, APIPA)", "points": 3, "patterns": ["vlan", "brassage", "brasse*", "169.254", "apipa", "imprimantes", "dhcp"], "required": true },
+      { "id": "action", "label": "Contournement réalisé (poste déplacé sur une prise validée)", "points": 3, "patterns": ["2.14-c", "contournement", "autre prise", "rebranche*", "deplace*", "bascule*"] },
+      { "id": "validation", "label": "Validation avec l'utilisatrice (adresse obtenue, applications testées)", "points": 2, "patterns": ["test*", "verifie*", "valide*", "fonctionne", "operationnel*", "confirme*"] },
+      { "id": "escalade", "label": "Escalade au N2 réseau avec les éléments utiles", "points": 2, "patterns": ["n2", "escalad*", "transmis*", "niveau 2", "equipe reseau", "demande de changement"] }
+    ],
+    "passPercent": 60
+  },
+  "hints": [
+    "Une adresse en 169.254.x.x n'est pas une panne en soi : c'est le signe que le poste n'a reçu aucune réponse à sa demande d'adresse. Pourquoi, alors que le voisin en reçoit une ?",
+    "Séparez le poste de la prise : que se passe-t-il avec un autre équipement sur la même prise, et avec ce poste sur une autre prise ? Le plan de brassage vous dira à quoi chaque prise est reliée.",
+    "La prise 2.14-B servait au copieur : elle est restée dans le VLAN Imprimantes, sans DHCP pour les postes. Basculez l'utilisatrice sur une prise du VLAN Postes et confiez la correction du port au N2."
+  ],
+  "debrief": {
+    "cause": "Le port du switch relié à la prise murale 2.14-B est resté affecté au VLAN 40 Imprimantes après le retrait du copieur qui l'occupait. Ce VLAN n'a pas d'étendue DHCP pour les postes : la demande d'adresse du poste reste sans réponse et Windows s'attribue une adresse APIPA 169.254.x.x.",
+    "clues": [
+      "Une adresse 169.254.x.x avec une liaison établie : le poste ne reçoit aucune réponse DHCP",
+      "Le voisin, sur une autre prise, obtient son bail du même serveur",
+      "Un autre équipement échoue sur la même prise, et ce poste fonctionne sur une autre prise",
+      "Le plan de brassage montre la prise 2.14-B dans le VLAN Imprimantes (ancien copieur)"
+    ],
+    "relevantTests": [
+      "ipconfig /all (liaison établie, DHCP activé, adresse APIPA)",
+      "Test croisé : un autre équipement sur la prise, le poste sur une autre prise",
+      "Lecture du plan de brassage pour relier la prise à un port et un VLAN"
+    ],
+    "wrongHypotheses": [
+      { "hypothesis": "Panne du serveur DHCP", "why": "Le voisin obtient son bail, et le poste en obtient un sur une autre prise." },
+      { "hypothesis": "Carte réseau ou câble défectueux", "why": "La liaison est établie et le même poste, avec le même câble, fonctionne sur la prise 2.14-C." },
+      { "hypothesis": "Problème logiciel (Office, pare-feu)", "why": "Aucun logiciel ne fonctionne faute d'adresse : la cause est au niveau du réseau, avant toute application." }
+    ],
+    "procedure": [
+      "Relever la configuration IP (ipconfig /all) et constater l'adresse APIPA avec liaison établie",
+      "Comparer avec un poste voisin qui fonctionne",
+      "Tester la prise avec un autre équipement, et le poste sur une prise documentée",
+      "Consulter le plan de brassage pour identifier le port et le VLAN de la prise",
+      "Laisser l'utilisatrice sur une prise validée du VLAN Postes et vérifier ses applications avec elle",
+      "Escalader au N2 réseau : prise 2.14-B, switch et port, nom du poste, adresse MAC, tests réalisés"
+    ],
+    "prevention": [
+      "Ajouter à la procédure de retrait d'un équipement (copieur, imprimante) la réaffectation du port au VLAN par défaut et la mise à jour du plan de brassage",
+      "Inclure dans la procédure de déménagement interne un test de connexion de chaque poste avant le départ des déménageurs"
+    ],
+    "exampleClosingNote": "Cause : la prise 2.14-B du nouveau bureau est brassée sur le VLAN 40 Imprimantes (ancien emplacement du copieur), sans DHCP pour les postes : le poste PC-VAL-0457 restait en APIPA 169.254.38.211. Action : contournement, poste rebranché sur la prise 2.14-C (VLAN 10 Postes) avec l'accord de l'utilisatrice. Validation : adresse 10.20.10.112 obtenue, comptabilité, lecteur F: et Outlook testés avec Mme Marchetti. Escalade : demande transmise au N2 réseau pour corriger la prise 2.14-B (switch SW-VAL-ET2-01, port Gi1/0/38), avec la MAC 3C-52-82-1A-7F-04 et les tests réalisés (portable de test également en 169.254 sur cette prise)."
+  }
+}

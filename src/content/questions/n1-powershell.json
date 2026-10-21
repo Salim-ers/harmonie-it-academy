@@ -1,0 +1,120 @@
+[
+  {
+    "code": "ps-verbe-get",
+    "lesson": "n1-powershell",
+    "skill": "powershell",
+    "prompt": "Vous voulez consulter l'état d'un poste sans rien modifier. Quelle cmdlet pouvez-vous lancer sans risque de changer la configuration ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Set-Service -Name Spooler -StartupType Disabled" },
+        { "id": "b", "text": "Get-Service -Name Spooler" },
+        { "id": "c", "text": "Restart-Service -Name Spooler" },
+        { "id": "d", "text": "Remove-Item C:\\Temp\\*" }
+      ],
+      "answer": "b"
+    },
+    "explanation": "Le verbe Get lit une information sans rien modifier : Get-Service est en lecture seule. Set-Service change le type de démarrage (ici, il désactiverait le spouleur), Restart-Service interrompt le service, et Remove-Item supprime des fichiers. Le verbe d'une cmdlet suffit à savoir si elle modifie le système.",
+    "difficulty": 1
+  },
+  {
+    "code": "ps-pipeline-order",
+    "lesson": "n1-powershell",
+    "skill": "powershell",
+    "prompt": "Remettez dans l'ordre les éléments du pipeline qui exporte, triés par nom, les services arrêtés avec seulement leur nom et leur nom affiché.",
+    "data": {
+      "type": "order",
+      "items": [
+        { "id": "select", "text": "Select-Object Name, DisplayName" },
+        { "id": "get", "text": "Get-Service" },
+        { "id": "export", "text": "Export-Csv -Path C:\\Temp\\services.csv -NoTypeInformation" },
+        { "id": "where", "text": "Where-Object Status -eq 'Stopped'" },
+        { "id": "sort", "text": "Sort-Object Name" }
+      ],
+      "answer": ["get", "where", "sort", "select", "export"]
+    },
+    "explanation": "On produit d'abord les objets (Get-Service), on filtre tôt pour alléger la suite (Where-Object), on trie (Sort-Object), on choisit les colonnes (Select-Object), puis on écrit le fichier (Export-Csv) en dernier. Placer Select-Object Name, DisplayName avant Where-Object supprimerait la propriété Status dont le filtre a besoin, et Export-Csv placé au milieu ne transmettrait rien à la suite.",
+    "difficulty": 2
+  },
+  {
+    "code": "ps-politique-vf",
+    "lesson": "n1-powershell",
+    "skill": "powershell",
+    "prompt": "Vrai ou faux : la politique d'exécution de PowerShell est une barrière de sécurité qui empêche un utilisateur déterminé d'exécuter un script malveillant.",
+    "data": { "type": "truefalse", "answer": false },
+    "explanation": "Faux. Microsoft présente la politique d'exécution comme une mesure qui évite les exécutions accidentelles, pas comme une frontière de sécurité : on peut la contourner, par exemple en collant le contenu du script dans la console ou en utilisant Invoke-Expression. La vraie protection, c'est de ne pas exécuter un code qu'on n'a pas compris et validé.",
+    "difficulty": 1
+  },
+  {
+    "code": "ps-where-fill",
+    "lesson": "n1-powershell",
+    "skill": "powershell",
+    "prompt": "Complétez la commande qui ne garde que les services en cours d'exécution.",
+    "data": { "type": "fill", "template": "Get-Service | ___ Status -eq 'Running'", "accepted": ["Where-Object", "where", "?"] },
+    "explanation": "Where-Object filtre les objets selon une condition sur leurs propriétés ; where et ? en sont des alias. Select-Object choisirait des colonnes et Sort-Object trierait, mais aucun des deux ne filtre les lignes selon une condition.",
+    "difficulty": 1
+  },
+  {
+    "code": "ps-cmdlets-match",
+    "lesson": "n1-powershell",
+    "skill": "powershell",
+    "prompt": "Associez chaque besoin à la cmdlet adaptée.",
+    "data": {
+      "type": "match",
+      "left": [
+        { "id": "ip", "text": "Voir l'adresse IP, la passerelle et les DNS du poste" },
+        { "id": "port", "text": "Vérifier qu'un serveur répond sur le port 445" },
+        { "id": "fichiers", "text": "Lister les fichiers d'un dossier" },
+        { "id": "aide", "text": "Afficher des exemples d'utilisation d'une commande" }
+      ],
+      "right": [
+        { "id": "netip", "text": "Get-NetIPConfiguration" },
+        { "id": "tnc", "text": "Test-NetConnection" },
+        { "id": "gci", "text": "Get-ChildItem" },
+        { "id": "help", "text": "Get-Help -Examples" },
+        { "id": "process", "text": "Get-Process" }
+      ],
+      "answer": { "ip": "netip", "port": "tnc", "fichiers": "gci", "aide": "help" }
+    },
+    "explanation": "Get-NetIPConfiguration résume la configuration IP, Test-NetConnection teste une connexion vers un port précis, Get-ChildItem liste le contenu d'un dossier et Get-Help -Examples montre des exemples. Get-Process liste les processus en cours : il ne répond à aucun de ces quatre besoins.",
+    "difficulty": 1
+  },
+  {
+    "code": "ps-exam-1",
+    "lesson": "n1-powershell",
+    "skill": "security-hygiene",
+    "prompt": "Un courriel interne vous demande de lancer « en urgence » la commande powershell -EncodedCommand suivie d'une longue chaîne de caractères illisible. Quelle est la bonne réaction ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "La lancer dans une console administrateur puisque le courriel vient d'une adresse interne" },
+        { "id": "b", "text": "Ne pas la lancer, signaler le courriel à la sécurité ou au N2, car on ne peut pas savoir ce que fait une commande encodée sans l'analyser" },
+        { "id": "c", "text": "La lancer dans une console standard, ce qui suffit à éviter tout risque" },
+        { "id": "d", "text": "Passer la politique d'exécution en AllSigned puis la lancer" }
+      ],
+      "answer": "b"
+    },
+    "explanation": "-EncodedCommand exécute une commande encodée en Base64 : son contenu est masqué, ce qui est un signal classique d'attaque, surtout associé à l'urgence. Une adresse interne peut être compromise ou usurpée. Une console standard limite les dégâts mais ne les empêche pas (vol de données, fichiers de l'utilisateur). La politique d'exécution ne s'applique pas aux commandes passées ainsi : elle ne protège de rien ici.",
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "code": "ps-exam-2",
+    "lesson": "n1-powershell",
+    "skill": "powershell",
+    "prompt": "Un technicien exporte des données avec Get-Process | Format-Table Name, CPU | Export-Csv C:\\Temp\\p.csv. Le fichier obtenu est illisible. Pourquoi, et quelle correction appliquer ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Export-Csv ne sait pas exporter les processus ; il faut copier l'écran" },
+        { "id": "b", "text": "Format-Table produit des instructions d'affichage et non des objets ; il faut utiliser Select-Object Name, CPU avant Export-Csv" },
+        { "id": "c", "text": "Il manque les droits administrateur ; il faut relancer la console élevée" },
+        { "id": "d", "text": "Le dossier C:\\Temp est en lecture seule" }
+      ],
+      "answer": "b"
+    },
+    "explanation": "Les cmdlets Format-* transforment les objets en données de mise en forme pour l'écran : Export-Csv reçoit ces données techniques et produit un fichier inutilisable. Select-Object garde des objets avec les seules propriétés choisies, que Export-Csv écrit correctement. Export-Csv sait exporter tout objet, les droits administrateur ne changent rien au format, et un dossier en lecture seule provoquerait une erreur d'accès, pas un fichier illisible.",
+    "difficulty": 2,
+    "examOnly": true
+  }
+]

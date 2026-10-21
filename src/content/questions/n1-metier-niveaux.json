@@ -1,0 +1,130 @@
+[
+  {
+    "code": "niveaux-role-n0",
+    "lesson": "n1-metier-niveaux",
+    "skill": "itsm",
+    "prompt": "Parmi ces situations, laquelle relève du niveau N0 ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Un utilisateur réinitialise lui-même son mot de passe grâce au portail en libre-service" },
+        { "id": "b", "text": "Un technicien déverrouille un compte après avoir vérifié l'identité de l'utilisateur" },
+        { "id": "c", "text": "Un administrateur corrige une stratégie de groupe sur le serveur" },
+        { "id": "d", "text": "L'éditeur du logiciel de paie publie un correctif" }
+      ],
+      "answer": "a"
+    },
+    "explanation": "Le N0 regroupe tout ce qui permet à l'utilisateur de résoudre seul son problème : portail de réinitialisation, FAQ, tutoriels. Le déverrouillage par un technicien est une action N1. La correction d'une stratégie de groupe demande des droits d'administration : c'est typiquement du N2. Le correctif de l'éditeur relève du N3.",
+    "difficulty": 1
+  },
+  {
+    "code": "niveaux-escalade-criteres",
+    "lesson": "n1-metier-niveaux",
+    "skill": "itsm",
+    "prompt": "Dans quelles situations un technicien N1 doit-il escalader sans attendre ? (plusieurs réponses)",
+    "data": {
+      "type": "multiple",
+      "choices": [
+        { "id": "collectif", "text": "Tout un étage n'a plus accès au partage réseau" },
+        { "id": "phishing", "text": "Un utilisateur a saisi son mot de passe sur une page reçue par un courriel suspect" },
+        { "id": "droits", "text": "La correction exige un accès au serveur que le N1 ne possède pas" },
+        { "id": "mdp", "text": "Un utilisateur a oublié son mot de passe et la procédure de réinitialisation est connue" },
+        { "id": "outlook", "text": "Un utilisateur demande comment ajouter une signature dans Outlook" }
+      ],
+      "answer": ["collectif", "phishing", "droits"]
+    },
+    "explanation": "Un impact collectif, une suspicion de compromission et un besoin de droits que l'on n'a pas sont trois motifs d'escalade immédiate. Le mot de passe oublié avec une procédure connue et l'aide à la signature Outlook sont au contraire des demandes typiques que le N1 doit résoudre lui-même : les escalader encombrerait le N2 inutilement.",
+    "difficulty": 1
+  },
+  {
+    "code": "niveaux-modele-universel",
+    "lesson": "n1-metier-niveaux",
+    "skill": "itsm",
+    "prompt": "Vrai ou faux : le découpage N1/N2/N3 est défini par une norme et identique dans toutes les entreprises.",
+    "data": { "type": "truefalse", "answer": false },
+    "explanation": "Faux : c'est un modèle d'organisation, pas une norme. Une petite entreprise peut confier tous les niveaux à une seule personne, un centre de services peut avoir un « N1 étendu » avec plus de droits, et ailleurs le N1 se limite à enregistrer les tickets. Il faut toujours demander le périmètre réel du N1 dans l'organisation où l'on travaille.",
+    "difficulty": 1
+  },
+  {
+    "code": "niveaux-associer",
+    "lesson": "n1-metier-niveaux",
+    "skill": "itsm",
+    "prompt": "Associez chaque organisation à sa mission principale.",
+    "data": {
+      "type": "match",
+      "left": [
+        { "id": "helpdesk", "text": "Helpdesk" },
+        { "id": "servicedesk", "text": "Service desk" },
+        { "id": "proximite", "text": "Support de proximité" },
+        { "id": "infogerance", "text": "Infogérance" }
+      ],
+      "right": [
+        { "id": "pannes", "text": "Résoudre les pannes signalées par les utilisateurs" },
+        { "id": "spoc", "text": "Point de contact unique pour pannes, demandes et information" },
+        { "id": "site", "text": "Interventions physiques sur le matériel et au bureau" },
+        { "id": "contrat", "text": "Support assuré par un prestataire selon un contrat" },
+        { "id": "dev", "text": "Développer les applications métier" }
+      ],
+      "answer": { "helpdesk": "pannes", "servicedesk": "spoc", "proximite": "site", "infogerance": "contrat" }
+    },
+    "explanation": "Le helpdesk est historiquement centré sur la panne ; le service desk élargit au point de contact unique (pannes, demandes, information) ; la proximité intervient physiquement ; l'infogérance désigne un support confié à un prestataire sous contrat. Le développement d'applications n'est la mission d'aucune de ces organisations de support : c'est le rôle des équipes applicatives ou de développement.",
+    "difficulty": 1
+  },
+  {
+    "code": "niveaux-whoami-local",
+    "lesson": "n1-metier-niveaux",
+    "skill": "communication",
+    "prompt": "Au téléphone, vous faites taper `whoami` à un utilisateur du Groupe Valmont. Il lit : `pc-acc-007\\admin`. Que pouvez-vous en déduire ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "La session est ouverte avec un compte local du poste, pas avec un compte du domaine" },
+        { "id": "b", "text": "L'utilisateur est administrateur du domaine valmont.local" },
+        { "id": "c", "text": "Le poste n'est pas connecté au réseau" },
+        { "id": "d", "text": "La commande a échoué" }
+      ],
+      "answer": "a"
+    },
+    "explanation": "whoami affiche la forme DOMAINE\\identifiant. Quand la partie gauche est le nom du poste, il s'agit d'un compte local de cet ordinateur. Cela ne dit rien des droits sur le domaine (le nom « admin » ne prouve rien), ni de la connexion réseau : un compte de domaine apparaîtrait sous la forme valmont\\identifiant même hors ligne grâce aux informations mises en cache. La commande a bien fonctionné puisqu'elle a renvoyé un résultat.",
+    "difficulty": 2
+  },
+  {
+    "code": "niveaux-exam-1",
+    "lesson": "n1-metier-niveaux",
+    "skill": "itsm",
+    "prompt": "Vous travaillez au centre de services. Un appelant se présente comme le directeur général de Maison Aubrac, dit être en déplacement et exige que vous réinitialisiez immédiatement son mot de passe et le communiquiez par téléphone. La procédure du client impose un rappel sur le numéro professionnel enregistré. Que faites-vous ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "J'applique la procédure : je rappelle sur le numéro enregistré avant toute action, et je documente la demande" },
+        { "id": "b", "text": "Je réinitialise immédiatement, car il s'agit d'un membre de la direction prioritaire" },
+        { "id": "c", "text": "Je donne le mot de passe à son assistante, qui est joignable" },
+        { "id": "d", "text": "Je refuse et je raccroche sans ouvrir de ticket" }
+      ],
+      "answer": "a"
+    },
+    "explanation": "La pression et le statut de l'appelant sont des signaux classiques d'ingénierie sociale. Le statut prioritaire accélère le traitement, mais il ne supprime pas la vérification d'identité. Réinitialiser sans contrôle ou transmettre le mot de passe à un tiers expose le compte le plus sensible de l'entreprise. Raccrocher sans ticket laisse un vrai dirigeant sans aide et efface la trace d'une éventuelle tentative de fraude, qu'il faut au contraire documenter.",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "code": "niveaux-exam-2",
+    "lesson": "n1-metier-niveaux",
+    "skill": "itsm",
+    "prompt": "Classez ces informations dans l'ordre où elles apparaissent dans une note d'escalade bien construite.",
+    "data": {
+      "type": "order",
+      "items": [
+        { "id": "attendu", "text": "Action attendue du niveau suivant" },
+        { "id": "qui", "text": "Utilisateur, poste et application concernés" },
+        { "id": "fait", "text": "Tests réalisés et leurs résultats" },
+        { "id": "symptome", "text": "Symptôme exact et heure de début" },
+        { "id": "impact", "text": "Impact : nombre de personnes et travail bloqué" }
+      ],
+      "answer": ["qui", "symptome", "impact", "fait", "attendu"]
+    },
+    "explanation": "La note suit la logique de lecture du niveau suivant : de qui parle-t-on, que se passe-t-il, à quel point c'est grave, qu'a-t-on déjà essayé, et que demande-t-on. Commencer par l'action attendue sans contexte oblige le lecteur à revenir en arrière ; placer les tests avant le symptôme rend la note incompréhensible ; oublier l'impact empêche de prioriser.",
+    "difficulty": 2,
+    "examOnly": true
+  }
+]

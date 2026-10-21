@@ -1,0 +1,118 @@
+[
+  {
+    "code": "ticket-incident-demande",
+    "lesson": "n1-ticket-cycle",
+    "skill": "itsm",
+    "prompt": "Un utilisateur écrit : « Je n'ai plus accès au dossier partagé Contrats alors que j'y travaillais encore hier. » Comment qualifiez-vous ce ticket ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Incident : un accès qui fonctionnait a cessé de fonctionner" },
+        { "id": "b", "text": "Demande de service : il s'agit d'une demande d'accès" },
+        { "id": "c", "text": "Problème : il faut chercher la cause racine" },
+        { "id": "d", "text": "Changement : les droits ont été modifiés" }
+      ],
+      "answer": "a"
+    },
+    "explanation": "Le critère est simple : quelque chose qui fonctionnait hier ne fonctionne plus aujourd'hui, c'est un incident. Ce serait une demande de service si l'utilisateur n'avait jamais eu cet accès. Un problème est la recherche de cause d'un ou plusieurs incidents, pas la qualification d'un ticket utilisateur. Un changement de droits est peut-être la cause, mais le ticket de l'utilisateur reste un incident.",
+    "difficulty": 1
+  },
+  {
+    "code": "ticket-priorite-matrice",
+    "lesson": "n1-ticket-cycle",
+    "skill": "itsm",
+    "prompt": "Avec la matrice de la leçon, quelle priorité donnez-vous à un poste qui ne démarre plus, pour une seule personne qui a un rendez-vous client en visioconférence dans vingt minutes ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "p1", "text": "P1 — Critique" },
+        { "id": "p2", "text": "P2 — Haute" },
+        { "id": "p3", "text": "P3 — Moyenne" },
+        { "id": "p5", "text": "P5 — Planifiée" }
+      ],
+      "answer": "p3"
+    },
+    "explanation": "Impact faible (une personne) et urgence haute (échéance dans vingt minutes) donnent P3 dans la matrice. P1 et P2 supposent un impact plus large (une équipe, un service, un site). P5 ignorerait l'urgence. En pratique, on cherche aussi un contournement rapide, comme un poste de prêt ou la visioconférence depuis le téléphone, ce qui répond au besoin sans fausser la priorité.",
+    "difficulty": 2
+  },
+  {
+    "code": "ticket-sla-ola",
+    "lesson": "n1-ticket-cycle",
+    "skill": "itsm",
+    "prompt": "Associez chaque sigle à sa définition.",
+    "data": {
+      "type": "match",
+      "left": [
+        { "id": "sla", "text": "SLA" },
+        { "id": "ola", "text": "OLA" },
+        { "id": "kpi", "text": "KPI" }
+      ],
+      "right": [
+        { "id": "client", "text": "Engagement de service envers le client ou les utilisateurs" },
+        { "id": "interne", "text": "Engagement entre deux équipes internes" },
+        { "id": "mesure", "text": "Indicateur mesuré pour vérifier un objectif" },
+        { "id": "licence", "text": "Contrat de licence d'un logiciel" }
+      ],
+      "answer": { "sla": "client", "ola": "interne", "kpi": "mesure" }
+    },
+    "explanation": "Le SLA engage le prestataire ou le service informatique envers les utilisateurs. L'OLA est un accord interne entre équipes qui permet de tenir le SLA. Le KPI est une mesure, comme le taux de respect des délais. Le contrat de licence n'a rien à voir avec ces trois notions : il fixe les conditions d'utilisation d'un logiciel.",
+    "difficulty": 1
+  },
+  {
+    "code": "ticket-statuts-ordre",
+    "lesson": "n1-ticket-cycle",
+    "skill": "itsm",
+    "prompt": "Remettez dans l'ordre les statuts successifs d'un ticket traité normalement.",
+    "data": {
+      "type": "order",
+      "items": [
+        { "id": "clos", "text": "Clos" },
+        { "id": "encours", "text": "En cours (attribué)" },
+        { "id": "nouveau", "text": "Nouveau" },
+        { "id": "resolu", "text": "Résolu" }
+      ],
+      "answer": ["nouveau", "encours", "resolu", "clos"]
+    },
+    "explanation": "Le ticket naît au statut Nouveau, passe En cours quand un technicien ou un groupe en devient responsable, devient Résolu quand une solution est appliquée et communiquée, puis Clos après confirmation de l'utilisateur ou expiration du délai de validation. Clore avant de résoudre ou résoudre avant d'attribuer n'aurait pas de sens : personne n'aurait été responsable du traitement.",
+    "difficulty": 1
+  },
+  {
+    "code": "ticket-escalade-type",
+    "lesson": "n1-ticket-cycle",
+    "skill": "itsm",
+    "prompt": "Vous transférez un ticket à l'équipe réseau parce que la correction demande de reconfigurer un switch. De quel type d'escalade s'agit-il ? Complétez : escalade ___",
+    "data": { "type": "fill", "template": "Escalade ___", "accepted": ["fonctionnelle", "fonctionelle"] },
+    "explanation": "Transférer un ticket vers une équipe plus compétente ou disposant des droits nécessaires est une escalade fonctionnelle. L'escalade hiérarchique, elle, consiste à alerter un responsable parce qu'un SLA est menacé, qu'une décision est nécessaire ou qu'un utilisateur est très mécontent ; elle ne change pas forcément l'équipe qui traite.",
+    "difficulty": 1
+  },
+  {
+    "code": "ticket-exam-1",
+    "lesson": "n1-ticket-cycle",
+    "skill": "itsm",
+    "prompt": "Il est 15 h. Un ticket P2 attribué à l'équipe messagerie depuis 13 h n'a reçu aucune réponse ; le SLA de résolution expire à 17 h et l'utilisateur, un directeur commercial, vient de rappeler. Quelles actions sont appropriées ? (plusieurs réponses)",
+    "data": {
+      "type": "multiple",
+      "choices": [
+        { "id": "relance", "text": "Relancer l'équipe messagerie en rappelant l'échéance du SLA" },
+        { "id": "manager", "text": "Prévenir le responsable du service desk du risque de dépassement" },
+        { "id": "info", "text": "Informer l'utilisateur de l'avancement et du prochain point" },
+        { "id": "attente", "text": "Passer le ticket En attente pour suspendre le délai" },
+        { "id": "p1", "text": "Monter le ticket en P1 pour qu'il soit traité plus vite" }
+      ],
+      "answer": ["relance", "manager", "info"]
+    },
+    "explanation": "Relancer l'équipe, alerter son responsable (escalade hiérarchique) et tenir l'utilisateur informé sont les bons réflexes avant un dépassement. Passer le ticket En attente sans attendre réellement un tiers revient à manipuler l'indicateur. Monter la priorité sans changement d'impact ni d'urgence fausse la matrice et pénalise d'autres tickets ; si la situation a réellement évolué, on requalifie en le justifiant.",
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "code": "ticket-exam-2",
+    "lesson": "n1-ticket-cycle",
+    "skill": "documentation",
+    "prompt": "Vrai ou faux : un technicien peut passer directement un ticket au statut Clos dès qu'il pense avoir réglé le problème, sans attendre la confirmation de l'utilisateur, puisque cela améliore le délai de résolution.",
+    "data": { "type": "truefalse", "answer": false },
+    "explanation": "Faux. Le statut Résolu signale que le technicien pense avoir réglé le problème ; la clôture intervient après confirmation de l'utilisateur ou après le délai de validation prévu par l'outil. Clore sans confirmation expose à un ticket rouvert, à un utilisateur mécontent et à des statistiques trompeuses : le délai paraît court alors que le service n'est pas rétabli.",
+    "difficulty": 2,
+    "examOnly": true
+  }
+]

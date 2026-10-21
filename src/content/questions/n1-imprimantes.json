@@ -1,0 +1,120 @@
+[
+  {
+    "code": "print-spouleur-role",
+    "lesson": "n1-imprimantes",
+    "skill": "printing",
+    "prompt": "Quel est le rôle du service Spouleur d'impression (Spooler) sous Windows ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Recevoir les documents à imprimer, les stocker dans une file et les envoyer un par un à l'imprimante" },
+        { "id": "b", "text": "Traduire le document dans le langage de l'imprimante" },
+        { "id": "c", "text": "Attribuer une adresse IP aux imprimantes" },
+        { "id": "d", "text": "Commander automatiquement du toner" }
+      ],
+      "answer": "a"
+    },
+    "explanation": "Le spouleur gère les files d'attente : il reçoit, stocke et envoie les travaux. La traduction dans le langage de l'imprimante est le rôle du pilote. L'adresse IP vient du DHCP ou d'une configuration fixe, et le spouleur ne gère aucun réapprovisionnement de consommables.",
+    "difficulty": 1
+  },
+  {
+    "code": "print-file-bloquee",
+    "lesson": "n1-imprimantes",
+    "skill": "diagnostic",
+    "prompt": "Sur la file d'un serveur d'impression, le premier travail est en état « Error, Printing » depuis vingt minutes et dix travaux « Normal » attendent derrière. Quelle est la meilleure action ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Redémarrer le service Spouleur du serveur" },
+        { "id": "b", "text": "Supprimer tous les travaux de la file" },
+        { "id": "c", "text": "Annuler uniquement le travail en erreur, après avoir prévenu son propriétaire" },
+        { "id": "d", "text": "Réinstaller le pilote sur tous les postes" }
+      ],
+      "answer": "c"
+    },
+    "explanation": "Le travail en erreur en tête de file bloque tous les suivants : l'annuler seul libère la file sans perte pour les autres. Redémarrer le spouleur du serveur couperait toutes les files pour tous les utilisateurs. Supprimer toute la file détruirait dix documents sains. Le pilote n'est pas en cause tant qu'un seul document pose problème.",
+    "difficulty": 1
+  },
+  {
+    "code": "print-port-9100",
+    "lesson": "n1-imprimantes",
+    "skill": "printing",
+    "prompt": "Vrai ou faux : si une imprimante réseau répond au ping, on est certain qu'elle peut recevoir des impressions.",
+    "data": { "type": "truefalse", "answer": false },
+    "explanation": "Faux. Le ping prouve seulement qu'un appareil répond à cette adresse ; ce peut même être un autre appareil qui a récupéré l'adresse. Il faut tester le port d'impression lui-même, en général le port TCP 9100, avec Test-NetConnection -Port 9100, et vérifier que l'adresse affichée sur l'imprimante correspond à celle du port Windows.",
+    "difficulty": 2
+  },
+  {
+    "code": "print-modes-match",
+    "lesson": "n1-imprimantes",
+    "skill": "printing",
+    "prompt": "Associez chaque élément à sa description.",
+    "data": {
+      "type": "match",
+      "left": [
+        { "id": "connexion", "text": "\\\\SRV-IMP01\\IMP-2E-RH" },
+        { "id": "port", "text": "IP_10.20.12.30" },
+        { "id": "zpl", "text": "^XA ... ^XZ" },
+        { "id": "badge", "text": "Impression libérée au copieur" }
+      ],
+      "right": [
+        { "id": "serveur", "text": "Connexion à une file partagée par un serveur d'impression" },
+        { "id": "tcpip", "text": "Port TCP/IP standard pointant vers l'adresse de l'imprimante" },
+        { "id": "etiquette", "text": "Étiquette décrite en langage d'imprimante thermique" },
+        { "id": "secure", "text": "Impression sécurisée par badge" },
+        { "id": "usb", "text": "Imprimante locale branchée en USB" }
+      ],
+      "answer": { "connexion": "serveur", "port": "tcpip", "zpl": "etiquette", "badge": "secure" }
+    },
+    "explanation": "Un nom en \\\\serveur\\file est une connexion à une imprimante partagée. IP_suivi d'une adresse est le nom habituel d'un port TCP/IP standard. ^XA et ^XZ ouvrent et ferment une étiquette ZPL. La libération au copieur caractérise l'impression sécurisée. Aucun de ces éléments ne désigne une imprimante USB locale.",
+    "difficulty": 2
+  },
+  {
+    "code": "print-printjob-fill",
+    "lesson": "n1-imprimantes",
+    "skill": "printing",
+    "prompt": "Complétez la commande PowerShell qui affiche les travaux en attente de l'imprimante IMP-2E-RH.",
+    "data": { "type": "fill", "template": "___ -PrinterName \"IMP-2E-RH\"", "accepted": ["Get-PrintJob"] },
+    "explanation": "Get-PrintJob liste les travaux d'une file ; son paramètre -PrinterName est obligatoire. Get-Printer liste les imprimantes, pas leurs travaux, et Remove-PrintJob supprime un travail au lieu de l'afficher.",
+    "difficulty": 1
+  },
+  {
+    "code": "print-exam-1",
+    "lesson": "n1-imprimantes",
+    "skill": "printing",
+    "prompt": "À l'entrepôt de Nordelis Logistique, la maintenance a remplacé hier la carte réseau d'une imprimante d'étiquettes. Ce matin, la file Windows indique « Erreur » pour tous les travaux. L'imprimante affiche « Prête » et imprime sa page de configuration, qui indique l'adresse 10.30.20.143. Le port Windows de la file pointe vers 10.30.20.21. Quelle est la cause la plus probable ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Le ruban est mal installé" },
+        { "id": "b", "text": "L'imprimante a changé d'adresse IP et le port de la file pointe vers l'ancienne" },
+        { "id": "c", "text": "Le pilote Windows est corrompu" },
+        { "id": "d", "text": "Le serveur DHCP est en panne" }
+      ],
+      "answer": "b"
+    },
+    "explanation": "Après l'intervention, l'imprimante a obtenu une nouvelle adresse (probablement en DHCP), alors que le port de la file envoie toujours vers 10.30.20.21. Le ruban est hors de cause puisque la page de configuration s'imprime. Le pilote n'explique pas une erreur de connexion. Le DHCP fonctionne, au contraire : c'est lui qui a donné la nouvelle adresse. La correction (réservation DHCP ou mise à jour du port) se fait selon la procédure et la documentation du parc.",
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "code": "print-exam-2",
+    "lesson": "n1-imprimantes",
+    "skill": "diagnostic",
+    "prompt": "Un utilisateur affirme avoir envoyé un bulletin de paie à imprimer sur le copieur à badge, mais rien n'est sorti quand il a passé son badge. Les collègues impriment normalement. Quelles vérifications sont pertinentes ? (plusieurs réponses)",
+    "data": {
+      "type": "multiple",
+      "choices": [
+        { "id": "file", "text": "Vérifier qu'il a bien choisi la file d'impression sécurisée et non une autre imprimante" },
+        { "id": "badge", "text": "Vérifier que son badge est associé à son compte" },
+        { "id": "expire", "text": "Vérifier si le travail n'a pas expiré faute d'avoir été libéré à temps" },
+        { "id": "spooler", "text": "Redémarrer le spouleur du serveur d'impression" },
+        { "id": "partage", "text": "Lui proposer d'imprimer depuis le compte d'un collègue" }
+      ],
+      "answer": ["file", "badge", "expire"]
+    },
+    "explanation": "Les collègues impriment : le serveur et le copieur fonctionnent. Les causes probables sont propres à l'utilisateur : mauvaise file choisie, badge non associé, ou travail expiré. Redémarrer le spouleur du serveur toucherait tout le monde sans raison. Imprimer depuis le compte d'un collègue contourne la traçabilité et expose un document confidentiel.",
+    "difficulty": 2,
+    "examOnly": true
+  }
+]

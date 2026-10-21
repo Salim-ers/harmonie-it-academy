@@ -1,0 +1,147 @@
+{
+  "meta": {
+    "slug": "n1-communication",
+    "title": "Communiquer avec l'utilisateur et rédiger un ticket exploitable",
+    "summary": "Mener un appel de support du premier mot à la clôture, questionner et reformuler, apaiser un utilisateur mécontent, puis rédiger un ticket qu'un collègue comprend sans vous appeler.",
+    "level": "debutant",
+    "prerequisites": ["Connaître le cycle de vie d'un ticket (leçon « Cycle de vie d'un ticket »)"],
+    "objectives": [
+      "Structurer un appel : accueil, écoute, questionnement, reformulation, action, conclusion",
+      "Choisir entre question ouverte et question fermée selon l'étape du diagnostic",
+      "Désamorcer un échange tendu avec un utilisateur mécontent ou pressé",
+      "Expliquer une manipulation sans jargon, étape par étape",
+      "Rédiger un ticket avec un titre précis, un symptôme, un impact, les actions réalisées et la prochaine étape"
+    ],
+    "durationMin": 40,
+    "skills": [
+      { "code": "communication", "weight": 3 },
+      { "code": "documentation", "weight": 3 }
+    ],
+    "next": "n1-methode-diagnostic"
+  },
+  "blocks": [
+    { "id": "intro", "kind": "paragraph", "text": "Vendredi, 16 h 50. Le N2 messagerie ouvre un ticket escaladé par le service desk du Groupe Valmont. Titre : « Problème mail ». Description : « Utilisateur pas content, ne reçoit plus rien, voir avec lui. » Il appelle l'utilisateur : messagerie vocale. Il rappelle le service desk : le technicien qui a pris l'appel est parti. Le ticket attend le lundi. Lundi, 8 h 30, on découvre que c'était la boîte du service clients, partagée par huit personnes, pleine depuis jeudi : des dizaines de courriels de clients ont été rejetés. Tout était connu dès le premier appel. Rien n'était écrit. La technique n'était pas en cause ; la communication, si. Cette leçon couvre les deux moitiés du problème : bien parler avec l'utilisateur, et bien écrire pour ceux qui viendront après vous." },
+    { "id": "h-pourquoi", "kind": "heading", "level": 2, "text": "Pourquoi la communication est une compétence technique" },
+    { "id": "p-pourquoi", "kind": "paragraph", "text": "Au support, l'information arrive presque toujours par la bouche de l'utilisateur, et elle repart presque toujours par écrit, dans un ticket. Une question mal posée vous envoie sur une fausse piste. Une reformulation oubliée vous fait résoudre un autre problème que celui de l'utilisateur. Un ticket flou fait perdre une heure au N2. Bien communiquer n'est pas une question de gentillesse : c'est ce qui rend le diagnostic rapide et l'escalade efficace." },
+    { "id": "def", "kind": "callout", "tone": "definition", "title": "Définition simple", "text": "Un **ticket exploitable** est un ticket qu'une autre personne peut reprendre sans appeler ni l'utilisateur ni vous : il dit qui est concerné, ce qui se passe exactement, depuis quand, avec quel impact, ce qui a déjà été fait avec quel résultat, et quelle est la prochaine étape." },
+    { "id": "analogie", "kind": "callout", "tone": "analogy", "title": "Analogie", "text": "Pensez à un pilote d'avion qui reçoit une instruction de la tour de contrôle. Il la **répète** à voix haute avant de l'exécuter : « Montée au niveau 120, cap 250 ». Si la tour a été mal comprise, l'erreur se voit tout de suite. La reformulation au support joue exactement ce rôle : vous répétez ce que vous avez compris, l'utilisateur corrige, et personne ne part dans la mauvaise direction." },
+    { "id": "h-boucle", "kind": "heading", "level": 2, "text": "La boucle de communication d'un appel" },
+    { "id": "diag-loop", "kind": "diagram", "diagram": "communication-loop", "caption": "Écouter, questionner, reformuler, agir, vérifier : la boucle se répète jusqu'à ce que l'utilisateur confirme que son problème est réglé." },
+    { "id": "steps-appel", "kind": "steps", "title": "Un appel structuré en six temps", "steps": [
+      { "title": "Accueillir", "text": "Une phrase stable, toujours la même : « Service desk, Inès, bonjour. » Puis demandez le nom et le service, et ouvrez ou retrouvez le ticket immédiatement. Le ton se fixe dans les dix premières secondes." },
+      { "title": "Laisser parler", "text": "Laissez l'utilisateur décrire son problème sans l'interrompre, même s'il part dans des détails. Prenez des notes. Les éléments décisifs arrivent souvent au détour d'une phrase : « depuis qu'on m'a changé d'écran », « mes collègues aussi »." },
+      { "title": "Questionner", "text": "Posez des questions ouvertes pour élargir, puis fermées pour préciser. Une seule question à la fois." },
+      { "title": "Reformuler", "text": "« Si je résume : depuis ce matin, Outlook s'ouvre mais aucun courriel n'arrive, et vos collègues du service clients ont le même problème. C'est bien ça ? » Attendez la confirmation." },
+      { "title": "Agir en expliquant", "text": "Dites ce que vous allez faire et pourquoi, à chaque étape : « Je vais regarder l'espace de la boîte partagée, cela prend une minute. » Le silence au téléphone inquiète." },
+      { "title": "Conclure", "text": "Vérifiez avec l'utilisateur que le problème est réglé, ou annoncez clairement la suite : qui va intervenir, quand, et comment il sera tenu informé. Donnez le numéro du ticket." }
+    ] },
+    { "id": "h-questions", "kind": "heading", "level": 2, "text": "Questions ouvertes, questions fermées" },
+    { "id": "p-questions", "kind": "paragraph", "text": "Une **question ouverte** invite l'utilisateur à raconter : « Que se passe-t-il quand vous cliquez sur Envoyer ? » Elle sert en début d'appel, quand vous ne savez encore rien. Une **question fermée** appelle une réponse courte, souvent oui ou non : « Le message d'erreur est-il apparu avant ou après le redémarrage ? » Elle sert à vérifier une hypothèse précise. Commencer par des questions fermées, c'est risquer d'enfermer l'utilisateur dans vos suppositions ; ne poser que des questions ouvertes, c'est risquer un appel de vingt minutes." },
+    { "id": "tab-questions", "kind": "table", "caption": "Questions utiles et à quoi elles servent", "headers": ["Question", "Type", "Ce qu'elle permet de savoir"], "rows": [
+      ["« Pouvez-vous me décrire ce que vous voyez à l'écran ? »", "Ouverte", "Le symptôme réel, avec les mots de l'utilisateur"],
+      ["« Qu'est-ce que vous étiez en train de faire quand c'est arrivé ? »", "Ouverte", "Le contexte et le geste déclencheur"],
+      ["« Depuis quand exactement ? »", "Fermée (précision)", "L'heure de début, à rapprocher d'un changement ou d'une panne connue"],
+      ["« Vos collègues ont-ils le même problème ? »", "Fermée", "L'impact : individuel ou collectif"],
+      ["« Y a-t-il un message d'erreur ? Pouvez-vous me le lire mot à mot ? »", "Fermée puis précise", "Un texte exact, souvent décisif pour la recherche"],
+      ["« Qu'est-ce qui a changé récemment sur votre poste ou dans votre bureau ? »", "Ouverte", "Une mise à jour, un déménagement, un nouveau périphérique"],
+      ["« Avez-vous une échéance aujourd'hui qui dépend de cela ? »", "Fermée", "L'urgence, pour calculer la priorité"]
+    ] },
+    { "id": "tip-mots", "kind": "callout", "tone": "tip", "title": "Faites lire, ne faites pas interpréter", "text": "Demandez à l'utilisateur de lire **mot à mot** un message d'erreur, ou de faire une capture d'écran avec l'outil Capture d'écran de Windows (raccourci Windows + Maj + S). « Il y a une erreur » ne sert à rien ; « Impossible de se connecter au serveur, code 0x800CCC0E » se recherche en dix secondes dans la base de connaissances." },
+    { "id": "h-ecoute", "kind": "heading", "level": 2, "text": "Écouter et reformuler" },
+    { "id": "p-ecoute", "kind": "paragraph", "text": "L'écoute active, c'est montrer que vous suivez (« d'accord », « je note »), ne pas finir les phrases de l'utilisateur, et repérer ce qui compte vraiment pour lui. Derrière « mon ordinateur est lent », il y a peut-être « je dois envoyer la proposition commerciale avant midi ». La reformulation reprend les faits et le besoin : elle vérifie votre compréhension et montre à l'utilisateur qu'il a été entendu. C'est souvent à ce moment qu'il ajoute l'information manquante : « Ah, et ça a commencé quand j'ai branché le nouveau casque. »" },
+    { "id": "h-mecontent", "kind": "heading", "level": 2, "text": "L'utilisateur mécontent, pressé ou VIP" },
+    { "id": "p-mecontent", "kind": "paragraph", "text": "Un utilisateur qui s'énerve n'est pas en colère contre vous : il est bloqué dans son travail, parfois depuis longtemps, parfois devant son propre responsable. Votre objectif n'est pas d'avoir raison, c'est de faire baisser la tension pour pouvoir travailler. Trois gestes y contribuent : **reconnaître** la gêne sans se justifier, **recentrer** sur les faits, et **s'engager** sur une action concrète avec un délai que vous pouvez tenir." },
+    { "id": "tab-phrases", "kind": "table", "caption": "Formulations qui aggravent, formulations qui aident", "headers": ["À éviter", "Pourquoi", "À préférer"], "rows": [
+      ["« Calmez-vous. »", "Personne ne s'est jamais calmé parce qu'on le lui demandait", "« Je comprends que ce soit très gênant, surtout aujourd'hui. Je m'en occupe maintenant. »"],
+      ["« Ce n'est pas de notre faute, c'est le réseau. »", "Rejette la responsabilité et n'aide pas l'utilisateur", "« Le problème vient d'un équipement réseau ; l'équipe concernée est prévenue et je vous tiens informé. »"],
+      ["« C'est impossible. »", "Ferme la discussion sans solution", "« Ce n'est pas possible directement, mais voici ce que l'on peut faire. »"],
+      ["« Vous avez dû faire une fausse manipulation. »", "Culpabilise et braque", "« On va regarder ensemble ce qui s'est passé. »"],
+      ["« Je vous rappelle tout à l'heure. »", "Promesse vague, souvent non tenue", "« Je vous rappelle avant 14 h, même si je n'ai pas encore la solution. »"]
+    ] },
+    { "id": "field-vip", "kind": "callout", "tone": "field", "title": "Sur le terrain : les utilisateurs prioritaires", "text": "Chez Maison Aubrac, le contrat prévoit un traitement prioritaire pour le comité de direction. Concrètement : délai de prise en charge plus court, rappel proactif, parfois un technicien dédié. Ce que cela ne change pas : la vérification d'identité, les règles de sécurité, l'interdiction d'agir hors procédure. Si un dirigeant exige une exception (« donnez-moi les droits administrateur, j'ai besoin d'installer ce logiciel »), vous restez courtois, vous expliquez la règle, et vous faites remonter la demande à votre responsable, qui a l'autorité pour en discuter." },
+    { "id": "warning-abus", "kind": "callout", "tone": "warning", "title": "Limite à ne pas franchir", "text": "La bienveillance n'oblige pas à tout accepter. Si un interlocuteur devient insultant ou menaçant, vous pouvez le prévenir calmement que vous mettrez fin à l'appel si cela continue, puis le faire, et en informer votre responsable. La plupart des services desks ont une consigne écrite pour ce cas : demandez-la dès votre arrivée." },
+    { "id": "h-jargon", "kind": "heading", "level": 2, "text": "Expliquer sans jargon" },
+    { "id": "p-jargon", "kind": "paragraph", "text": "L'utilisateur n'a pas besoin de savoir ce qu'est un bail DHCP ; il a besoin de savoir quoi faire et quand ce sera réglé. Remplacez le vocabulaire technique par l'effet concret, guidez par ce que l'utilisateur **voit** à l'écran, et donnez une seule consigne à la fois. Au lieu de « videz le cache des identifiants », dites : « Je vais vous faire effacer un mot de passe que Windows a gardé en mémoire et qui n'est plus le bon. En bas à gauche, cliquez sur la loupe, tapez Gestionnaire d'identification, puis dites-moi ce qui apparaît. »" },
+    { "id": "tab-jargon", "kind": "table", "caption": "Traduire le jargon", "headers": ["Jargon", "Version utilisateur"], "rows": [
+      ["Le serveur DHCP ne répond pas", "Votre ordinateur n'arrive pas à obtenir sa connexion au réseau de l'entreprise"],
+      ["Le profil itinérant est corrompu", "Vos réglages personnels sur ce poste sont abîmés ; on va les recréer sans perdre vos fichiers"],
+      ["On va escalader au N2", "Je transmets à un collègue spécialiste, qui a les accès nécessaires"],
+      ["Le spouleur d'impression est bloqué", "La file d'attente de l'imprimante est coincée ; on va la débloquer"],
+      ["Votre boîte a atteint son quota", "Votre boîte aux lettres est pleine ; il faut libérer de la place pour recevoir de nouveaux messages"]
+    ] },
+    { "id": "h-rediger", "kind": "heading", "level": 2, "text": "Rédiger un ticket exploitable" },
+    { "id": "p-rediger", "kind": "paragraph", "text": "Un ticket se lit souvent en diagonale, dans une liste, par quelqu'un qui en a cinquante autres. Le **titre** doit donc porter l'essentiel : quoi, où, pour qui, avec un mot d'impact si nécessaire. La **description** suit une structure stable, toujours la même, pour que le lecteur trouve l'information au même endroit. Écrivez des faits vérifiables plutôt que des impressions, recopiez les messages d'erreur exactement, et datez les actions." },
+    { "id": "code-modele", "kind": "code", "language": "text", "caption": "Modèle de description réutilisable", "code": "Titre : [Service/Site] Symptôme précis – élément concerné (impact)\n\nDEMANDEUR : nom, service, poste, téléphone\nSYMPTÔME : ce qui se passe exactement, message d'erreur recopié\nDEPUIS : date et heure de début, événement déclencheur éventuel\nIMPACT : nombre de personnes, travail bloqué, échéance\nACTIONS RÉALISÉES : test → résultat (une ligne par test, horodatée)\nCONTOURNEMENT : solution temporaire en place, ou « aucun »\nPROCHAINE ÉTAPE : qui fait quoi, et quand l'utilisateur sera recontacté" },
+    { "id": "tab-titres", "kind": "table", "caption": "Des titres qui travaillent pour vous", "headers": ["Titre faible", "Titre exploitable"], "rows": [
+      ["Problème mail", "[Service clients] Boîte partagée sav@ pleine, courriels rejetés – 8 utilisateurs"],
+      ["Imprimante", "[Siège 2e étage] IMP-PAIE-01 ne répond plus au ping – service paie bloqué"],
+      ["Urgent !!!", "[Nordelis quai 3] Imprimante d'étiquettes HS – expédition de 8 h menacée"],
+      ["PC lent", "PC-COM-031 : ouverture de session > 10 min depuis la mise à jour du 14/10"]
+    ] },
+    { "id": "h-avant-apres", "kind": "heading", "level": 3, "text": "Le même ticket, mal puis bien rédigé" },
+    { "id": "code-mauvais", "kind": "code", "language": "text", "caption": "Avant : ticket inexploitable", "code": "Titre : Problème mail\n\nUtilisateur pas content, ne reçoit plus rien. J'ai essayé des trucs, ça marche pas.\nVoir avec lui." },
+    { "id": "code-bon", "kind": "code", "language": "text", "caption": "Après : ticket exploitable", "code": "Titre : [Service clients] Boîte partagée sav@valmont.local pleine, courriels rejetés – 8 utilisateurs\n\nDEMANDEUR : M. Garnier, responsable service clients, PC-SAV-002, poste 4521\nSYMPTÔME : aucun nouveau courriel dans la boîte partagée « SAV » depuis jeudi après-midi.\n  Un client a transféré le message de rejet reçu : « La boîte aux lettres du destinataire est pleine ».\nDEPUIS : jeudi 15/10 vers 15 h (dernier courriel reçu à 14 h 52)\nIMPACT : 8 personnes du service clients ; demandes clients rejetées depuis 2 jours\nACTIONS RÉALISÉES :\n  - 16 h 35 : vérifié que les boîtes individuelles de M. Garnier et d'une collègue reçoivent normalement → OK\n  - 16 h 38 : la boîte partagée affiche un avertissement de quota atteint dans Outlook → confirmé\n  - 16 h 40 : je n'ai pas les droits pour modifier le quota ou archiver la boîte partagée\nCONTOURNEMENT : aucun ; M. Garnier fait supprimer les pièces jointes volumineuses anciennes par son équipe\nPROCHAINE ÉTAPE : escalade N2 messagerie pour augmentation du quota ou archivage.\n  M. Garnier joignable jusqu'à 18 h au 4521, puis lundi 8 h. Rappel promis lundi avant 9 h." },
+    { "id": "p-avant-apres", "kind": "paragraph", "text": "La deuxième version a pris trois minutes de plus à écrire. Elle aurait épargné un week-end de courriels rejetés : le N2 aurait vu « boîte partagée », « quota atteint », « 8 personnes », « depuis 2 jours », et aurait agi le vendredi soir. Remarquez aussi ce qui n'y figure pas : aucun jugement sur l'utilisateur (« pas content »), aucune formule vague (« des trucs »), aucun mot de passe." },
+    { "id": "mistakes", "kind": "mistakes", "items": [
+      { "mistake": "Interrompre l'utilisateur dès la première phrase pour poser vos questions", "why": "Vous perdez des indices et l'utilisateur se sent ignoré.", "fix": "Laisser parler une minute, noter, puis questionner." },
+      { "mistake": "Poser trois questions dans la même phrase", "why": "L'utilisateur répond à la dernière et oublie les autres.", "fix": "Une question, une réponse, puis la suivante." },
+      { "mistake": "Rester silencieux pendant une manipulation à distance", "why": "L'utilisateur croit que la ligne est coupée ou que vous êtes perdu.", "fix": "Annoncer chaque action : « Je regarde maintenant la file d'impression. »" },
+      { "mistake": "Écrire dans le ticket ce que vous pensez de l'utilisateur", "why": "Le ticket peut être lu par l'utilisateur, son responsable ou un juriste ; c'est un document professionnel.", "fix": "Écrire uniquement des faits, des actions et des résultats." },
+      { "mistake": "Promettre un délai que vous ne maîtrisez pas", "why": "Le délai dépend souvent d'une autre équipe ; la promesse non tenue détruit la confiance.", "fix": "S'engager sur ce qui dépend de vous : « Je vous rappelle avant 14 h pour faire le point. »" }
+    ] },
+    { "id": "risks", "kind": "risks", "items": [
+      "Ne notez jamais de mot de passe dans un ticket, un chat ou un courriel, même temporaire : utilisez le canal prévu par la procédure.",
+      "Ne demandez jamais son mot de passe à un utilisateur ; si vous en avez besoin pour un test, la procédure prévoit une autre solution (prise en main en sa présence, compte de test).",
+      "Les tickets sont des documents durables, souvent consultables par l'utilisateur : n'y mettez ni jugement, ni donnée personnelle inutile (santé, vie privée).",
+      "Avant une prise en main à distance, demandez l'accord explicite de l'utilisateur et invitez-le à fermer les documents confidentiels ; chez certains clients, l'accord doit être tracé dans le ticket."
+    ] },
+    { "id": "quiz", "kind": "quiz", "title": "Vérifiez votre compréhension", "questions": ["comm-question-ouverte", "comm-reformulation", "comm-phrase-mecontent", "comm-ticket-elements", "comm-titre-ticket"] },
+    { "id": "exercise", "kind": "exercise", "title": "Réécrire un ticket et préparer la réponse à l'utilisateur", "context": "Ticket reçu dans la file du Groupe Valmont, créé par un collègue avant son départ en congé : « Titre : VPN. Description : Mme Rocher (compta) peut pas se connecter, encore. Elle est énervée. J'ai redémarré. Voir demain. » En la rappelant, vous apprenez : elle télétravaille aujourd'hui, le VPN affiche « Échec de l'authentification » depuis ce matin 8 h, elle a changé son mot de passe hier soir depuis son téléphone, la clôture mensuelle doit être terminée ce soir 18 h, et une collègue de la compta, elle aussi en télétravail, se connecte sans problème. Son poste est PC-CPT-009.", "task": "Rédigez le titre et la description du ticket selon la structure de la leçon, puis écrivez les deux ou trois phrases que vous dites à Mme Rocher pour conclure l'appel.", "hints": [
+      "Reprenez la structure : demandeur, symptôme, depuis, impact, actions réalisées, contournement, prochaine étape. Commencez par le titre.",
+      "Un changement de mot de passe la veille et un échec d'authentification depuis ce matin : qu'est-ce qui a changé ? Notez-le comme un fait, pas comme une conclusion.",
+      "La collègue fonctionne : le VPN n'est pas en panne générale. Le mot de passe enregistré sur le poste est peut-être l'ancien. Côté conclusion, engagez-vous sur un rappel horodaté et rappelez l'échéance de 18 h."
+    ], "solution": [
+      "Titre possible : « [Compta – télétravail] VPN : échec d'authentification depuis 8 h, PC-CPT-009 – clôture mensuelle à 18 h ». Il dit quoi (VPN, échec d'authentification), pour qui, depuis quand et pourquoi c'est pressé, ce qui aide à la priorisation dans une liste.",
+      "Description : DEMANDEUR : Mme Rocher, comptabilité, PC-CPT-009, en télétravail. SYMPTÔME : le client VPN affiche « Échec de l'authentification ». DEPUIS : ce matin 8 h ; mot de passe changé hier soir depuis son téléphone. IMPACT : une personne bloquée, clôture mensuelle à terminer avant 18 h. ACTIONS RÉALISÉES : redémarrage (par le collègue, sans effet) ; vérifié qu'une collègue de la compta en télétravail se connecte normalement, donc pas de panne générale du VPN. CONTOURNEMENT : à définir. PROCHAINE ÉTAPE : vérifier si le poste utilise encore l'ancien mot de passe enregistré, puis escalader au N2 si l'authentification échoue avec le nouveau mot de passe.",
+      "Ce que la réécriture apporte : les faits remplacent les impressions (le commentaire sur l'humeur de l'utilisatrice disparaît), l'événement déclencheur probable (changement de mot de passe) est noté sans être affirmé comme cause, et la comparaison avec la collègue écarte la panne générale. Un N2 qui lit ce ticket sait immédiatement où chercher.",
+      "Conclusion de l'appel, par exemple : « Madame Rocher, je résume : votre VPN refuse votre connexion depuis ce matin, et vous avez changé votre mot de passe hier soir. Je vais vérifier avec vous que c'est bien le nouveau mot de passe qui est utilisé ; si cela ne suffit pas, je transmets tout de suite à un collègue spécialiste en signalant votre échéance de 18 h. Je vous rappelle avant 11 h dans tous les cas, votre numéro de ticket est le 2026-10431. »"
+    ], "rubric": {
+      "criteria": [
+        { "id": "titre", "label": "Titre précis (VPN + authentification ou poste ou échéance)", "points": 2, "patterns": ["echec de l'authentification", "echec d'authentification", "authentification", "pc-cpt-009"], "required": true },
+        { "id": "changement", "label": "Mentionne le changement de mot de passe de la veille", "points": 3, "patterns": ["change son mot de passe", "changement de mot de passe", "nouveau mot de passe", "ancien mot de passe", "mot de passe change", "mot de passe modifie"], "required": true },
+        { "id": "impact", "label": "Indique l'impact et l'échéance de 18 h", "points": 2, "patterns": ["18 h", "18h", "cloture", "echeance"] },
+        { "id": "collegue", "label": "Exploite la collègue qui fonctionne (pas de panne générale)", "points": 2, "patterns": ["collegue", "pas de panne generale", "pas generale", "fonctionne normalement", "se connecte"] },
+        { "id": "suite", "label": "Prévoit une prochaine étape et un rappel horodaté", "points": 2, "patterns": ["prochaine etape", "je vous rappelle", "rappel", "avant 11", "escalad*", "n2"] },
+        { "id": "reformulation", "label": "Reformule ou résume auprès de l'utilisatrice", "points": 1, "patterns": ["je resume", "si je resume", "si j'ai bien compris", "pour resumer", "je recapitule"] }
+      ],
+      "redFlags": [
+        { "id": "jugement", "label": "Porte un jugement sur l'utilisatrice dans le ticket", "patterns": ["elle est enervee", "utilisatrice enervee", "pas contente", "agressive"], "penalty": 2 },
+        { "id": "mdp", "label": "Demande ou note le mot de passe de l'utilisatrice", "patterns": ["donnez-moi votre mot de passe", "donnez moi votre mot de passe", "quel est votre mot de passe", "communiquer son mot de passe"], "penalty": 3 }
+      ],
+      "passPercent": 60
+    } },
+    { "id": "interview", "kind": "interview", "questions": [
+      { "question": "Un utilisateur vous appelle très énervé : c'est la troisième fois cette semaine que son imprimante tombe en panne. Comment gérez-vous l'appel ?", "expectedPoints": ["Laisser parler et reconnaître la gêne sans se justifier", "Recentrer sur les faits et reformuler", "Retrouver l'historique des tickets précédents", "S'engager sur une action et un délai tenables", "Signaler la récurrence (problème) pour traiter la cause"], "modelAnswer": "Je le laisse d'abord exprimer son mécontentement sans l'interrompre, puis je reconnais que c'est pénible : trois pannes en une semaine, c'est légitime d'être agacé. Je retrouve les tickets précédents pour ne pas lui reposer les mêmes questions, et je reformule la situation. Je traite la panne du jour, et comme c'est récurrent, je le signale dans le ticket et à mon responsable pour qu'on cherche la cause de fond plutôt que de réparer à chaque fois. Je termine par un engagement précis : ce que je fais, quand je le rappelle." },
+      { "question": "Qu'est-ce qu'un bon ticket, pour vous ?", "expectedPoints": ["Un titre qui dit quoi, où, pour qui", "Symptôme exact et message d'erreur recopié", "Impact et date de début", "Actions réalisées avec résultats", "Prochaine étape claire", "Des faits, pas de jugement"], "modelAnswer": "Un bon ticket, c'est un ticket qu'un collègue peut reprendre sans m'appeler ni rappeler l'utilisateur. Il a un titre précis, qui dit quoi, où et pour qui. Dans la description, je mets le demandeur, le symptôme exact avec le message d'erreur recopié, depuis quand, l'impact, les tests que j'ai faits avec leur résultat, le contournement éventuel et la prochaine étape. J'écris uniquement des faits, sans jugement, parce que le ticket est un document professionnel qui peut être relu par d'autres." }
+    ] },
+    { "id": "glossary", "kind": "glossary", "terms": [
+      { "term": "Question ouverte", "en": "Open question", "definition": "Question qui invite à décrire ou raconter, sans réponse attendue par oui ou non." },
+      { "term": "Question fermée", "en": "Closed question", "definition": "Question qui appelle une réponse courte et précise, souvent oui ou non." },
+      { "term": "Reformulation", "en": "Paraphrasing", "definition": "Répéter avec ses mots ce que l'on a compris pour le faire confirmer." },
+      { "term": "Écoute active", "en": "Active listening", "definition": "Attitude qui montre à l'interlocuteur qu'on le suit et qu'on cherche à comprendre son besoin." },
+      { "term": "Prise en main à distance", "en": "Remote control / remote assistance", "definition": "Contrôle de l'écran d'un utilisateur depuis le poste du technicien, avec son accord." }
+    ] },
+    { "id": "summary", "kind": "summary", "points": [
+      "Un appel suit une boucle : accueillir, laisser parler, questionner, reformuler, agir en expliquant, conclure.",
+      "Questions ouvertes pour découvrir, questions fermées pour vérifier ; une seule question à la fois, et les messages d'erreur se lisent mot à mot.",
+      "Face à un utilisateur mécontent : reconnaître, recentrer sur les faits, s'engager sur ce qui dépend de vous. Le statut VIP change le délai, pas les règles.",
+      "Expliquer sans jargon, c'est décrire l'effet concret et guider par ce que l'utilisateur voit.",
+      "Un ticket exploitable : titre précis, demandeur, symptôme, début, impact, actions et résultats, contournement, prochaine étape. Des faits, jamais de jugement ni de mot de passe."
+    ] },
+    { "id": "references", "kind": "references", "items": [
+      { "title": "Utiliser l'Assistance rapide pour aider les utilisateurs", "url": "https://learn.microsoft.com/windows/client-management/client-tools/quick-assist", "publisher": "Microsoft Learn", "verifiedAt": "2026-10-21" },
+      { "title": "Comment faire face à l'arnaque au faux support technique ?", "url": "https://www.cybermalveillance.gouv.fr/tous-nos-contenus/fiches-reflexes/arnaques-au-faux-support-technique", "publisher": "Cybermalveillance.gouv.fr", "verifiedAt": "2026-10-21" },
+      { "title": "RGPD : de quoi parle-t-on ?", "url": "https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on", "publisher": "CNIL", "verifiedAt": "2026-10-21" }
+    ] }
+  ]
+}

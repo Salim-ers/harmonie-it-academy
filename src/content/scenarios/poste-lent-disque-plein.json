@@ -1,0 +1,320 @@
+{
+  "slug": "poste-lent-disque-plein",
+  "title": "Le poste qui rame depuis une semaine",
+  "summary": "Depuis une semaine, le portable d'une assistante est d'une lenteur pénible et Teams se fige. Trouvez ce qui étouffe le poste et libérez-le sans faire perdre de fichiers à personne.",
+  "sector": "bureau",
+  "difficulty": 1,
+  "requiredTier": 1,
+  "estimatedMinutes": 15,
+  "skills": ["windows", "powershell", "m365", "diagnostic", "communication"],
+  "company": {
+    "name": "Atelier Brunel Architectes (entreprise fictive)",
+    "description": "Agence d'architecture de 85 personnes. Portables Windows 11 avec SSD de 256 Go, Microsoft 365 ; les projets sont stockés dans des bibliothèques SharePoint synchronisées par OneDrive avec les fichiers à la demande activés. Le support est assuré par un prestataire en prise en main à distance."
+  },
+  "ticket": {
+    "reference": "INC-2026-05261",
+    "reporter": { "name": "Camille Rousseau", "role": "Assistante de direction", "site": "Agence de Lyon" },
+    "channel": "portail",
+    "title": "PC très lent, Teams se fige pendant les réunions",
+    "description": "« Mon PC rame depuis une semaine environ : tout met des secondes à s'ouvrir, et Teams se fige pendant les réunions, l'image se bloque et je dois parfois le fermer. J'ai déjà redémarré plusieurs fois, ça ne change rien. J'ai le comité de direction cet après-midi en visio. »",
+    "impact": "individuel",
+    "urgency": "moyenne",
+    "slaMinutes": 60
+  },
+  "startFlags": [],
+  "clues": [
+    { "id": "c-depuis-semaine", "label": "La lenteur a commencé la semaine dernière, après que l'utilisatrice a « mis les archives de projets sur son PC » pour les consulter en déplacement" },
+    { "id": "c-disque-100", "label": "Gestionnaire des tâches : disque à 100 % d'activité, temps de réponse élevé ; processeur et mémoire normaux" },
+    { "id": "c-c-99", "label": "Get-Volume : C: à 99 % de remplissage, 2,1 Go libres sur 237 Go" },
+    { "id": "c-stockage-onedrive", "label": "Le dossier des bibliothèques SharePoint synchronisées occupe 168 Go, dont 161 Go pour les archives" },
+    { "id": "c-bibliotheque", "label": "La bibliothèque « Archives Projets 2018-2024 » (161 Go) est marquée « Toujours conserver sur cet appareil »" },
+    { "id": "c-ram-ok", "label": "16 Go de mémoire, 9,8 Go utilisés : la mémoire n'est pas saturée" },
+    { "id": "c-kb-onedrive", "label": "Procédure : « Libérer de l'espace » sur les dossiers OneDrive ; ne jamais supprimer de fichiers d'un dossier synchronisé pour gagner de la place" }
+  ],
+  "actions": [
+    {
+      "id": "interroger-debut",
+      "label": "Demander depuis quand le poste est lent et ce qui a changé à ce moment-là",
+      "category": "interroger",
+      "minutes": 3,
+      "relevance": "useful",
+      "outcomes": [
+        { "text": "« Depuis mardi dernier, à peu près. Ce jour-là, j'ai voulu emporter les anciens projets pour travailler dans le train : j'ai fait clic droit sur le dossier des archives dans l'Explorateur et j'ai choisi l'option pour les garder sur mon PC. Ça a mouliné toute la nuit. Depuis, tout est lent. »", "reveals": ["c-depuis-semaine"] }
+      ]
+    },
+    {
+      "id": "gestionnaire-taches",
+      "label": "Ouvrir le Gestionnaire des tâches (onglets Processus et Performances)",
+      "category": "observer",
+      "minutes": 3,
+      "relevance": "key",
+      "outcomes": [
+        {
+          "when": { "all": ["espace-libere"] },
+          "text": "Le disque est revenu à une activité normale.",
+          "terminal": { "shell": "text", "lines": ["Gestionnaire des tâches – Performances", "Processeur ......... 7 %   2,1 GHz", "Mémoire ............ 8,9/15,7 Go (57 %)", "Disque 0 (C:) ...... SSD   Activité 4 %   Temps de réponse moyen 0,6 ms", "Wi-Fi .............. E : 0,2 R : 1,4 Mbit/s"] }
+        },
+        {
+          "text": "Le processeur et la mémoire sont tranquilles, mais le disque est saturé en permanence, avec des temps de réponse énormes pour un SSD. OneDrive et l'indexation de recherche sont en tête de la colonne Disque.",
+          "terminal": {
+            "shell": "text",
+            "lines": [
+              "Gestionnaire des tâches – Performances",
+              "Processeur ......... 18 %   2,4 GHz",
+              "Mémoire ............ 9,8/15,7 Go (62 %)",
+              "Disque 0 (C:) ...... SSD   Activité 100 %   Temps de réponse moyen 412 ms",
+              "Wi-Fi .............. E : 0,3 R : 2,1 Mbit/s",
+              "",
+              "Processus (tri par Disque)",
+              "Microsoft OneDrive ............ 38,2 Mo/s",
+              "Microsoft Windows Search Indexer  9,6 Mo/s",
+              "Système ........................ 6,1 Mo/s",
+              "Microsoft Teams ................ 0,8 Mo/s"
+            ]
+          },
+          "reveals": ["c-disque-100", "c-ram-ok"]
+        }
+      ]
+    },
+    {
+      "id": "get-volume",
+      "label": "Vérifier l'espace disque en PowerShell (Get-Volume)",
+      "category": "tester",
+      "minutes": 2,
+      "relevance": "key",
+      "outcomes": [
+        {
+          "when": { "all": ["espace-libere"] },
+          "text": "Le volume C: a retrouvé une large marge d'espace libre.",
+          "terminal": { "shell": "powershell", "lines": ["PS C:\\> Get-Volume -DriveLetter C", "", "DriveLetter FriendlyName FileSystemType DriveType HealthStatus OperationalStatus SizeRemaining      Size", "----------- ------------ -------------- --------- ------------ ----------------- -------------      ----", "C           Windows      NTFS           Fixed     Healthy      OK                    162,4 GB 237,17 GB"] }
+        },
+        {
+          "text": "Le volume système est presque plein : à ce niveau, Windows n'a plus de place pour son fichier d'échange, ses fichiers temporaires et le cache de Teams, et le SSD perd beaucoup de ses performances.",
+          "terminal": {
+            "shell": "powershell",
+            "lines": [
+              "PS C:\\> Get-Volume -DriveLetter C",
+              "",
+              "DriveLetter FriendlyName FileSystemType DriveType HealthStatus OperationalStatus SizeRemaining      Size",
+              "----------- ------------ -------------- --------- ------------ ----------------- -------------      ----",
+              "C           Windows      NTFS           Fixed     Healthy      OK                       2,1 GB 237,17 GB"
+            ]
+          },
+          "reveals": ["c-c-99"]
+        }
+      ]
+    },
+    {
+      "id": "parametres-stockage",
+      "label": "Ouvrir Paramètres > Système > Stockage pour voir ce qui occupe le disque",
+      "category": "observer",
+      "minutes": 3,
+      "relevance": "useful",
+      "outcomes": [
+        { "when": { "all": ["espace-libere"] }, "text": "Paramètres > Stockage : 74,8 Go utilisés sur 237 Go. Le dossier « Atelier Brunel Architectes » n'occupe plus que 6,9 Go en local." },
+        { "text": "Paramètres > Stockage : 235 Go utilisés sur 237 Go. Applications et fonctionnalités : 31 Go ; fichiers temporaires : 4,6 Go ; Autres > dossier « Atelier Brunel Architectes » (bibliothèques SharePoint synchronisées par OneDrive) : 168 Go. C'est de loin le plus gros consommateur.", "reveals": ["c-stockage-onedrive"] }
+      ]
+    },
+    {
+      "id": "taille-onedrive",
+      "label": "Mesurer en PowerShell l'espace réellement occupé par les dossiers OneDrive",
+      "category": "tester",
+      "minutes": 4,
+      "relevance": "useful",
+      "outcomes": [
+        {
+          "when": { "all": ["espace-libere"] },
+          "text": "La bibliothèque d'archives n'occupe presque plus rien en local : les fichiers sont redevenus des espaces réservés, toujours visibles et ouvrables à la demande.",
+          "terminal": { "shell": "powershell", "lines": ["PS C:\\> Get-ChildItem \"$env:USERPROFILE\\Atelier Brunel Architectes\" -Directory | % { $f = Get-ChildItem $_.FullName -Recurse -File | ? { -not ($_.Attributes -band 0x400000) }; [pscustomobject]@{ Dossier = $_.Name; 'Local (Go)' = [math]::Round(($f | Measure-Object Length -Sum).Sum / 1GB, 1) } }", "", "Dossier                         Local (Go)", "-------                         ----------", "Archives Projets 2018-2024 - Documents      0,2", "Projets en cours - Documents              5,3"] }
+        },
+        {
+          "text": "Le dossier des archives est presque intégralement présent en local : ses fichiers ne sont plus des espaces réservés mais des copies complètes.",
+          "terminal": {
+            "shell": "powershell",
+            "lines": [
+              "PS C:\\> Get-ChildItem \"$env:USERPROFILE\\Atelier Brunel Architectes\" -Directory | % { $f = Get-ChildItem $_.FullName -Recurse -File | ? { -not ($_.Attributes -band 0x400000) }; [pscustomobject]@{ Dossier = $_.Name; 'Local (Go)' = [math]::Round(($f | Measure-Object Length -Sum).Sum / 1GB, 1) } }",
+              "",
+              "Dossier                         Local (Go)",
+              "-------                         ----------",
+              "Archives Projets 2018-2024 - Documents    161,2",
+              "Projets en cours - Documents              5,3"
+            ]
+          },
+          "reveals": ["c-stockage-onedrive"]
+        }
+      ]
+    },
+    {
+      "id": "etat-fichiers-onedrive",
+      "label": "Regarder l'état de synchronisation de la bibliothèque d'archives dans l'Explorateur (colonne État, clic droit)",
+      "category": "observer",
+      "minutes": 2,
+      "relevance": "key",
+      "outcomes": [
+        { "when": { "all": ["espace-libere"] }, "text": "Les fichiers de la bibliothèque d'archives affichent de nouveau l'icône de nuage : « Disponible lorsque vous êtes en ligne ». Ils restent visibles et s'ouvrent à la demande ; « Toujours conserver sur cet appareil » n'est plus coché." },
+        { "text": "Dans le dossier « Archives Projets 2018-2024 - Documents », tous les fichiers affichent un cercle vert plein : « Toujours disponible sur cet appareil ». Au clic droit, l'option « Toujours conserver sur cet appareil » est cochée sur le dossier racine. La bibliothèque représente 161 Go de plans, maquettes et rendus.", "reveals": ["c-bibliotheque"] }
+      ]
+    },
+    {
+      "id": "kb-onedrive",
+      "label": "Consulter la fiche « Espace disque et OneDrive » de la base de connaissances",
+      "category": "consulter",
+      "minutes": 2,
+      "relevance": "useful",
+      "outcomes": [
+        { "text": "Fiche KB-0518 : les bibliothèques SharePoint synchronisées utilisent les fichiers à la demande. Pour récupérer de l'espace, faire un clic droit sur le dossier puis « Libérer de l'espace » : les fichiers restent dans le nuage et visibles dans l'Explorateur. Ne jamais supprimer de fichiers d'un dossier synchronisé pour gagner de la place : la suppression est répliquée sur SharePoint pour tous les utilisateurs. Toujours expliquer la manipulation à l'utilisateur et convenir avec lui des dossiers à garder hors connexion.", "reveals": ["c-kb-onedrive"] }
+      ]
+    },
+    {
+      "id": "nettoyage-temporaires",
+      "label": "Supprimer les fichiers temporaires avec l'outil de nettoyage de Windows",
+      "category": "corriger",
+      "minutes": 5,
+      "relevance": "neutral",
+      "outcomes": [
+        { "when": { "all": ["espace-libere"] }, "text": "Le nettoyage libère encore 4,1 Go. Le poste avait déjà retrouvé de la marge." },
+        { "text": "Le nettoyage libère 4,1 Go de fichiers temporaires et de cache de mises à jour. L'espace libre remonte à 6,2 Go, puis OneDrive continue de télécharger : une demi-heure plus tard, le disque est de nouveau presque plein. Le vrai consommateur n'est pas traité." }
+      ]
+    },
+    {
+      "id": "supprimer-archives",
+      "label": "Supprimer le dossier des archives du disque pour libérer 161 Go",
+      "category": "corriger",
+      "minutes": 4,
+      "relevance": "irrelevant",
+      "risk": { "level": "dangerous", "explanation": "Le dossier est synchronisé avec la bibliothèque SharePoint « Archives Projets 2018-2024 » : supprimer les fichiers localement les supprime aussi dans SharePoint, pour les 85 collaborateurs de l'agence. Plans et dossiers d'exécution de sept ans de projets disparaissent des postes de tous, et leur restauration depuis la corbeille du site doit être demandée à l'administrateur SharePoint, avec un risque de perte des fichiers modifiés entre-temps." },
+      "outcomes": [
+        { "text": "OneDrive affiche « Vous avez supprimé des fichiers dans le nuage » et les supprime de SharePoint. Dix minutes plus tard, deux chefs de projet appellent : leurs plans d'archives ont disparu. Il faut ouvrir un incident majeur pour restaurer la bibliothèque depuis la corbeille du site." }
+      ]
+    },
+    {
+      "id": "desactiver-defender",
+      "label": "Désactiver la protection en temps réel de Microsoft Defender pour « accélérer » le poste",
+      "category": "corriger",
+      "minutes": 2,
+      "relevance": "irrelevant",
+      "risk": { "level": "dangerous", "explanation": "Sans protection en temps réel, le poste n'analyse plus les fichiers ouverts ni les pièces jointes : un document piégé peut s'exécuter sans être détecté et se propager aux fichiers synchronisés de toute l'agence. Désactiver un antivirus est une dérogation à la politique de sécurité, qui doit être demandée au responsable sécurité ; elle ne doit jamais servir à masquer un symptôme de lenteur." },
+      "outcomes": [
+        { "text": "La protection est coupée — et la stratégie de sécurité la réactive automatiquement au bout de quelques minutes, en déclenchant une alerte sur la console du responsable sécurité. Le disque reste à 100 % : Defender n'était pas en tête de la colonne Disque." }
+      ]
+    },
+    {
+      "id": "ajouter-ram",
+      "label": "Commander une barrette de mémoire supplémentaire",
+      "category": "escalader",
+      "minutes": 5,
+      "relevance": "irrelevant",
+      "outcomes": [
+        { "text": "Le bon de commande est préparé… mais le portable a de la mémoire soudée et 16 Go dont 6 libres : la mémoire n'est pas saturée. Le Gestionnaire des tâches pointe le disque, pas la RAM. Commande annulée." }
+      ]
+    },
+    {
+      "id": "reinitialiser-teams",
+      "label": "Vider le cache de Teams",
+      "category": "corriger",
+      "minutes": 4,
+      "relevance": "neutral",
+      "outcomes": [
+        { "when": { "all": ["espace-libere"] }, "text": "Le cache de Teams est vidé, sans effet notable : le poste était déjà redevenu fluide." },
+        { "text": "Après avoir vidé le cache, Teams se relance un peu plus vite, puis se fige à nouveau dès que la vidéo démarre : il n'a pas la place d'écrire ses fichiers et le disque reste saturé." }
+      ]
+    },
+    {
+      "id": "redemarrer",
+      "label": "Redémarrer le poste",
+      "category": "corriger",
+      "minutes": 4,
+      "relevance": "neutral",
+      "outcomes": [
+        { "when": { "all": ["espace-libere"] }, "text": "Le poste redémarre en moins d'une minute et ouvre la session rapidement." },
+        { "text": "Le redémarrage prend près de quatre minutes. À l'ouverture de session, OneDrive reprend sa synchronisation et le disque remonte aussitôt à 100 %. L'utilisatrice l'avait déjà fait plusieurs fois." }
+      ]
+    },
+    {
+      "id": "pause-synchro",
+      "label": "Suspendre la synchronisation OneDrive pendant 2 heures",
+      "category": "corriger",
+      "minutes": 1,
+      "relevance": "neutral",
+      "risk": { "level": "caution", "explanation": "Suspendre OneDrive soulage le disque un moment mais ne libère aucun espace, et les modifications de l'utilisatrice ne sont plus sauvegardées dans le nuage pendant la pause. C'est au mieux un répit le temps de traiter la vraie cause ; à signaler à l'utilisatrice." },
+      "outcomes": [
+        { "text": "L'activité disque descend à 40 %. Le poste respire un peu, mais il ne reste que 2,1 Go libres : Teams se fige encore dès que la vidéo démarre. Et dans deux heures, la synchronisation reprendra." }
+      ]
+    },
+    {
+      "id": "test-performances",
+      "label": "Vérifier avec l'utilisatrice : espace libre, réactivité et appel Teams de test",
+      "category": "tester",
+      "minutes": 4,
+      "relevance": "useful",
+      "outcomes": [
+        { "when": { "all": ["espace-libere"] }, "text": "C: affiche 162 Go libres, le disque est à 4 % d'activité. Les applications s'ouvrent normalement et l'appel Teams de test se déroule sans figer, vidéo comprise. Mme Rousseau ouvre un plan des archives : il se télécharge à la demande en quelques secondes. Elle est prête pour le comité de direction." },
+        { "text": "Le poste reste très lent et l'appel Teams de test se fige au bout de quelques secondes, l'image bloquée." }
+      ]
+    }
+  ],
+  "diagnoses": [
+    { "id": "d-onedrive-local", "label": "La bibliothèque d'archives synchronisée a été marquée « Toujours conserver sur cet appareil » : 161 Go téléchargés en local ont rempli C: à 99 %, ce qui sature le disque et fige Teams", "correct": true, "requiresClues": ["c-disque-100", "c-c-99", "c-bibliotheque"], "feedback": "Exact. Avec l'option « Toujours conserver sur cet appareil », OneDrive a téléchargé l'intégralité des archives au lieu de garder des espaces réservés. Un volume système plein à 99 % prive Windows et Teams de la place nécessaire à leurs fichiers temporaires, et un SSD presque plein devient beaucoup plus lent." },
+    { "id": "d-ram", "label": "Le poste manque de mémoire vive", "correct": false, "feedback": "La mémoire est utilisée à 62 % et n'est pas saturée ; c'est le disque qui est à 100 %." },
+    { "id": "d-virus", "label": "Le poste est infecté par un logiciel malveillant", "correct": false, "feedback": "Les processus qui saturent le disque sont OneDrive et l'indexation de recherche, des composants légitimes. L'espace a été consommé par une bibliothèque identifiée, à la date où l'utilisatrice l'a mise hors connexion." },
+    { "id": "d-teams", "label": "Teams est défectueux depuis une mise à jour", "correct": false, "feedback": "Teams n'est qu'une victime : tout le poste est lent, et le cache vidé n'améliore rien tant que le disque reste plein." },
+    { "id": "d-ssd-hs", "label": "Le SSD est en train de tomber en panne", "correct": false, "feedback": "Get-Volume indique un état « Healthy ». Le disque est lent parce qu'il est plein et sollicité en continu par la synchronisation, pas parce qu'il est défaillant." }
+  ],
+  "resolutions": [
+    { "id": "r-liberer-espace", "label": "Avec l'utilisatrice, utiliser « Libérer de l'espace » sur la bibliothèque d'archives (fichiers à la demande), garder hors connexion seulement les dossiers utiles, puis vérifier l'espace libre", "correct": true, "setFlags": ["espace-libere"], "feedback": "Bonne résolution : les fichiers retournent à l'état d'espaces réservés, toujours visibles et ouvrables à la demande, sans rien supprimer ni côté poste ni côté SharePoint. En choisissant avec l'utilisatrice les quelques dossiers à garder hors connexion pour ses déplacements, vous répondez aussi à son besoin initial." },
+    { "id": "r-supprimer", "label": "Supprimer les archives du disque", "correct": false, "feedback": "Les fichiers seraient supprimés de la bibliothèque SharePoint pour toute l'agence : vous transformeriez un incident individuel en incident majeur." },
+    { "id": "r-arreter-synchro", "label": "Arrêter la synchronisation de la bibliothèque d'archives sans prévenir", "correct": false, "feedback": "L'espace serait libéré, mais l'utilisatrice perdrait l'accès aux archives depuis l'Explorateur sans comprendre pourquoi, alors qu'elle en a besoin. « Libérer de l'espace » obtient le même gain en gardant l'accès à la demande." },
+    { "id": "r-materiel", "label": "Remplacer le SSD par un modèle plus grand et ajouter de la mémoire", "correct": false, "feedback": "Coûteux et inutile : 161 Go d'archives n'ont pas besoin d'être stockés en local. Le même réglage remplirait n'importe quel disque à la prochaine bibliothèque." }
+  ],
+  "fixedFlag": "espace-libere",
+  "verificationActionId": "test-performances",
+  "closureRubric": {
+    "criteria": [
+      { "id": "cause", "label": "Cause expliquée (bibliothèque OneDrive conservée sur l'appareil, disque C: plein)", "points": 3, "patterns": ["onedrive", "toujours conserver", "disque plein", "99 %", "espace disque", "bibliotheque"], "required": true },
+      { "id": "action", "label": "Action réalisée (Libérer de l'espace / fichiers à la demande)", "points": 3, "patterns": ["liberer de l espace", "libere de l espace", "fichiers a la demande", "espaces reserves", "a la demande"] },
+      { "id": "validation", "label": "Validation (espace libre, appel Teams de test)", "points": 2, "patterns": ["go libres", "espace libre", "test", "appel teams", "fluide", "verifie*", "valide*"] },
+      { "id": "prevention", "label": "Prévention (conseils à l'utilisatrice, ne garder hors connexion que l'utile)", "points": 2, "patterns": ["conseil*", "explique*", "hors connexion", "prevention", "a l avenir", "sensibilis*"] }
+    ],
+    "redFlags": [
+      { "id": "suppression", "label": "Suppression de fichiers synchronisés", "patterns": ["supprime les archives", "suppression des archives"], "penalty": 3 }
+    ],
+    "passPercent": 60
+  },
+  "hints": [
+    "Un redémarrage ne change rien : la lenteur a une cause qui persiste. Quelle ressource du poste est saturée : processeur, mémoire, disque ou réseau ?",
+    "Le disque est à 100 % : regardez aussi combien d'espace il reste sur C: et ce qui l'occupe.",
+    "La bibliothèque d'archives est marquée « Toujours conserver sur cet appareil » : « Libérer de l'espace » la rend de nouveau disponible à la demande, sans rien supprimer."
+  ],
+  "debrief": {
+    "cause": "L'utilisatrice a coché « Toujours conserver sur cet appareil » sur la bibliothèque SharePoint « Archives Projets 2018-2024 » synchronisée par OneDrive. Ses 161 Go ont été téléchargés en local et ont rempli le volume C: à 99 % ; Windows, l'indexation et Teams n'ont plus la place de travailler, et le SSD presque plein est saturé en permanence.",
+    "clues": [
+      "La lenteur commence le jour où les archives ont été mises hors connexion",
+      "Le disque est à 100 % d'activité alors que processeur et mémoire sont normaux",
+      "Il ne reste que 2,1 Go libres sur C:",
+      "Le dossier OneDrive des archives est intégralement présent en local, option « Toujours conserver » cochée"
+    ],
+    "relevantTests": [
+      "Gestionnaire des tâches (identifier la ressource saturée et le processus en cause)",
+      "Get-Volume (espace libre réel)",
+      "Paramètres > Stockage et état OneDrive des dossiers"
+    ],
+    "wrongHypotheses": [
+      { "hypothesis": "Manque de mémoire vive", "why": "La mémoire est à 62 % ; c'est le disque qui est saturé." },
+      { "hypothesis": "Problème propre à Teams", "why": "Tout le poste est lent ; Teams est une victime du disque plein." },
+      { "hypothesis": "Virus ou SSD défaillant", "why": "Les processus en cause sont légitimes, le volume est sain, et l'espace a été consommé par une bibliothèque identifiée." }
+    ],
+    "procedure": [
+      "Ouvrir le Gestionnaire des tâches et identifier la ressource saturée",
+      "Mesurer l'espace libre (Get-Volume) et ce qui l'occupe (Paramètres > Stockage)",
+      "Repérer les dossiers OneDrive marqués « Toujours conserver sur cet appareil »",
+      "Avec l'utilisatrice, faire « Libérer de l'espace » sur la bibliothèque et ne garder hors connexion que les dossiers vraiment utiles",
+      "Vérifier l'espace libre, l'activité disque et un appel Teams de test",
+      "Expliquer la différence entre fichiers à la demande et fichiers conservés sur l'appareil"
+    ],
+    "prevention": [
+      "Expliquer à l'utilisatrice comment garder hors connexion un seul dossier de projet plutôt qu'une bibliothèque entière",
+      "Proposer au N2 une alerte de supervision quand le volume C: passe sous 10 % d'espace libre"
+    ],
+    "exampleClosingNote": "Cause : la bibliothèque OneDrive « Archives Projets 2018-2024 » (161 Go) avait été marquée « Toujours conserver sur cet appareil » ; le disque C: était plein à 99 % (2,1 Go libres), disque à 100 % d'activité, d'où les lenteurs et Teams qui se fige. Action : avec l'utilisatrice, « Libérer de l'espace » sur la bibliothèque (fichiers à la demande), seul le dossier du projet en cours gardé hors connexion. Validation : 162 Go libres, disque à 4 %, appel Teams de test fluide, un plan d'archive ouvert à la demande. Prévention : conseils donnés pour ne garder hors connexion que les dossiers utiles ; alerte d'espace disque proposée au N2."
+  }
+}

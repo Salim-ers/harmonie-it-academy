@@ -1,0 +1,132 @@
+[
+  {
+    "code": "osi-ordre-couches",
+    "lesson": "n1-osi",
+    "skill": "network-fundamentals",
+    "prompt": "Remettez les couches du modèle OSI dans l'ordre, de la couche 1 à la couche 7.",
+    "data": {
+      "type": "order",
+      "items": [
+        { "id": "transport", "text": "Transport" },
+        { "id": "physique", "text": "Physique" },
+        { "id": "application", "text": "Application" },
+        { "id": "reseau", "text": "Réseau" },
+        { "id": "session", "text": "Session" },
+        { "id": "liaison", "text": "Liaison de données" },
+        { "id": "presentation", "text": "Présentation" }
+      ],
+      "answer": ["physique", "liaison", "reseau", "transport", "session", "presentation", "application"]
+    },
+    "explanation": "De bas en haut : physique (1), liaison de données (2), réseau (3), transport (4), session (5), présentation (6), application (7). L'erreur la plus fréquente est d'inverser session et présentation, ou de placer le transport sous le réseau : or le transport (ports) s'appuie sur le réseau (adresses IP), et non l'inverse.",
+    "difficulty": 1
+  },
+  {
+    "code": "osi-unites",
+    "lesson": "n1-osi",
+    "skill": "network-fundamentals",
+    "prompt": "Associez chaque couche à son unité de données.",
+    "data": {
+      "type": "match",
+      "left": [
+        { "id": "c4", "text": "Couche 4 Transport (TCP)" },
+        { "id": "c3", "text": "Couche 3 Réseau" },
+        { "id": "c2", "text": "Couche 2 Liaison de données" },
+        { "id": "c1", "text": "Couche 1 Physique" }
+      ],
+      "right": [
+        { "id": "segment", "text": "Segment" },
+        { "id": "paquet", "text": "Paquet" },
+        { "id": "trame", "text": "Trame" },
+        { "id": "bits", "text": "Bits" },
+        { "id": "port", "text": "Port" }
+      ],
+      "answer": { "c4": "segment", "c3": "paquet", "c2": "trame", "c1": "bits" }
+    },
+    "explanation": "TCP produit des segments (UDP des datagrammes), IP des paquets, Ethernet des trames, et la couche physique transmet des bits. « Port » est un piège : c'est une information contenue dans l'en-tête de couche 4, pas une unité de données.",
+    "difficulty": 1
+  },
+  {
+    "code": "osi-panne-couche",
+    "lesson": "n1-osi",
+    "skill": "diagnostic",
+    "prompt": "Un poste en adresse fixe 10.20.10.40/24, passerelle 10.20.10.1, ne joint plus rien, pas même sa passerelle ; pourtant la carte indique un lien actif à 1 Gbps et les voisins fonctionnent. Le port de switch du poste a été placé par erreur dans le VLAN Imprimantes. À quelle couche OSI se situe la cause ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "c1", "text": "Couche 1 Physique" },
+        { "id": "c2", "text": "Couche 2 Liaison de données" },
+        { "id": "c4", "text": "Couche 4 Transport" },
+        { "id": "c7", "text": "Couche 7 Application" }
+      ],
+      "answer": "c2"
+    },
+    "explanation": "Le VLAN est une notion de couche 2 : il découpe logiquement le réseau local au niveau du switch. Le lien actif à 1 Gbps prouve que la couche 1 fonctionne. Les couches 4 et 7 ne sont pas en cause : sans accès à la passerelle, aucun port ni aucune application ne peut fonctionner, et le symptôme apparaît dès le ping.",
+    "difficulty": 2
+  },
+  {
+    "code": "osi-tcpip-correspondance",
+    "lesson": "n1-osi",
+    "skill": "network-fundamentals",
+    "prompt": "Quelles couches OSI la couche « Application » du modèle TCP/IP regroupe-t-elle ? (plusieurs réponses)",
+    "data": {
+      "type": "multiple",
+      "choices": [
+        { "id": "app", "text": "Application (7)" },
+        { "id": "pres", "text": "Présentation (6)" },
+        { "id": "sess", "text": "Session (5)" },
+        { "id": "trans", "text": "Transport (4)" },
+        { "id": "res", "text": "Réseau (3)" }
+      ],
+      "answer": ["app", "pres", "sess"]
+    },
+    "explanation": "La couche Application de TCP/IP couvre les couches OSI 5, 6 et 7, qui sont en pratique gérées ensemble par les applications. Le transport (4) a sa propre couche dans TCP/IP, et la couche réseau (3) correspond à la couche Internet.",
+    "difficulty": 2
+  },
+  {
+    "code": "osi-ping-couche4",
+    "lesson": "n1-osi",
+    "skill": "diagnostic",
+    "prompt": "Vrai ou faux : si un serveur répond au ping, on peut en conclure que l'application qu'il héberge est joignable depuis le poste.",
+    "data": { "type": "truefalse", "answer": false },
+    "explanation": "Faux. Le ping (ICMP) valide la couche 3 : le poste et le serveur s'atteignent au niveau IP. Il ne teste pas le port de l'application (couche 4), qui peut être fermé ou filtré par un pare-feu, ni l'application elle-même (service arrêté, droits). L'étape suivante est un test de port, par exemple avec Test-NetConnection -Port.",
+    "difficulty": 1
+  },
+  {
+    "code": "osi-exam-1",
+    "lesson": "n1-osi",
+    "skill": "diagnostic",
+    "prompt": "Une utilisatrice signale que seule l'application de notes de frais ne fonctionne plus ; la messagerie, Teams et les partages réseau fonctionnent normalement. Quelle démarche est la plus adaptée pour commencer ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Démarche ascendante : vérifier d'abord le câble et le voyant de la carte" },
+        { "id": "b", "text": "Démarche descendante : partir du message d'erreur de l'application, puis tester son port et sa résolution de nom" },
+        { "id": "c", "text": "Remplacer le câble réseau par précaution" },
+        { "id": "d", "text": "Renouveler le bail DHCP du poste" }
+      ],
+      "answer": "b"
+    },
+    "explanation": "Les autres applications réseau fonctionnent : les couches 1 à 3 sont de fait validées. Commencer par le haut (message d'erreur, nom du serveur, port du service) est le plus efficace. La démarche ascendante (a) ferait perdre du temps sur des couches qui fonctionnent, tout comme changer le câble (c) ou renouveler le bail DHCP (d), qui concernent les couches basses.",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "code": "osi-exam-2",
+    "lesson": "n1-osi",
+    "skill": "network-fundamentals",
+    "prompt": "Un poste du VLAN Bureaux (10.20.10.87) envoie une requête au serveur 10.20.30.15. Dans la trame qui quitte la carte réseau du poste, quelle est l'adresse MAC de destination ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "L'adresse MAC du serveur 10.20.30.15" },
+        { "id": "b", "text": "L'adresse MAC de la passerelle 10.20.10.1" },
+        { "id": "c", "text": "L'adresse de diffusion FF-FF-FF-FF-FF-FF" },
+        { "id": "d", "text": "L'adresse MAC du serveur DNS 10.20.1.10" }
+      ],
+      "answer": "b"
+    },
+    "explanation": "Le serveur est dans un autre réseau : le poste confie le paquet à sa passerelle. Le paquet IP garde la destination 10.20.30.15, mais la trame Ethernet est adressée à la MAC de la passerelle, seul équipement que le poste peut joindre directement. Le poste ne connaît pas la MAC du serveur, qui ne serait d'ailleurs pas joignable directement (a faux). La diffusion ne sert qu'à certains protocoles comme ARP ou DHCP (c faux), et le DNS n'intervient pas dans l'acheminement de la trame (d faux).",
+    "difficulty": 3,
+    "examOnly": true
+  }
+]

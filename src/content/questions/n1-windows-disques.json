@@ -1,0 +1,120 @@
+[
+  {
+    "code": "disques-partitions-match",
+    "lesson": "n1-windows-disques",
+    "skill": "windows",
+    "prompt": "Associez chaque partition d'un disque système GPT à son rôle.",
+    "data": {
+      "type": "match",
+      "left": [
+        { "id": "efi", "text": "Partition système EFI (FAT32)" },
+        { "id": "msr", "text": "Partition réservée Microsoft (MSR)" },
+        { "id": "c", "text": "Windows (C:, NTFS)" },
+        { "id": "recovery", "text": "Partition de récupération" }
+      ],
+      "right": [
+        { "id": "boot", "text": "Contient le gestionnaire de démarrage lu par le firmware UEFI" },
+        { "id": "reserve", "text": "Réserve technique de Windows, sans données utilisateur" },
+        { "id": "systeme", "text": "Système, applications et profils utilisateurs" },
+        { "id": "winre", "text": "Contient l'environnement de récupération WinRE" },
+        { "id": "swap", "text": "Partition d'échange dédiée à la mémoire virtuelle" }
+      ],
+      "answer": { "efi": "boot", "msr": "reserve", "c": "systeme", "recovery": "winre" }
+    },
+    "explanation": "La partition EFI héberge le gestionnaire de démarrage ; la MSR est une petite réserve technique ; C: contient Windows, les applications et les profils ; la partition de récupération contient WinRE. Windows n'utilise pas de partition d'échange dédiée : sa mémoire virtuelle est un fichier (pagefile.sys) placé sur un volume, en général C:.",
+    "difficulty": 2
+  },
+  {
+    "code": "disques-onedrive",
+    "lesson": "n1-windows-disques",
+    "skill": "windows",
+    "prompt": "Le dossier OneDrive d'un utilisateur occupe 22 Go sur son disque presque plein. Quelle action libère de la place sans perdre de données ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Supprimer les fichiers du dossier OneDrive" },
+        { "id": "b", "text": "Clic droit sur les dossiers peu utilisés, puis « Libérer de l'espace »" },
+        { "id": "c", "text": "Désinstaller OneDrive" },
+        { "id": "d", "text": "Marquer tous les fichiers « Toujours conserver sur cet appareil »" }
+      ],
+      "answer": "b"
+    },
+    "explanation": "« Libérer de l'espace » repasse les fichiers en ligne uniquement : ils restent dans le cloud et se téléchargent à l'ouverture. Supprimer les fichiers les effacerait aussi du cloud et des autres appareils. Désinstaller OneDrive arrêterait la synchronisation sans résoudre proprement le problème. « Toujours conserver » fait l'inverse : il force le stockage local.",
+    "difficulty": 1
+  },
+  {
+    "code": "disques-chkdsk-vf",
+    "lesson": "n1-windows-disques",
+    "skill": "hardware",
+    "prompt": "Vrai ou faux : sur un disque dur qui fait des clics et affiche HealthStatus « Warning », le bon premier réflexe est de lancer chkdsk C: /r pour réparer les secteurs défectueux.",
+    "data": { "type": "truefalse", "answer": false },
+    "explanation": "Faux. chkdsk /r relit toute la surface du disque pendant des heures : sur un disque qui montre des signes de défaillance, cette sollicitation intensive peut précipiter la panne. Le premier réflexe est de sauvegarder les données importantes, puis d'escalader pour remplacement. Un disque qui se déclare en mauvaise santé ne se répare pas, il se remplace.",
+    "difficulty": 2
+  },
+  {
+    "code": "disques-causes-multiple",
+    "lesson": "n1-windows-disques",
+    "skill": "windows",
+    "prompt": "Parmi ces actions, lesquelles libèrent de l'espace sur C: sans risque pour les données de l'utilisateur ? (plusieurs réponses)",
+    "data": {
+      "type": "multiple",
+      "choices": [
+        { "id": "temp", "text": "Supprimer les fichiers temporaires depuis Paramètres, Stockage" },
+        { "id": "update", "text": "Nettoyer les restes de mises à jour avec « Nettoyer les fichiers système »" },
+        { "id": "recovery", "text": "Supprimer la partition de récupération" },
+        { "id": "ancien", "text": "Supprimer un dossier inconnu de 30 Go à la racine de C:" },
+        { "id": "onedrive", "text": "Libérer l'espace des dossiers OneDrive peu utilisés" }
+      ],
+      "answer": ["temp", "update", "onedrive"]
+    },
+    "explanation": "Les fichiers temporaires et les restes de mises à jour sont recréés ou devenus inutiles ; libérer l'espace OneDrive garde les fichiers dans le cloud. Supprimer la partition de récupération prive le poste de WinRE pour un gain minime, et ne libère d'ailleurs pas d'espace sur C: sans autre manipulation risquée. Un dossier inconnu peut contenir des archives indispensables : on l'identifie avant toute décision.",
+    "difficulty": 1
+  },
+  {
+    "code": "disques-volume-fill",
+    "lesson": "n1-windows-disques",
+    "skill": "powershell",
+    "prompt": "Complétez la commande PowerShell qui affiche l'espace restant et la taille du volume C:.",
+    "data": { "type": "fill", "template": "___ -DriveLetter C", "accepted": ["Get-Volume"] },
+    "explanation": "Get-Volume -DriveLetter C affiche le système de fichiers, l'état de santé, l'espace restant (SizeRemaining) et la taille du volume. Get-Disk décrit les disques physiques et n'a pas de paramètre -DriveLetter ; Get-PSDrive fonctionne aussi pour l'espace libre mais s'utilise avec -Name C.",
+    "difficulty": 1
+  },
+  {
+    "code": "disques-exam-1",
+    "lesson": "n1-windows-disques",
+    "skill": "windows",
+    "prompt": "Depuis ce matin, le lecteur réseau S: d'une utilisatrice a « disparu ». Get-Volume montre une clé USB en exFAT avec la lettre S:, branchée ce matin. Get-PSDrive ne liste plus le partage du service. Quelle est l'explication la plus probable ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Le serveur de fichiers est en panne" },
+        { "id": "b", "text": "La clé USB a pris la lettre S:, ce qui empêche le lecteur réseau de se connecter sous cette lettre" },
+        { "id": "c", "text": "Le disque C: est plein" },
+        { "id": "d", "text": "La partition de récupération a été supprimée" }
+      ],
+      "answer": "b"
+    },
+    "explanation": "Une lettre de lecteur ne peut désigner qu'un seul volume à la fois. La clé branchée ce matin a pris S:, et le mappage du lecteur réseau ne peut plus utiliser cette lettre. Retirer la clé puis reconnecter le lecteur (ou changer la lettre de la clé, avec validation) règle le problème. Une panne du serveur toucherait tout le service, et ni l'espace de C: ni la partition de récupération n'ont de lien avec les lettres réseau.",
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "code": "disques-exam-2",
+    "lesson": "n1-windows-disques",
+    "skill": "windows",
+    "prompt": "Remettez dans l'ordre la démarche pour traiter un disque C: plein sur le poste d'un utilisateur.",
+    "data": {
+      "type": "order",
+      "items": [
+        { "id": "decide", "text": "Faire décider l'utilisateur pour ses gros fichiers et libérer l'espace OneDrive" },
+        { "id": "mesure", "text": "Mesurer l'espace libre avec Get-Volume ou la vue Stockage" },
+        { "id": "verif", "text": "Mesurer à nouveau et documenter la cause et le gain dans le ticket" },
+        { "id": "sur", "text": "Nettoyer ce qui est sans risque : fichiers temporaires, restes de mises à jour" }
+      ],
+      "answer": ["mesure", "sur", "decide", "verif"]
+    },
+    "explanation": "On part d'une mesure précise, puis on nettoie ce qui ne comporte aucun risque pour les données. On passe ensuite aux fichiers de l'utilisateur, qui décide lui-même, et à OneDrive. On termine par une nouvelle mesure qui prouve le résultat et par la documentation. Commencer par les fichiers de l'utilisateur ferait courir un risque inutile alors que les nettoyages sûrs suffisent parfois.",
+    "difficulty": 2,
+    "examOnly": true
+  }
+]

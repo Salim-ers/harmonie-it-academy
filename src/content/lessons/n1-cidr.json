@@ -1,0 +1,160 @@
+{
+  "meta": {
+    "slug": "n1-cidr",
+    "title": "CIDR et calcul de sous-réseaux sans calculatrice",
+    "summary": "Lire une notation /26 ou /22, trouver de tête l'adresse réseau, le broadcast et la plage utilisable, et dire en trente secondes si deux postes sont dans le même réseau.",
+    "level": "debutant",
+    "prerequisites": ["Connaître la structure d'une adresse IPv4, le masque et la passerelle (leçon « Adresse IP, masque et passerelle »)"],
+    "objectives": [
+      "Convertir une notation CIDR (/24, /25, /26…) en masque décimal et inversement",
+      "Calculer le nombre d'adresses utilisables d'un réseau avec la formule 2^n − 2",
+      "Trouver l'adresse réseau, l'adresse de broadcast et la plage utilisable avec la méthode du bloc",
+      "Déterminer si deux adresses appartiennent au même sous-réseau",
+      "Repérer une passerelle ou un masque incohérent dans une configuration de poste"
+    ],
+    "durationMin": 45,
+    "skills": [
+      { "code": "network-ip", "weight": 3 }
+    ],
+    "next": "n1-dhcp"
+  },
+  "blocks": [
+    { "id": "intro", "kind": "paragraph", "text": "Mardi, 14 h. À l'entrepôt de Nordelis Logistique, un terminal de scan neuf refuse d'envoyer ses données au serveur. Le prestataire a collé une étiquette dessus : « IP 10.30.20.70/26 – passerelle 10.30.20.1 ». Il jure que tout est correct puisque « c'est la même plage ». Le technicien N1 qui sait calculer un sous-réseau voit en trente secondes que le terminal et sa passerelle ne sont **pas** dans le même réseau. Celui qui ne sait pas calculer ouvre un ticket « terminal défectueux » et renvoie un appareil qui fonctionne." },
+    { "id": "intro-enjeu", "kind": "paragraph", "text": "Calculer un sous-réseau fait peur parce qu'on l'associe au binaire. En réalité, pour les cas que vous rencontrerez au support, une méthode simple suffit : retenir quelques valeurs, faire une soustraction et chercher un multiple. Cette leçon vous la donne, avec des exemples entièrement vérifiés. Prenez un papier et refaites chaque calcul : c'est en le faisant à la main que la méthode devient un réflexe." },
+    { "id": "h-cidr", "kind": "heading", "level": 2, "text": "La notation CIDR : compter les bits du réseau" },
+    { "id": "def", "kind": "callout", "tone": "definition", "title": "Définition simple", "text": "La **notation CIDR** (Classless Inter-Domain Routing) écrit le masque sous la forme d'une barre oblique suivie du **nombre de bits à 1** du masque. `10.20.10.0/24` signifie « les 24 premiers bits désignent le réseau, les 8 restants désignent les hôtes ». C'est une autre écriture du masque `255.255.255.0`." },
+    { "id": "p-cidr", "kind": "paragraph", "text": "Un masque IPv4 fait toujours 32 bits : une suite de 1 suivie d'une suite de 0. Le nombre après la barre (le **préfixe**) donne directement le nombre de 1. Le reste, 32 moins le préfixe, est le nombre de **bits d'hôte**, que l'on note *n*. Avec /24, n = 8 ; avec /26, n = 6 ; avec /22, n = 10. Tout le calcul repose sur ce *n*." },
+    { "id": "analogie", "kind": "callout", "tone": "analogy", "title": "Analogie", "text": "Imaginez une rue de 256 numéros que la mairie découpe en lotissements de taille égale. Un /24, c'est la rue entière. Un /25, ce sont deux lotissements de 128 numéros. Un /26, quatre lotissements de 64 numéros. Dans chaque lotissement, le premier numéro est le panneau d'entrée (l'adresse réseau) et le dernier est le haut-parleur qui s'adresse à tout le lotissement (le broadcast) : personne ne peut y habiter. Calculer un sous-réseau, c'est simplement trouver dans quel lotissement se trouve une maison." },
+    { "id": "h-valeurs", "kind": "heading", "level": 2, "text": "Les valeurs à connaître par cœur" },
+    { "id": "p-octet", "kind": "paragraph", "text": "Dans un octet, les bits valent de gauche à droite 128, 64, 32, 16, 8, 4, 2, 1. Quand on « allume » les bits du masque de gauche à droite, on obtient toujours la même suite de valeurs, et ce sont les **seules valeurs possibles** dans un octet de masque : 128, 192, 224, 240, 248, 252, 254 et 255. Par exemple 192 = 128 + 64 (deux bits à 1), 224 = 128 + 64 + 32 (trois bits), 240 = 128 + 64 + 32 + 16 (quatre bits)." },
+    { "id": "tab-prefixes", "kind": "table", "caption": "Table de référence : préfixe, masque, taille du bloc et nombre d'hôtes utilisables", "headers": ["Préfixe", "Masque décimal", "Bits d'hôte (n)", "Taille du bloc", "Adresses utilisables (2^n − 2)"], "rows": [
+      ["/16", "255.255.0.0", "16", "65 536 (3e et 4e octets entiers)", "65 534"],
+      ["/22", "255.255.252.0", "10", "4 dans le 3e octet", "1 022"],
+      ["/23", "255.255.254.0", "9", "2 dans le 3e octet", "510"],
+      ["/24", "255.255.255.0", "8", "256 (tout le 4e octet)", "254"],
+      ["/25", "255.255.255.128", "7", "128", "126"],
+      ["/26", "255.255.255.192", "6", "64", "62"],
+      ["/27", "255.255.255.224", "5", "32", "30"],
+      ["/28", "255.255.255.240", "4", "16", "14"],
+      ["/29", "255.255.255.248", "3", "8", "6"],
+      ["/30", "255.255.255.252", "2", "4", "2"]
+    ] },
+    { "id": "p-moins-deux", "kind": "paragraph", "text": "Pourquoi **2^n − 2** ? Avec *n* bits d'hôte, on peut écrire 2^n adresses. Mais deux d'entre elles sont réservées dans chaque réseau : la première (tous les bits d'hôte à 0), qui est l'**adresse du réseau** lui-même, et la dernière (tous les bits d'hôte à 1), qui est l'**adresse de broadcast**, utilisée pour parler à tous les hôtes du réseau à la fois. Un /26 contient donc 2⁶ = 64 adresses, dont 64 − 2 = **62** utilisables par des postes, imprimantes ou passerelles." },
+    { "id": "info-31", "kind": "callout", "tone": "info", "title": "Les cas particuliers /31 et /32", "text": "Un /32 désigne une seule adresse (un hôte précis, souvent dans une règle de pare-feu). Un /31 ne contient que deux adresses : la RFC 3021 autorise à les utiliser toutes les deux sur une liaison point à point entre deux routeurs, sans adresse réseau ni broadcast. Vous les croiserez dans des schémas réseau, jamais sur un poste utilisateur." },
+    { "id": "h-methode", "kind": "heading", "level": 2, "text": "La méthode du bloc (ou du « nombre magique »)" },
+    { "id": "diag", "kind": "diagram", "diagram": "subnet-split", "caption": "Le réseau 10.20.10.0/24 découpé en quatre sous-réseaux /26 : chaque bloc compte 64 adresses, de .0 à .63, de .64 à .127, de .128 à .191 et de .192 à .255." },
+    { "id": "p-methode", "kind": "paragraph", "text": "Le principe est le suivant : dans le masque, un seul octet est « intéressant », celui qui n'est ni 255 ni 0. La **taille du bloc** vaut 256 moins la valeur de cet octet. Les réseaux commencent tous à un **multiple** de cette taille. Pour trouver le réseau d'une adresse, on cherche le plus grand multiple du bloc inférieur ou égal à l'octet correspondant de l'adresse. Le broadcast est juste avant le réseau suivant." },
+    { "id": "list-methode", "kind": "list", "ordered": true, "items": [
+      "Écrire le masque en décimal et repérer l'**octet intéressant** (ni 255 ni 0).",
+      "Calculer la **taille du bloc** : 256 − valeur de cet octet.",
+      "Lister les multiples du bloc : 0, bloc, 2 × bloc… jusqu'à dépasser l'octet de l'adresse.",
+      "**Adresse réseau** : le plus grand multiple inférieur ou égal à l'octet de l'adresse ; les octets suivants passent à 0.",
+      "**Broadcast** : le multiple suivant moins 1 ; les octets suivants passent à 255.",
+      "**Plage utilisable** : de l'adresse réseau + 1 jusqu'au broadcast − 1.",
+      "**Vérifier** : la plage contient-elle bien l'adresse de départ ? Le nombre d'adresses est-il égal à 2^n − 2 ?"
+    ] },
+    { "id": "h-demo", "kind": "heading", "level": 2, "text": "Démonstration : trois calculs pas à pas" },
+    { "id": "steps-demo", "kind": "steps", "title": "Calculer le sous-réseau de 10.20.10.200/27", "steps": [
+      { "title": "Convertir le préfixe en masque", "text": "/27 = 24 bits pour les trois premiers octets (255.255.255) + 3 bits dans le quatrième. Trois bits à 1 : 128 + 64 + 32 = 224. Le masque est 255.255.255.224." },
+      { "title": "Calculer la taille du bloc", "text": "L'octet intéressant est le quatrième (224). Bloc = 256 − 224 = 32. Contrôle : n = 32 − 27 = 5 bits d'hôte, et 2⁵ = 32. Les deux calculs concordent." },
+      { "title": "Trouver l'adresse réseau", "text": "Multiples de 32 : 0, 32, 64, 96, 128, 160, 192, 224. Le quatrième octet de l'adresse vaut 200 ; le plus grand multiple inférieur ou égal est 192 (le suivant, 224, dépasse 200). Adresse réseau : 10.20.10.192." },
+      { "title": "Trouver le broadcast", "text": "Le réseau suivant commence à 224. Le broadcast est donc 224 − 1 = 223 : 10.20.10.223." },
+      { "title": "Déduire la plage utilisable", "text": "De 10.20.10.193 (réseau + 1) à 10.20.10.222 (broadcast − 1). Nombre d'adresses : 222 − 193 + 1 = 30, égal à 2⁵ − 2 = 30. L'adresse de départ 200 est bien dans la plage : le calcul est validé." },
+      { "title": "Contre-vérifier en binaire (facultatif)", "text": "200 = 128 + 64 + 8 = 11001000. Masque 224 = 11100000. On garde les bits de l'adresse là où le masque vaut 1 : 110 00000 = 128 + 64 = 192. On retrouve bien l'adresse réseau 10.20.10.192." }
+    ] },
+    { "id": "h-ex2", "kind": "heading", "level": 3, "text": "Deuxième exemple : 10.20.10.37/26" },
+    { "id": "p-ex2", "kind": "paragraph", "text": "Masque : /26 = 255.255.255.192 (128 + 64). Bloc : 256 − 192 = **64** (contrôle : n = 6, 2⁶ = 64). Multiples de 64 : 0, 64, 128, 192. L'octet vaut 37 : le plus grand multiple inférieur ou égal est **0**. Réseau : `10.20.10.0`. Le réseau suivant commence à 64, donc broadcast : `10.20.10.63`. Plage utilisable : `10.20.10.1` à `10.20.10.62`, soit 62 adresses (2⁶ − 2 = 62). 37 est bien entre 1 et 62 : validé." },
+    { "id": "h-ex3", "kind": "heading", "level": 3, "text": "Troisième exemple, plus large : 10.30.5.20/22 chez Nordelis" },
+    { "id": "p-ex3", "kind": "paragraph", "text": "Le masque d'un /22 est 255.255.252.0 : 16 bits pour les deux premiers octets, puis 6 bits dans le troisième (128 + 64 + 32 + 16 + 8 + 4 = 252). L'octet intéressant est cette fois le **troisième**. Bloc : 256 − 252 = **4**. Multiples de 4 : 0, 4, 8… L'adresse a 5 dans le troisième octet : le plus grand multiple inférieur ou égal est **4**. Réseau : `10.30.4.0` (le quatrième octet passe à 0). Le réseau suivant commence à 10.30.8.0, donc broadcast : `10.30.7.255` (le quatrième octet passe à 255). Plage : `10.30.4.1` à `10.30.7.254`. Nombre d'hôtes : n = 32 − 22 = 10, 2¹⁰ − 2 = **1 022**." },
+    { "id": "warn-22", "kind": "callout", "tone": "warning", "title": "Piège classique des préfixes inférieurs à /24", "text": "Avec un /22 ou un /23, des adresses qui « ont l'air » d'être des adresses réseau ou de broadcast sont en fait des adresses d'hôte tout à fait valides. Dans 10.30.4.0/22, `10.30.5.0` et `10.30.4.255` sont des adresses utilisables : seules `10.30.4.0` et `10.30.7.255` sont réservées. Ne refusez pas une adresse en .0 ou en .255 sans avoir fait le calcul." },
+    { "id": "h-meme", "kind": "heading", "level": 2, "text": "Deux postes sont-ils dans le même réseau ?" },
+    { "id": "p-meme", "kind": "paragraph", "text": "C'est la question la plus utile au support. La méthode : calculer l'adresse réseau de chacun avec **son** masque, puis comparer. Si les deux adresses réseau sont identiques (et les masques aussi), les postes sont voisins et se parlent directement. Sinon, ils doivent passer par un routeur. Un même couple d'adresses peut être voisin ou non selon le masque : c'est pour cela qu'une adresse sans son masque ne veut rien dire." },
+    { "id": "tab-meme", "kind": "table", "caption": "Les mêmes adresses, des conclusions différentes selon le masque", "headers": ["Poste A", "Poste B", "Réseau de A", "Réseau de B", "Même réseau ?"], "rows": [
+      ["10.20.10.60/26", "10.20.10.70/26", "10.20.10.0", "10.20.10.64", "Non : 60 est dans le bloc 0–63, 70 dans le bloc 64–127"],
+      ["10.20.10.60/25", "10.20.10.70/25", "10.20.10.0", "10.20.10.0", "Oui : bloc de 128, les deux sont entre 0 et 127"],
+      ["10.20.10.90/28", "10.20.10.77/28", "10.20.10.80", "10.20.10.64", "Non : blocs de 16, 90 dans 80–95, 77 dans 64–79"],
+      ["10.30.5.20/22", "10.30.7.200/22", "10.30.4.0", "10.30.4.0", "Oui : bloc de 4 dans le 3e octet, 5 et 7 sont tous deux entre 4 et 7"]
+    ] },
+    { "id": "field-masque", "kind": "callout", "tone": "field", "title": "Sur le terrain", "text": "Si deux machines du même réseau n'ont pas le même masque, le comportement devient déroutant : A croit que B est son voisin et lui parle directement, tandis que B pense que A est ailleurs et répond via la passerelle. Résultat : des connexions qui marchent « parfois » ou dans un seul sens. Un masque différent du reste du VLAN sur un poste est toujours une anomalie à corriger." },
+    { "id": "h-poste", "kind": "heading", "level": 2, "text": "Lire le préfixe sur un poste Windows" },
+    { "id": "cmd-ipconfig", "kind": "command", "shell": "cmd", "command": "ipconfig", "explanation": "ipconfig affiche le masque en décimal. Ici, un poste du VLAN Salles de réunion du Groupe Valmont, un petit réseau 10.20.60.0/26. À vous de retrouver le préfixe et la plage.", "output": "Carte Ethernet Ethernet :\n\n   Suffixe DNS propre à la connexion. . . : valmont.local\n   Adresse IPv6 de liaison locale. . . . .: fe80::5d2e:81a4:c03b:9f12%7\n   Adresse IPv4. . . . . . . . . . . . . .: 10.20.60.37\n   Masque de sous-réseau. . . . . . . . . : 255.255.255.192\n   Passerelle par défaut. . . . . . . . . : 10.20.60.1", "outputNotes": [
+      { "match": "Adresse IPv4", "note": "Quatrième octet 37 : avec un bloc de 64, il tombe dans le bloc 0–63." },
+      { "match": "Masque de sous-réseau", "note": "192 dans le dernier octet = deux bits à 1, soit 24 + 2 = /26. Bloc 256 − 192 = 64. Réseau 10.20.60.0, broadcast 10.20.60.63." },
+      { "match": "Passerelle par défaut", "note": "10.20.60.1 est entre 10.20.60.1 et 10.20.60.62 : elle est bien dans le réseau du poste, la configuration est cohérente." }
+    ] },
+    { "id": "cmd-ps", "kind": "command", "shell": "powershell", "command": "Get-NetIPAddress -AddressFamily IPv4 | Select-Object InterfaceAlias, IPAddress, PrefixLength", "explanation": "Get-NetIPAddress liste les adresses IP du poste ; Select-Object ne garde que trois colonnes. PowerShell affiche directement la longueur du préfixe (notation CIDR) au lieu du masque décimal.", "output": "InterfaceAlias              IPAddress     PrefixLength\n--------------              ---------     ------------\nEthernet                    10.20.60.37             26\nWi-Fi                       169.254.12.80           16\nLoopback Pseudo-Interface 1 127.0.0.1                8", "outputNotes": [
+      { "match": "10.20.60.37", "note": "PrefixLength 26 : on retrouve le masque 255.255.255.192 de la sortie ipconfig." },
+      { "match": "169.254.12.80", "note": "Carte Wi-Fi activée mais sans réponse DHCP (APIPA en /16) : sans importance si le poste travaille en Ethernet." },
+      { "match": "127.0.0.1", "note": "L'interface de bouclage, toujours en /8." }
+    ] },
+    { "id": "h-choisir", "kind": "heading", "level": 2, "text": "Le calcul inverse : quel préfixe pour combien d'appareils ?" },
+    { "id": "p-choisir", "kind": "paragraph", "text": "Vous ne concevrez pas le plan d'adressage, mais on vous demandera parfois si « un /26 suffira pour la nouvelle salle de 50 postes ». Méthode : trouver le plus petit *n* tel que 2^n − 2 soit supérieur ou égal au besoin, **sans oublier la passerelle** et les imprimantes. Pour 50 appareils plus une passerelle (51 adresses) : 2⁵ − 2 = 30 est trop petit, 2⁶ − 2 = 62 suffit, donc n = 6 et le préfixe est 32 − 6 = **/26**. Pour 100 appareils : 2⁷ − 2 = 126 suffit, soit **/25**. Pour 300 appareils : 2⁸ − 2 = 254 est trop petit, 2⁹ − 2 = 510 suffit, soit **/23**." },
+    { "id": "tip-anti", "kind": "callout", "tone": "tip", "title": "Antisèche à recopier", "text": "Bloc = 256 − octet du masque. Réseau = plus grand multiple du bloc ≤ octet de l'adresse. Broadcast = multiple suivant − 1. Hôtes = 2^n − 2 avec n = 32 − préfixe. Et toujours : vérifier que l'adresse de départ est dans la plage trouvée." },
+    { "id": "mistakes", "kind": "mistakes", "items": [
+      { "mistake": "Annoncer 64 postes possibles dans un /26", "why": "On oublie que l'adresse réseau et le broadcast sont réservés.", "fix": "Toujours appliquer 2^n − 2 : un /26 offre 62 adresses utilisables." },
+      { "mistake": "Prendre l'adresse du réseau suivant comme broadcast (par exemple .64 pour 10.20.10.0/26)", "why": "Le broadcast est la dernière adresse du bloc, pas la première du suivant.", "fix": "Broadcast = multiple suivant − 1, soit 10.20.10.63." },
+      { "mistake": "Appliquer la taille du bloc au quatrième octet pour un /22", "why": "Pour un préfixe entre /17 et /23, l'octet intéressant est le troisième.", "fix": "Repérer d'abord l'octet du masque qui n'est ni 255 ni 0." },
+      { "mistake": "Déclarer deux postes voisins parce que leurs trois premiers octets sont identiques", "why": "Ce raccourci n'est valable qu'en /24 ; en /26, 10.20.10.60 et 10.20.10.70 sont dans deux réseaux différents.", "fix": "Calculer l'adresse réseau de chaque poste avec son masque, puis comparer." },
+      { "mistake": "Refuser une adresse en .0 ou .255 dans un /22 ou un /23", "why": "Dans un grand réseau, ces adresses peuvent être des adresses d'hôte valides.", "fix": "Ne conclure qu'après avoir calculé l'adresse réseau et le broadcast réels." }
+    ] },
+    { "id": "risks", "kind": "risks", "items": [
+      "Ne modifiez jamais le masque d'un poste ou d'un équipement pour « le faire marcher » : un masque différent de celui du réseau crée des pannes intermittentes difficiles à diagnostiquer.",
+      "N'attribuez jamais l'adresse réseau ou l'adresse de broadcast à un appareil : il serait injoignable ou perturberait le réseau.",
+      "Le découpage en sous-réseaux et le choix des passerelles relèvent de l'équipe réseau : votre rôle est de constater l'incohérence, de la prouver par le calcul et de l'escalader.",
+      "Notez vos calculs dans le ticket : un collègue doit pouvoir vérifier votre raisonnement sans tout refaire."
+    ] },
+    { "id": "quiz", "kind": "quiz", "title": "Vérifiez votre compréhension", "questions": ["cidr-broadcast-26", "cidr-reseau-27", "cidr-hotes-prefixe", "cidr-meme-reseau", "cidr-choix-prefixe"] },
+    { "id": "exercise", "kind": "exercise", "title": "Le terminal de scan qui ne sort pas", "context": "L'entrepôt de Nordelis Logistique utilise le réseau 10.30.20.0/24, découpé par l'équipe réseau en quatre sous-réseaux /26 : un par zone (quais, stockage, préparation, bureaux d'expédition). Dans chaque sous-réseau, la convention de l'équipe réseau est que la passerelle porte la première adresse utilisable. Le nouveau terminal de scan est configuré ainsi : adresse 10.30.20.70, masque 255.255.255.192, passerelle 10.30.20.1. Il joint les autres terminaux de sa zone, mais pas le serveur d'entrepôt situé dans un autre réseau.", "task": "Listez les quatre sous-réseaux /26 (adresse réseau, plage utilisable, broadcast), indiquez celui du terminal, expliquez pourquoi il ne sort pas et proposez la correction à faire valider.", "hints": [
+      "Un /26 donne des blocs de combien d'adresses ? Commencez à 10.30.20.0 et avancez de bloc en bloc.",
+      "Dans quel bloc tombe le quatrième octet 70 ? Et le quatrième octet 1 de la passerelle ?",
+      "La passerelle doit être dans le même sous-réseau que le terminal. Quelle est la première adresse utilisable du bloc du terminal ?"
+    ], "solution": [
+      "Un /26 correspond au masque 255.255.255.192 ; bloc = 256 − 192 = 64. Les quatre sous-réseaux sont : 10.30.20.0/26 (utilisables .1 à .62, broadcast .63) ; 10.30.20.64/26 (utilisables .65 à .126, broadcast .127) ; 10.30.20.128/26 (utilisables .129 à .190, broadcast .191) ; 10.30.20.192/26 (utilisables .193 à .254, broadcast .255). Chacun offre 2⁶ − 2 = 62 adresses.",
+      "Le terminal (quatrième octet 70) est dans le bloc 64–127 : son réseau est 10.30.20.64/26, broadcast 10.30.20.127. La passerelle 10.30.20.1 est dans le bloc 0–63, donc dans un autre sous-réseau : le terminal ne peut pas la joindre directement. Il parle à ses voisins (10.30.20.65 à .126), mais tout ce qui sort de son réseau échoue.",
+      "Selon la convention de l'équipe réseau, la passerelle du sous-réseau 10.30.20.64/26 est 10.30.20.65. La correction consiste à remplacer 10.30.20.1 par 10.30.20.65, après confirmation par l'équipe réseau (ou mieux, à passer le terminal en DHCP si la zone dispose d'une étendue). Le terminal n'est pas défectueux : il ne faut pas le renvoyer.",
+      "Exemple de note de ticket : « Terminal SCAN-QUAI-07 en 10.30.20.70/26 (réseau 10.30.20.64/26), passerelle configurée 10.30.20.1 hors sous-réseau. Passerelle attendue selon convention : 10.30.20.65. Demande de validation au N2 réseau avant correction. »"
+    ], "rubric": {
+      "criteria": [
+        { "id": "bloc", "label": "Utilise un bloc de 64 adresses", "points": 1, "patterns": ["64 adresses", "bloc de 64", "blocs de 64", "256 - 192", "256 − 192", "taille 64"] },
+        { "id": "liste", "label": "Liste les quatre sous-réseaux", "points": 2, "patterns": ["10.30.20.128", "10.30.20.192", "128 a 191", "128-191", "10.30.20.129"] },
+        { "id": "reseau", "label": "Identifie le réseau du terminal 10.30.20.64/26", "points": 3, "patterns": ["10.30.20.64", "64 a 127", "64-127", "bloc 64", "bloc de 64 a 127"], "required": true },
+        { "id": "passerelle", "label": "Explique que la passerelle 10.30.20.1 est hors du sous-réseau", "points": 3, "patterns": ["hors du sous-reseau", "hors sous-reseau", "pas dans le meme", "autre sous-reseau", "pas dans le sous-reseau", "hors du reseau", "pas dans son reseau", "mauvaise passerelle", "passerelle incorrecte"], "required": true },
+        { "id": "correction", "label": "Propose la passerelle 10.30.20.65", "points": 2, "patterns": ["10.30.20.65"] },
+        { "id": "validation", "label": "Fait valider ou escalade", "points": 1, "patterns": ["valid*", "escalad*", "n2", "equipe reseau", "confirm*"] }
+      ],
+      "redFlags": [
+        { "id": "masque24", "label": "Propose d'élargir le masque du terminal en /24", "patterns": ["passer en /24", "mettre en /24", "masque en /24", "changer le masque", "mettre le masque a 255.255.255.0", "elargir le masque"], "penalty": 3 },
+        { "id": "renvoi", "label": "Conclut que le terminal est défectueux", "patterns": ["terminal defectueux", "renvoyer le terminal", "materiel defectueux", "remplacer le terminal"], "penalty": 2 }
+      ],
+      "passPercent": 60
+    } },
+    { "id": "interview", "kind": "interview", "questions": [
+      { "question": "Combien d'adresses utilisables y a-t-il dans un /26, et pourquoi ?", "expectedPoints": ["/26 laisse 6 bits d'hôte", "2⁶ = 64 adresses au total", "Moins l'adresse réseau et le broadcast", "Soit 62 adresses utilisables"], "modelAnswer": "Un /26 réserve 26 bits au réseau, il reste donc 32 − 26 = 6 bits pour les hôtes, soit 2⁶ = 64 adresses. On retire la première, qui est l'adresse du réseau, et la dernière, qui est le broadcast. Il reste 62 adresses utilisables. Le masque correspondant est 255.255.255.192." },
+      { "question": "Comment savez-vous si deux postes sont dans le même sous-réseau ?", "expectedPoints": ["Il faut connaître l'adresse et le masque de chacun", "Calculer l'adresse réseau de chaque poste", "Comparer les adresses réseau", "Le raccourci des trois premiers octets ne vaut qu'en /24"], "modelAnswer": "Je relève l'adresse et le masque de chacun, puis je calcule leur adresse réseau, par exemple avec la méthode du bloc : 256 moins l'octet intéressant du masque, puis le plus grand multiple inférieur ou égal. Si les deux adresses réseau et les masques sont identiques, les postes sont voisins. Je ne me fie pas aux trois premiers octets : en /26, 10.20.10.60 et 10.20.10.70 sont dans deux réseaux différents." },
+      { "question": "Donnez l'adresse réseau et le broadcast de 10.20.10.200/27.", "expectedPoints": ["Masque 255.255.255.224", "Bloc de 32", "Réseau 10.20.10.192", "Broadcast 10.20.10.223"], "modelAnswer": "Un /27 correspond au masque 255.255.255.224. Le bloc vaut 256 − 224 = 32. Les réseaux commencent à 0, 32, 64… 192, 224. 200 est entre 192 et 223 : l'adresse réseau est 10.20.10.192 et le broadcast 10.20.10.223. La plage utilisable va de 10.20.10.193 à 10.20.10.222, soit 30 adresses." }
+    ] },
+    { "id": "glossary", "kind": "glossary", "terms": [
+      { "term": "Notation CIDR", "en": "CIDR notation", "definition": "Écriture du masque sous la forme /n, où n est le nombre de bits à 1 du masque." },
+      { "term": "Préfixe", "en": "Prefix length", "definition": "Nombre de bits qui désignent le réseau dans une adresse (le n de /n)." },
+      { "term": "Sous-réseau", "en": "Subnet", "definition": "Partie d'un réseau plus grand, délimitée par un masque plus long." },
+      { "term": "Adresse réseau", "en": "Network address", "definition": "Première adresse d'un sous-réseau, tous les bits d'hôte à 0 ; non attribuable à un appareil." },
+      { "term": "Adresse de diffusion", "en": "Broadcast address", "definition": "Dernière adresse d'un sous-réseau, tous les bits d'hôte à 1 ; elle s'adresse à tous les hôtes." },
+      { "term": "Taille du bloc", "en": "Block size", "definition": "Écart entre deux sous-réseaux consécutifs : 256 moins l'octet intéressant du masque." },
+      { "term": "Plage utilisable", "en": "Usable host range", "definition": "Adresses comprises entre l'adresse réseau et le broadcast, attribuables aux appareils." }
+    ] },
+    { "id": "summary", "kind": "summary", "points": [
+      "/n = n bits à 1 dans le masque ; il reste 32 − n bits d'hôte.",
+      "Valeurs possibles d'un octet de masque : 128, 192, 224, 240, 248, 252, 254, 255.",
+      "Bloc = 256 − octet intéressant du masque ; les réseaux commencent aux multiples du bloc.",
+      "Broadcast = début du réseau suivant − 1 ; plage utilisable = réseau + 1 à broadcast − 1 ; hôtes = 2^n − 2.",
+      "Deux postes sont voisins seulement si leurs adresses réseau, calculées avec le même masque, sont identiques.",
+      "Une passerelle doit toujours appartenir au sous-réseau du poste : sinon, le poste ne joint que ses voisins."
+    ] },
+    { "id": "references", "kind": "references", "items": [
+      { "title": "RFC 4632 — Classless Inter-domain Routing (CIDR)", "url": "https://www.rfc-editor.org/rfc/rfc4632", "publisher": "IETF", "verifiedAt": "2026-10-21" },
+      { "title": "RFC 950 — Internet Standard Subnetting Procedure", "url": "https://www.rfc-editor.org/rfc/rfc950", "publisher": "IETF", "verifiedAt": "2026-10-21" },
+      { "title": "RFC 3021 — Using 31-Bit Prefixes on IPv4 Point-to-Point Links", "url": "https://www.rfc-editor.org/rfc/rfc3021", "publisher": "IETF", "verifiedAt": "2026-10-21" },
+      { "title": "TCP/IP addressing and subnetting", "url": "https://learn.microsoft.com/troubleshoot/windows-client/networking/tcpip-addressing-and-subnetting", "publisher": "Microsoft Learn", "verifiedAt": "2026-10-21" }
+    ] }
+  ]
+}

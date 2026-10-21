@@ -1,0 +1,118 @@
+[
+  {
+    "code": "arp-switch-apprentissage",
+    "lesson": "n1-arp-switch",
+    "skill": "network-fundamentals",
+    "prompt": "Un switch reçoit sur son port 12 une trame dont la MAC source est 3C-52-82-4A-19-07 et la MAC de destination 00-80-77-3A-15-C2, adresse qu'il ne connaît pas encore. Que fait-il ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Il jette la trame, puisque la destination est inconnue" },
+        { "id": "b", "text": "Il note que 3C-52-82-4A-19-07 est derrière le port 12, puis envoie la trame sur tous les autres ports du VLAN" },
+        { "id": "c", "text": "Il envoie une requête ARP pour trouver la destination" },
+        { "id": "d", "text": "Il transmet la trame à la passerelle, qui saura où la livrer" }
+      ],
+      "answer": "b"
+    },
+    "explanation": "Le switch apprend toujours la MAC source (port 12), puis, faute de connaître la MAC de destination, inonde la trame sur tous les ports du VLAN sauf celui d'arrivée. Il ne jette pas une trame simplement parce que la destination est inconnue (a faux). ARP est un protocole des hôtes IP, pas un mécanisme du switch de niveau 2 (c faux). Et un switch ne raisonne pas en passerelle : c'est une notion de couche 3 (d faux).",
+    "difficulty": 2
+  },
+  {
+    "code": "arp-requete-diffusion",
+    "lesson": "n1-arp-switch",
+    "skill": "network-fundamentals",
+    "prompt": "Vrai ou faux : une requête ARP est envoyée en diffusion à tout le réseau local, tandis que la réponse ARP est envoyée directement au demandeur.",
+    "data": { "type": "truefalse", "answer": true },
+    "explanation": "Vrai. Le demandeur ne connaît pas encore la MAC de la cible : il diffuse sa question vers FF-FF-FF-FF-FF-FF, que tous les appareils du VLAN reçoivent. Seul le propriétaire de l'adresse répond, et il connaît la MAC du demandeur (indiquée dans la requête) : il lui répond donc en envoi direct. Une réponse en diffusion surchargerait inutilement le réseau.",
+    "difficulty": 1
+  },
+  {
+    "code": "arp-equipements-couches",
+    "lesson": "n1-arp-switch",
+    "skill": "network-fundamentals",
+    "prompt": "Associez chaque équipement à l'information qu'il utilise pour acheminer les données.",
+    "data": {
+      "type": "match",
+      "left": [
+        { "id": "hub", "text": "Hub" },
+        { "id": "switch", "text": "Switch" },
+        { "id": "routeur", "text": "Routeur" }
+      ],
+      "right": [
+        { "id": "rien", "text": "Aucune adresse : il répète le signal sur tous les ports (couche 1)" },
+        { "id": "mac", "text": "L'adresse MAC de destination (couche 2)" },
+        { "id": "ip", "text": "L'adresse IP de destination (couche 3)" },
+        { "id": "port", "text": "Le numéro de port TCP (couche 4)" }
+      ],
+      "answer": { "hub": "rien", "switch": "mac", "routeur": "ip" }
+    },
+    "explanation": "Le hub est un simple répéteur de couche 1 : il recopie tout partout. Le switch décide selon la MAC de destination, grâce à sa table MAC. Le routeur décide selon l'adresse IP de destination pour passer d'un réseau à un autre. Le numéro de port est une information de couche 4, exploitée par les pare-feu et les machines elles-mêmes, pas par ces trois équipements pour acheminer les données.",
+    "difficulty": 1
+  },
+  {
+    "code": "arp-cache-passerelle",
+    "lesson": "n1-arp-switch",
+    "skill": "network-fundamentals",
+    "prompt": "Le poste 10.20.10.87/24 vient de joindre le serveur 10.20.30.15. Quelle entrée trouverez-vous dans son cache ARP pour cet échange ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Une entrée 10.20.30.15 avec la MAC du serveur" },
+        { "id": "b", "text": "Une entrée 10.20.10.1 avec la MAC de la passerelle" },
+        { "id": "c", "text": "Une entrée 10.20.30.15 avec la MAC FF-FF-FF-FF-FF-FF" },
+        { "id": "d", "text": "Aucune entrée : ARP n'est pas utilisé pour cet échange" }
+      ],
+      "answer": "b"
+    },
+    "explanation": "Le serveur est dans un autre réseau : le poste envoie ses trames à la passerelle 10.20.10.1, dont il a résolu la MAC par ARP. Les diffusions ARP ne traversent pas les routeurs : le poste ne peut ni demander ni connaître la MAC du serveur (a faux). FF-FF-FF-FF-FF-FF est la MAC de diffusion, jamais associée à un hôte (c faux). ARP est bien utilisé, mais pour la passerelle (d faux).",
+    "difficulty": 2
+  },
+  {
+    "code": "arp-oui",
+    "lesson": "n1-arp-switch",
+    "skill": "network-fundamentals",
+    "prompt": "Complétez : les trois premiers octets d'une adresse MAC, attribués par l'IEEE à un fabricant, s'appellent l'___.",
+    "data": { "type": "fill", "template": "Les trois premiers octets d'une adresse MAC forment l'___", "accepted": ["OUI", "Organizationally Unique Identifier", "identifiant unique d'organisation"] },
+    "explanation": "L'OUI (Organizationally Unique Identifier) identifie le fabricant de la carte réseau ; les trois octets suivants sont attribués par le fabricant à chaque carte. Il ne faut pas le confondre avec le PID (identifiant de processus) ni avec le VLAN, qui est une notion de segmentation du réseau. Rechercher un OUI dans le registre de l'IEEE aide à identifier un appareil inconnu.",
+    "difficulty": 1
+  },
+  {
+    "code": "arp-exam-1",
+    "lesson": "n1-arp-switch",
+    "skill": "network-fundamentals",
+    "prompt": "Un poste en DHCP subit des coupures intermittentes et Windows affiche « conflit d'adresse IP ». Quelles actions sont appropriées pour un technicien N1 ? (plusieurs réponses)",
+    "data": {
+      "type": "multiple",
+      "choices": [
+        { "id": "event", "text": "Lire l'événement Tcpip 4199 du journal Système pour relever la MAC de l'autre appareil" },
+        { "id": "fixe", "text": "Attribuer au poste une adresse fixe libre pour régler le problème" },
+        { "id": "escalade", "text": "Escalader au N2 avec l'adresse disputée, la MAC de l'autre appareil et l'heure des événements" },
+        { "id": "contexte", "text": "Chercher si un appareil a été installé ou reconfiguré récemment à proximité" },
+        { "id": "debrancher", "text": "Débrancher au hasard des cordons dans la baie pour trouver l'appareil" }
+      ],
+      "answer": ["event", "escalade", "contexte"]
+    },
+    "explanation": "L'événement 4199 donne la MAC de l'appareil en conflit, le contexte (installation récente) oriente vers le coupable, et l'escalade permet au N2 de localiser le port dans la table MAC du switch. Fixer une adresse sur le poste masque le problème sans corriger l'appareil fautif et risque un nouveau conflit. Débrancher des cordons dans la baie peut couper d'autres utilisateurs et n'est pas du ressort du N1 sans autorisation.",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "code": "arp-exam-2",
+    "lesson": "n1-arp-switch",
+    "skill": "network-fundamentals",
+    "prompt": "Après un déménagement de bureau, le téléphone IP d'un collaborateur reste éteint alors que le poste branché sur une autre prise du même bureau fonctionne. Le téléphone s'allumait normalement dans l'ancien bureau. Quelle est la piste la plus probable ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Le téléphone a une adresse IP en conflit" },
+        { "id": "b", "text": "La nouvelle prise est brassée sur un port de switch qui ne fournit pas l'alimentation PoE" },
+        { "id": "c", "text": "Le serveur DNS ne connaît pas le téléphone" },
+        { "id": "d", "text": "Le cache ARP du poste est plein" }
+      ],
+      "answer": "b"
+    },
+    "explanation": "Un téléphone IP sans bloc d'alimentation est alimenté par le switch via le PoE. S'il reste totalement éteint, le problème est électrique avant d'être réseau : la nouvelle prise arrive probablement sur un port non PoE, ou le budget PoE du switch est atteint. Un conflit d'adresse (a) ou un problème DNS (c) n'empêcheraient pas l'appareil de s'allumer, et le cache ARP du poste (d) n'a aucun lien avec l'alimentation du téléphone.",
+    "difficulty": 2,
+    "examOnly": true
+  }
+]

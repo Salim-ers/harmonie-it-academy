@@ -1,0 +1,191 @@
+@import "tailwindcss";
+
+/*
+ * Harmonie IT Academy — design tokens.
+ * Le thème est porté par l'attribut data-theme sur <html> (posé avant le rendu par un script inline,
+ * à partir du choix enregistré ou de prefers-color-scheme).
+ */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+:root {
+  --paper: #fafaf8;
+  --surface: #ffffff;
+  --mist: #eef0f3;
+  --line: #e2e5ea;
+  --line-strong: #cdd2da;
+  --ink: #101114;
+  --ink-2: #25272e;
+  --muted: #5a5f6b;
+  --signal: #506cf0;
+  --signal-ink: #3a52d0;
+  --signal-wash: #e9edfe;
+  --ok: #1d8a66;
+  --ok-wash: #e2f3ec;
+  --warn: #a5650f;
+  --warn-wash: #fbf0dc;
+  --danger: #be3a26;
+  --danger-wash: #fbe7e3;
+  --gold: #9c7a24;
+  --gold-bright: #c9a24a;
+  --gold-wash: #f6efd9;
+  --navy: #0c2246;
+  --term-bg: #0e0f13;
+  --term-fg: #d7dbe3;
+  --term-dim: #7d8493;
+  --term-prompt: #8ea0f7;
+  --term-ok: #5fd3a8;
+  --term-err: #f29483;
+  --shadow-lift: 0 1px 0 rgb(16 17 20 / 0.04), 0 8px 24px -12px rgb(16 17 20 / 0.18);
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --paper: #101114;
+  --surface: #16171c;
+  --mist: #1d1f26;
+  --line: #2a2d36;
+  --line-strong: #3a3e4a;
+  --ink: #f1f2f4;
+  --ink-2: #c8cbd3;
+  --muted: #8e94a1;
+  --signal: #7890f6;
+  --signal-ink: #9eaefa;
+  --signal-wash: #1b2242;
+  --ok: #43c79c;
+  --ok-wash: #11302a;
+  --warn: #e0a54a;
+  --warn-wash: #33260f;
+  --danger: #f08b77;
+  --danger-wash: #3a1a15;
+  --gold: #d8bd72;
+  --gold-bright: #e3c983;
+  --gold-wash: #2e2714;
+  --navy: #9fb3e6;
+  --shadow-lift: 0 1px 0 rgb(0 0 0 / 0.3), 0 12px 32px -14px rgb(0 0 0 / 0.6);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-mist: var(--mist);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--muted);
+  --color-signal: var(--signal);
+  --color-signal-ink: var(--signal-ink);
+  --color-signal-wash: var(--signal-wash);
+  --color-ok: var(--ok);
+  --color-ok-wash: var(--ok-wash);
+  --color-warn: var(--warn);
+  --color-warn-wash: var(--warn-wash);
+  --color-danger: var(--danger);
+  --color-danger-wash: var(--danger-wash);
+  --color-gold: var(--gold);
+  --color-gold-bright: var(--gold-bright);
+  --color-gold-wash: var(--gold-wash);
+  --color-navy: var(--navy);
+  --color-term-bg: var(--term-bg);
+  --color-term-fg: var(--term-fg);
+  --color-term-dim: var(--term-dim);
+  --color-term-prompt: var(--term-prompt);
+  --color-term-ok: var(--term-ok);
+  --color-term-err: var(--term-err);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SFMono-Regular", monospace;
+  --font-display: var(--font-instrument-serif), Georgia, serif;
+  --radius-panel: 14px;
+  --radius-control: 8px;
+  --shadow-lift: var(--shadow-lift);
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01", "cv11";
+  }
+  ::selection {
+    background: var(--signal-wash);
+    color: var(--ink);
+  }
+  :focus-visible {
+    outline: 2px solid var(--signal);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+}
+
+@layer components {
+  /* Texte long des leçons : mesure ≤ 72 caractères, interlignage généreux. */
+  .prose-lesson {
+    max-width: 70ch;
+    font-size: 1.0625rem;
+    line-height: 1.7;
+    color: var(--ink-2);
+  }
+  .prose-lesson strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .prose-lesson code,
+  .inline-code {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    padding: 0.1em 0.35em;
+    border-radius: 5px;
+    background: var(--mist);
+    color: var(--ink);
+  }
+  .eyebrow-rule {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--muted);
+    font-size: 0.875rem;
+  }
+  .eyebrow-rule::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white;
+    color: black;
+  }
+}

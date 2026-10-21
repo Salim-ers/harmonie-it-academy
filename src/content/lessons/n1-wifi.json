@@ -1,0 +1,168 @@
+{
+  "meta": {
+    "slug": "n1-wifi",
+    "title": "Wi-Fi en entreprise : SSID, bandes et authentification",
+    "summary": "Comprendre SSID, bandes, signal et authentification WPA2/WPA3-Entreprise, lire netsh wlan et diagnostiquer les pannes Wi-Fi les plus fréquentes au poste.",
+    "level": "debutant",
+    "prerequisites": [
+      "Savoir lire ipconfig /all et reconnaître une adresse APIPA (leçon « DHCP »)",
+      "Connaître la séquence de tests réseau (leçon « Les commandes de diagnostic réseau sous Windows »)"
+    ],
+    "objectives": [
+      "Expliquer ce qu'est un SSID et pourquoi une entreprise en diffuse plusieurs",
+      "Comparer les bandes 2,4, 5 et 6 GHz en termes de portée et de débit",
+      "Interpréter la qualité de signal et le RSSI affichés par Windows",
+      "Distinguer WPA2/WPA3-Personnel et WPA2/WPA3-Entreprise (802.1X, RADIUS, certificats)",
+      "Lire netsh wlan show interfaces et générer un rapport WLAN",
+      "Diagnostiquer « connecté sans Internet », les déconnexions en mouvement et les échecs d'authentification"
+    ],
+    "durationMin": 45,
+    "skills": [
+      { "code": "wifi", "weight": 3 },
+      { "code": "diagnostic", "weight": 2 }
+    ],
+    "next": "n1-vlan"
+  },
+  "blocks": [
+    { "id": "intro", "kind": "paragraph", "text": "Jeudi, 10 h, boutique Maison Aubrac de la rue principale. La responsable appelle : « Les tablettes d'encaissement se déconnectent dès qu'on va en réserve, et ce matin une vendeuse n'arrive plus du tout à se connecter. » Deux problèmes, deux causes différentes : la réserve est au bout de la couverture d'une borne qui émet en 5 GHz, et la tablette de la vendeuse présente un certificat expiré au serveur d'authentification. Avec quelques notions et deux commandes, vous allez savoir distinguer ces cas en quelques minutes, au lieu de « supprimer et recréer le réseau Wi-Fi » en espérant que cela suffise." },
+    { "id": "h-base", "kind": "heading", "level": 2, "text": "Ce que l'on appelle « le Wi-Fi »" },
+    { "id": "p-base", "kind": "paragraph", "text": "Le Wi-Fi est un réseau local **sans fil** : au lieu d'un câble entre le poste et le switch, une **borne d'accès** (point d'accès, ou AP) échange des ondes radio avec la carte Wi-Fi du poste, puis relaie le trafic sur le réseau filaire de l'entreprise. Dans une entreprise, les bornes sont nombreuses et souvent pilotées par un **contrôleur** (boîtier ou service cloud) qui leur applique la même configuration. Les normes techniques sont publiées par l'IEEE sous le nom **802.11** (802.11n, ac, ax…) ; les noms commerciaux Wi-Fi 4, 5, 6, 6E et 7 sont attribués par la Wi-Fi Alliance." },
+    { "id": "def", "kind": "callout", "tone": "definition", "title": "Définition simple", "text": "Le **SSID** (Service Set Identifier) est le nom d'un réseau Wi-Fi, celui que l'on voit dans la liste des réseaux disponibles. Une même borne peut diffuser plusieurs SSID, chacun avec ses propres règles : mode d'authentification, réseau (VLAN) de destination, droits d'accès. Le **BSSID** est l'identifiant (une adresse MAC) d'une radio précise d'une borne : un même SSID a donc autant de BSSID que de radios qui le diffusent." },
+    { "id": "analogie", "kind": "callout", "tone": "analogy", "title": "Analogie", "text": "Imaginez un immeuble de bureaux avec plusieurs portes d'entrée portant le même nom : « Entrée Valmont ». Le nom sur la porte, c'est le SSID. Chaque porte physique, c'est un BSSID. Le gardien qui vérifie votre badge avant de vous laisser entrer, c'est l'authentification. Et l'étage où l'ascenseur vous dépose ensuite, c'est le VLAN. Un visiteur, lui, passe par une autre porte (« Accueil visiteurs ») qui ne mène qu'au hall." },
+    { "id": "tab-ssid", "kind": "table", "caption": "Les SSID fictifs du Groupe Valmont", "headers": ["SSID", "Pour qui", "Authentification", "Destination"], "rows": [
+      ["VALMONT-CORP", "Postes et portables du domaine", "WPA2/WPA3-Entreprise, certificat machine", "VLAN Bureaux (10.20.10.0/24)"],
+      ["VALMONT-VOIX", "Téléphones IP sans fil", "WPA2/WPA3-Entreprise", "VLAN Téléphonie (ID 20)"],
+      ["VALMONT-INVITES", "Visiteurs et appareils personnels", "Portail captif avec code du jour", "Réseau isolé, accès Internet seul"]
+    ] },
+    { "id": "h-bandes", "kind": "heading", "level": 2, "text": "Les bandes de fréquences : 2,4, 5 et 6 GHz" },
+    { "id": "p-bandes", "kind": "paragraph", "text": "Le Wi-Fi utilise trois grandes plages de fréquences, appelées **bandes**. La règle générale est simple : **plus la fréquence est basse, plus le signal porte loin et traverse les murs ; plus elle est haute, plus le débit possible est élevé mais plus la portée est courte**. Les bornes récentes émettent souvent sur deux ou trois bandes à la fois, et le poste choisit (ou se voit orienter vers) la plus adaptée." },
+    { "id": "tab-bandes", "kind": "table", "caption": "Compromis entre bandes (ordres de grandeur)", "headers": ["Bande", "Portée et traversée des murs", "Débit et encombrement", "Usage typique"], "rows": [
+      ["2,4 GHz", "La meilleure portée", "Débit plus faible, très encombrée (micro-ondes, Bluetooth, voisins), peu de canaux indépendants", "Objets connectés, zones éloignées, anciens appareils"],
+      ["5 GHz", "Portée moyenne, murs plus pénalisants", "Bon débit, beaucoup plus de canaux", "Bande de travail principale en entreprise"],
+      ["6 GHz (Wi-Fi 6E et 7)", "Portée la plus courte", "Très haut débit, bande peu encombrée, WPA3 obligatoire", "Salles très denses, appareils récents"]
+    ] },
+    { "id": "h-canaux", "kind": "heading", "level": 3, "text": "Canaux et interférences, en notions" },
+    { "id": "p-canaux", "kind": "paragraph", "text": "Chaque bande est découpée en **canaux**. Deux bornes proches qui émettent sur le même canal se gênent : elles doivent attendre leur tour pour parler, et le débit de chacune chute. En 2,4 GHz, seuls trois canaux ne se chevauchent pas en Europe dans la configuration habituelle (1, 6 et 11), ce qui rend cette bande vite saturée dans un immeuble. En 5 GHz, les canaux sont bien plus nombreux ; certains imposent à la borne de changer de canal si elle détecte un radar (mécanisme **DFS**), ce qui peut provoquer une courte coupure. Le choix des canaux est l'affaire de l'équipe réseau ; votre rôle est de **remarquer** qu'un problème touche une zone précise ou une heure précise, et de le noter." },
+    { "id": "h-signal", "kind": "heading", "level": 2, "text": "Mesurer le signal : pourcentage et RSSI" },
+    { "id": "p-signal", "kind": "paragraph", "text": "Windows affiche la qualité du signal en **pourcentage** et, sur les versions récentes, une valeur **RSSI** exprimée en **dBm** (décibels-milliwatt). Le RSSI est une valeur négative : **plus elle est proche de zéro, meilleur est le signal**. -45 dBm est excellent, -80 dBm est très faible. Le pourcentage est une traduction approximative propre au pilote : utile pour comparer, pas pour mesurer finement." },
+    { "id": "tab-rssi", "kind": "table", "caption": "Lecture indicative du RSSI", "headers": ["RSSI", "Qualité", "Ce que vit l'utilisateur"], "rows": [
+      ["-30 à -55 dBm", "Excellente", "Tout fonctionne, y compris visioconférence"],
+      ["-55 à -67 dBm", "Bonne", "Usage normal ; -67 dBm est un seuil souvent visé pour la voix et la vidéo"],
+      ["-67 à -75 dBm", "Moyenne à faible", "Lenteurs, micro-coupures en visioconférence"],
+      ["En dessous de -75 dBm", "Mauvaise", "Déconnexions, échecs de connexion, débit très bas"]
+    ] },
+    { "id": "signal-tip", "kind": "callout", "tone": "tip", "title": "Astuce", "text": "Un signal fort ne garantit pas un bon Wi-Fi : une borne saturée par 60 utilisateurs ou un canal brouillé donnent de mauvaises performances avec un excellent RSSI. À l'inverse, un signal faible explique presque toujours les problèmes. Relevez le signal **à l'endroit où l'utilisateur se plaint**, pas à votre bureau." },
+    { "id": "h-auth", "kind": "heading", "level": 2, "text": "L'authentification : Personnel ou Entreprise" },
+    { "id": "diag-wifi", "kind": "diagram", "diagram": "wifi-auth", "caption": "Authentification 802.1X : le poste présente son identité à la borne, qui la transmet au serveur RADIUS ; seule la réponse du serveur ouvre l'accès au réseau." },
+    { "id": "p-perso", "kind": "paragraph", "text": "En mode **Personnel** (WPA2-Personnel, WPA3-Personnel, parfois noté PSK ou SAE), tout le monde partage **une même clé**, le mot de passe du Wi-Fi. C'est simple, mais si un employé part avec ce mot de passe, il faut le changer sur tous les appareils. WPA3-Personnel renforce la protection contre les tentatives de devinette du mot de passe, mais le principe de clé partagée reste le même." },
+    { "id": "p-entreprise", "kind": "paragraph", "text": "En mode **Entreprise** (WPA2-Entreprise, WPA3-Entreprise), chaque utilisateur ou chaque machine s'authentifie **individuellement** grâce au protocole **802.1X**. Trois acteurs interviennent : le **client** (le poste, appelé « supplicant »), la **borne** ou le contrôleur (l'« authentificateur », qui se contente de relayer), et un **serveur RADIUS** qui décide (sous Windows Server, le rôle NPS joue souvent ce rôle, en s'appuyant sur Active Directory). L'identité peut être prouvée par un **identifiant et un mot de passe** (méthode courante : PEAP) ou par un **certificat** installé sur la machine (méthode EAP-TLS, considérée comme plus robuste)." },
+    { "id": "tab-auth", "kind": "table", "caption": "Personnel ou Entreprise : ce qui change pour le support", "headers": ["Critère", "WPA2/WPA3-Personnel", "WPA2/WPA3-Entreprise"], "rows": [
+      ["Identité", "Une clé partagée par tous", "Un compte ou un certificat par utilisateur ou machine"],
+      ["Départ d'un salarié", "Changer la clé partout", "Désactiver son compte ou révoquer son certificat"],
+      ["Traçabilité", "On ignore qui est connecté", "Le serveur RADIUS journalise chaque connexion"],
+      ["Panne typique", "Mauvaise clé saisie", "Mot de passe expiré, certificat expiré ou non approuvé, compte désactivé"],
+      ["Où chercher la cause", "Sur le poste (clé)", "Sur le poste ET dans les journaux RADIUS (N2)"]
+    ] },
+    { "id": "cert-field", "kind": "callout", "tone": "field", "title": "Sur le terrain", "text": "Avec 802.1X, le poste vérifie aussi l'identité du **serveur**, via son certificat. Si ce certificat serveur a été renouvelé et que le poste ne l'approuve pas, ou si le certificat machine du poste a expiré, la connexion échoue avec un message vague (« Impossible de se connecter à ce réseau »). Votre réflexe : noter l'heure exacte de l'échec, le nom du poste et le SSID, puis demander au N2 de consulter les journaux du serveur RADIUS. C'est là que la vraie raison est écrite." },
+    { "id": "h-invites", "kind": "heading", "level": 2, "text": "Réseau invités et portail captif" },
+    { "id": "p-invites", "kind": "paragraph", "text": "Un **réseau invités** est un SSID séparé, relié à un réseau isolé : il donne accès à Internet, **jamais** aux serveurs, imprimantes ou postes de l'entreprise. Il est souvent associé à un **portail captif** : à la première ouverture d'un navigateur, l'appareil est redirigé vers une page qui demande d'accepter des conditions, de saisir un code du jour ou une adresse de messagerie. Tant que cette étape n'est pas faite, l'appareil est connecté au Wi-Fi mais n'accède pas à Internet. Chez Maison Aubrac, le réseau invités des boutiques est totalement séparé du réseau des terminaux d'encaissement." },
+    { "id": "portal-tip", "kind": "callout", "tone": "tip", "title": "Astuce", "text": "Si la page du portail captif ne s'affiche pas, ouvrez dans le navigateur une adresse en http simple (sans « s »), ou désactivez temporairement le VPN de l'appareil : un VPN ou une page d'accueil en HTTPS empêchent parfois la redirection." },
+    { "id": "h-commandes", "kind": "heading", "level": 2, "text": "Les commandes Wi-Fi sous Windows" },
+    { "id": "cmd-wlan", "kind": "command", "shell": "cmd", "command": "netsh wlan show interfaces", "explanation": "Affiche l'état de chaque carte Wi-Fi : réseau associé, borne (BSSID), bande, canal, authentification, débit négocié et signal. Aucun droit administrateur n'est nécessaire. Certains champs (Bande, Rssi) n'apparaissent que sur les versions récentes de Windows.", "output": "Il existe 1 interface sur le système :\n\n    Nom                    : Wi-Fi\n    Description            : Intel(R) Wi-Fi 6E AX211 160MHz\n    Adresse physique       : a4:6b:b6:12:7c:e0\n    État                   : connecté\n    SSID                   : VALMONT-CORP\n    BSSID                  : 70:3a:0e:4d:21:b5\n    Type de réseau         : Infrastructure\n    Type de radio          : 802.11ax\n    Authentification       : WPA2 - Entreprise\n    Chiffrement            : CCMP\n    Mode de connexion      : Connexion automatique\n    Bande                  : 5 GHz\n    Canal                  : 52\n    Réception (Mbits/s)    : 86.7\n    Transmission (Mbits/s) : 72.2\n    Signal                 : 41%\n    Rssi                   : -76\n    Profil                 : VALMONT-CORP", "outputNotes": [
+      { "match": "SSID                   : VALMONT-CORP", "note": "Le poste est bien sur le réseau de l'entreprise, et non sur le réseau invités ou un partage de connexion de téléphone." },
+      { "match": "BSSID", "note": "L'identifiant de la borne à laquelle le poste est associé. Le relever à deux endroits différents montre si le poste change bien de borne en se déplaçant." },
+      { "match": "Authentification       : WPA2 - Entreprise", "note": "Authentification 802.1X : en cas d'échec, la cause peut être un compte, un mot de passe ou un certificat." },
+      { "match": "Réception (Mbits/s)    : 86.7", "note": "Débit négocié avec la borne. Très inférieur à ce que permet la carte (plusieurs centaines de Mbit/s), il confirme un lien radio dégradé." },
+      { "match": "Rssi                   : -76", "note": "Signal faible : sous -75 dBm, les coupures sont attendues. La cause est la couverture radio, pas le poste." }
+    ] },
+    { "id": "cmd-report", "kind": "command", "shell": "cmd", "command": "netsh wlan show wlanreport", "explanation": "Génère un rapport HTML sur les sessions Wi-Fi des derniers jours : connexions, déconnexions et leurs raisons. La commande doit être lancée dans une invite de commandes ouverte en tant qu'administrateur. Le fichier s'ouvre ensuite dans un navigateur.", "output": "Génération du rapport en cours.\nRapport écrit dans : C:\\ProgramData\\Microsoft\\Windows\\WlanReport\\wlan-report-latest.html", "outputNotes": [
+      { "match": "wlan-report-latest.html", "note": "Ouvrez ce fichier : le graphique des sessions montre chaque déconnexion. Une série de coupures à la même heure chaque jour, ou lors des déplacements, oriente le diagnostic." }
+    ] },
+    { "id": "cmd-profiles", "kind": "command", "shell": "cmd", "command": "netsh wlan show profiles", "explanation": "Liste les profils Wi-Fi enregistrés sur le poste. Un profil en double ou un ancien profil personnel (box, téléphone) peut faire connecter le poste au mauvais réseau.", "output": "Profils sur l’interface Wi-Fi :\n\nProfils de stratégie de groupe (lecture seule)\n---------------------------------\n    VALMONT-CORP\n\nProfils utilisateurs\n---------------\n    Profil Tous les utilisateurs : VALMONT-INVITES\n    Profil Tous les utilisateurs : Livebox-perso", "outputNotes": [
+      { "match": "Profils de stratégie de groupe", "note": "Le profil VALMONT-CORP est déployé par GPO : on ne le supprime pas, il serait recréé et on risquerait de couper l'accès entre-temps." },
+      { "match": "Livebox-perso", "note": "Un profil personnel sur un poste d'entreprise : ce n'est pas une cause de panne en soi, mais c'est utile à savoir si le poste se connecte au mauvais réseau." }
+    ] },
+    { "id": "h-symptomes", "kind": "heading", "level": 2, "text": "Les trois symptômes que vous rencontrerez le plus" },
+    { "id": "tab-symptomes", "kind": "table", "caption": "Symptôme, causes probables et vérifications", "headers": ["Symptôme", "Causes probables", "Vérifications N1"], "rows": [
+      ["« Connecté, pas d'Internet »", "Portail captif non validé, pas d'adresse DHCP (APIPA), DNS inaccessible, mauvais SSID", "SSID affiché, ipconfig /all (169.254 ?), ping passerelle, ouvrir une page http pour le portail"],
+      ["Déconnexions en se déplaçant", "Zone mal couverte, poste qui reste « accroché » à une borne lointaine, pilote ancien", "RSSI et BSSID à plusieurs endroits, rapport WLAN, version du pilote, comparaison avec un autre appareil"],
+      ["Échec d'authentification", "Mot de passe expiré ou changé récemment, compte verrouillé ou désactivé, certificat machine ou serveur expiré", "Heure exacte, message affiché, état du compte, autres utilisateurs touchés ? Escalade avec ces éléments"]
+    ] },
+    { "id": "roaming-info", "kind": "callout", "tone": "info", "title": "L'itinérance, en deux phrases", "text": "Quand on se déplace, c'est **le poste** qui décide de changer de borne, pas la borne qui le pousse. Certaines cartes restent trop longtemps associées à une borne lointaine au signal faible : le pilote et ses réglages jouent donc un rôle, d'où l'intérêt de comparer avec un autre appareil." },
+    { "id": "h-demo", "kind": "heading", "level": 2, "text": "Démonstration : les tablettes de la boutique" },
+    { "id": "steps-demo", "kind": "steps", "title": "Diagnostiquer des coupures Wi-Fi localisées", "steps": [
+      { "title": "Faire décrire précisément le symptôme", "text": "Où (en réserve), quand (dès qu'on y entre), quels appareils (toutes les tablettes), depuis quand (toujours, mais plus gênant depuis l'arrivée du nouveau stock qui encombre la réserve)." },
+      { "title": "Relever le signal en zone de vente", "text": "Sur un portable posé à côté de la caisse : SSID correct, Bande 5 GHz, Rssi -52. Tout va bien à cet endroit.", "command": "netsh wlan show interfaces" },
+      { "title": "Relever le signal en réserve", "text": "Même commande au fond de la réserve : Rssi -81, même BSSID qu'en zone de vente. Le poste reste accroché à la borne de la boutique, dont le signal ne traverse pas les rayonnages métalliques." },
+      { "title": "Consulter l'historique", "text": "Le rapport WLAN du portable montre une série de déconnexions pendant le passage en réserve, et aucune ailleurs.", "command": "netsh wlan show wlanreport" },
+      { "title": "Écarter les autres pistes", "text": "Plusieurs appareils de marques différentes sont touchés au même endroit : ce n'est pas un pilote ou une tablette défectueuse." },
+      { "title": "Escalader avec des mesures", "text": "Note au N2 réseau : « Boutique Maison Aubrac, réserve : RSSI -81 dBm sur BSSID 70:3a:0e:4d:21:b5 (seule borne visible), -52 dBm en zone de vente. Coupures confirmées par rapport WLAN. Couverture insuffisante en réserve, étude radio ou borne supplémentaire à envisager. »" }
+    ] },
+    { "id": "mistakes", "kind": "mistakes", "items": [
+      { "mistake": "Supprimer le profil Wi-Fi d'entreprise « pour le recréer »", "why": "Un profil 802.1X déployé par GPO ou par l'outil de gestion des appareils contient des réglages (certificat, méthode EAP) que l'utilisateur ne saura pas ressaisir.", "fix": "Ne jamais supprimer un profil géré ; relever les informations et escalader si l'authentification échoue." },
+      { "mistake": "Donner la clé du réseau invités ou un partage de connexion pour « dépanner » un poste professionnel", "why": "Le poste perd l'accès aux ressources internes et sort du périmètre de sécurité de l'entreprise.", "fix": "Traiter la cause sur le SSID d'entreprise ; le réseau invités est réservé aux visiteurs." },
+      { "mistake": "Mesurer le signal depuis son propre bureau", "why": "Le problème est souvent localisé : salle de réunion, réserve, bout de couloir.", "fix": "Relever RSSI et BSSID à l'endroit exact où l'utilisateur se plaint." },
+      { "mistake": "Conclure « Wi-Fi en panne » sur un « connecté sans Internet »", "why": "Le lien radio peut être parfait alors que le DHCP, le DNS ou le portail captif posent problème.", "fix": "Dérouler la séquence ipconfig, ping passerelle, nslookup, et vérifier le portail captif sur un réseau invités." }
+    ] },
+    { "id": "risks", "kind": "risks", "items": [
+      "Ne communiquez jamais une clé Wi-Fi d'entreprise par messagerie ou par téléphone sans avoir vérifié l'identité et le droit de la personne à la recevoir.",
+      "Un échec 802.1X peut révéler un compte verrouillé ou un certificat révoqué volontairement : ne tentez pas de contourner l'authentification, transmettez au N2.",
+      "Ne modifiez ni les canaux, ni la puissance, ni la configuration d'une borne ou d'un contrôleur : ces changements touchent tous les utilisateurs de la zone et relèvent d'une demande de changement.",
+      "Ne branchez pas de borne ou de routeur Wi-Fi personnel sur le réseau de l'entreprise : c'est une porte d'entrée non maîtrisée et une source d'interférences."
+    ] },
+    { "id": "quiz", "kind": "quiz", "title": "Vérifiez votre compréhension", "questions": ["wifi-bandes-portee", "wifi-rssi-lecture", "wifi-8021x-acteurs", "wifi-portail-captif", "wifi-ssid-bssid"] },
+    { "id": "exercise", "kind": "exercise", "title": "« Le Wi-Fi refuse mon portable depuis ce matin »", "context": "Chez Groupe Valmont, Mme Garnier signale que son portable PC-COM-031 ne se connecte plus au SSID VALMONT-CORP depuis ce matin : Windows affiche « Impossible de se connecter à ce réseau ». Ses collègues de l'open space sont connectés normalement. Hier soir, elle a reçu un message l'invitant à changer son mot de passe et l'a fait depuis son téléphone. Le portable est resté éteint depuis vendredi. netsh wlan show interfaces indique « État : déconnecté ».", "task": "Formulez votre hypothèse principale, expliquez pourquoi le problème ne vient pas de la couverture radio, et décrivez ce que vous faites et ce que vous transmettez éventuellement au N2.", "hints": [
+      "Les collègues au même endroit sont connectés : que peut-on en déduire sur les bornes et le signal ?",
+      "Le réseau est en WPA2-Entreprise : qu'est-ce qui est vérifié au moment de la connexion ? Qu'est-ce qui a changé pour Mme Garnier ?",
+      "Le portable conserve souvent l'ancien mot de passe en mémoire pour le Wi-Fi ou la session. Une connexion filaire permet de mettre à jour les informations, puis de retenter."
+    ], "solution": [
+      "Les collègues de la même zone sont connectés au même SSID : les bornes, la couverture et le serveur d'authentification fonctionnent. La cause est propre au portable ou au compte de Mme Garnier.",
+      "Le réseau est en mode Entreprise : chaque connexion est validée par le serveur RADIUS, selon le cas avec les identifiants de l'utilisatrice ou un certificat machine. Le changement de mot de passe d'hier soir est l'élément nouveau : le portable, éteint depuis vendredi, présente probablement encore l'ancien mot de passe, refusé par le serveur. Selon la configuration, un certificat machine expiré pendant l'arrêt du portable est une seconde hypothèse.",
+      "Action : relier le portable par câble au réseau de l'entreprise, ouvrir la session avec le nouveau mot de passe pour mettre à jour les informations mises en cache, puis retenter le Wi-Fi. Vérifier aussi que le compte n'est pas verrouillé par les tentatives répétées.",
+      "Si l'échec persiste, escalader au N2 avec : nom du poste, SSID, heure exacte de la dernière tentative, message affiché, changement de mot de passe récent, test filaire réalisé. Le N2 consultera les journaux RADIUS (raison du refus) et l'état du certificat machine."
+    ], "rubric": {
+      "criteria": [
+        { "id": "collegues", "label": "Exploite le fait que les collègues sont connectés", "points": 2, "patterns": ["collegue*", "voisin*", "autres utilisateurs", "les autres"] },
+        { "id": "radio", "label": "Écarte la couverture radio / le signal", "points": 1, "patterns": ["signal", "couverture", "borne*", "radio"] },
+        { "id": "mdp", "label": "Relie la panne au changement de mot de passe ou à l'authentification", "points": 3, "patterns": ["mot de passe", "identifiant*", "authentification", "802.1x", "radius", "ancien mot de passe"], "required": true },
+        { "id": "filaire", "label": "Propose une connexion filaire pour mettre à jour la session", "points": 2, "patterns": ["cable", "filaire", "ethernet", "branche*"] },
+        { "id": "certif", "label": "Envisage le certificat ou le verrouillage du compte", "points": 1, "patterns": ["certificat", "verrouill*", "bloque"] },
+        { "id": "escalade", "label": "Prévoit une escalade documentée (heure, poste, message, journaux)", "points": 2, "patterns": ["escalad*", "n2", "journaux", "logs", "heure"] }
+      ],
+      "redFlags": [
+        { "id": "invites", "label": "Propose de basculer le portable sur le réseau invités", "patterns": ["reseau invite*", "wifi invite*", "partage de connexion"], "penalty": 2 },
+        { "id": "suppr-profil", "label": "Propose de supprimer le profil Wi-Fi d'entreprise", "patterns": ["supprimer le profil", "oublier le reseau", "supprimer le reseau"], "penalty": 1 }
+      ],
+      "passPercent": 60
+    } },
+    { "id": "interview", "kind": "interview", "questions": [
+      { "question": "Quelle différence faites-vous entre WPA2-Personnel et WPA2-Entreprise ?", "expectedPoints": ["Personnel : une clé partagée par tous les appareils", "Entreprise : authentification individuelle via 802.1X", "Un serveur RADIUS valide l'identité (compte ou certificat)", "Conséquence : traçabilité et révocation individuelle"], "modelAnswer": "En mode Personnel, tous les appareils utilisent la même clé : c'est simple, mais si la clé fuit, il faut la changer partout et on ne sait pas qui est connecté. En mode Entreprise, chaque utilisateur ou chaque machine s'authentifie individuellement avec le protocole 802.1X : la borne relaie la demande à un serveur RADIUS qui vérifie un compte ou un certificat. On peut alors bloquer une seule personne, et chaque connexion est journalisée. Pour le support, cela veut dire qu'un échec de connexion peut venir du compte, du mot de passe ou d'un certificat, et que la raison exacte se trouve dans les journaux RADIUS." },
+      { "question": "Un utilisateur est « connecté au Wi-Fi mais sans Internet ». Comment procédez-vous ?", "expectedPoints": ["Vérifier le SSID réellement utilisé", "ipconfig /all : adresse valide ou APIPA", "Ping de la passerelle et nslookup", "Penser au portail captif sur un réseau invités", "Comparer avec un autre appareil"], "modelAnswer": "Je vérifie d'abord sur quel SSID il est réellement connecté, avec netsh wlan show interfaces. Ensuite, ipconfig /all : une adresse en 169.254 indique un problème DHCP, pas radio. Si l'adresse est correcte, je ping la passerelle puis je teste le DNS avec nslookup. Sur un réseau invités, je pense au portail captif non validé. Je compare avec un autre appareil au même endroit pour savoir si le problème est local au poste ou général." },
+      { "question": "Comment expliqueriez-vous la différence entre 2,4 GHz et 5 GHz à un utilisateur ?", "expectedPoints": ["2,4 GHz porte plus loin et traverse mieux les murs", "5 GHz offre plus de débit mais une portée plus courte", "Une analogie simple"], "modelAnswer": "Le 2,4 GHz, c'est une route de campagne : elle va loin et passe partout, mais elle est étroite et souvent encombrée. Le 5 GHz, c'est une autoroute : beaucoup plus rapide, mais avec moins de sorties, donc elle couvre une zone plus réduite et supporte mal les murs épais. Votre ordinateur choisit généralement la meilleure des deux selon l'endroit où vous êtes." }
+    ] },
+    { "id": "glossary", "kind": "glossary", "terms": [
+      { "term": "Point d'accès (borne)", "en": "Access Point (AP)", "definition": "Équipement qui relie les appareils sans fil au réseau filaire." },
+      { "term": "SSID", "en": "Service Set Identifier", "definition": "Nom d'un réseau Wi-Fi diffusé par une ou plusieurs bornes." },
+      { "term": "BSSID", "en": "Basic Service Set Identifier", "definition": "Adresse MAC d'une radio précise d'une borne." },
+      { "term": "Indicateur de puissance du signal", "en": "Received Signal Strength Indicator (RSSI)", "definition": "Puissance du signal reçu, en dBm négatifs : plus proche de zéro, meilleur." },
+      { "term": "Itinérance", "en": "Roaming", "definition": "Passage d'un appareil d'une borne à une autre en se déplaçant." },
+      { "term": "Serveur RADIUS", "en": "RADIUS server", "definition": "Serveur qui valide l'identité des clients en authentification 802.1X." },
+      { "term": "Portail captif", "en": "Captive portal", "definition": "Page web à valider avant d'obtenir l'accès Internet sur un réseau invités." },
+      { "term": "Clé pré-partagée", "en": "Pre-Shared Key (PSK)", "definition": "Mot de passe Wi-Fi commun à tous les appareils, en mode Personnel." }
+    ] },
+    { "id": "summary", "kind": "summary", "points": [
+      "Le SSID est le nom du réseau ; une entreprise en diffuse plusieurs, chacun relié à un réseau et à des règles différentes.",
+      "2,4 GHz porte loin mais est lent et encombré ; 5 GHz est la bande de travail ; 6 GHz offre le plus de débit sur la plus courte portée.",
+      "Le RSSI se lit en dBm négatifs : vers -67 dBm c'est correct, sous -75 dBm les coupures sont attendues.",
+      "WPA2/WPA3-Entreprise authentifie chaque utilisateur ou machine via 802.1X et un serveur RADIUS ; les échecs viennent souvent d'un mot de passe ou d'un certificat.",
+      "netsh wlan show interfaces donne SSID, BSSID, bande, canal, débit et signal ; netsh wlan show wlanreport retrace l'historique des déconnexions.",
+      "« Connecté sans Internet » se diagnostique comme un problème réseau classique, en pensant au portail captif sur un réseau invités."
+    ] },
+    { "id": "references", "kind": "references", "items": [
+      { "title": "Analyze the wireless network report", "url": "https://support.microsoft.com/en-us/help/4000462", "publisher": "Microsoft Support", "verifiedAt": "2026-10-21" },
+      { "title": "Security (WPA3-Personal et WPA3-Enterprise)", "url": "https://www.wi-fi.org/discover-wi-fi/security", "publisher": "Wi-Fi Alliance", "verifiedAt": "2026-10-21" },
+      { "title": "Sécuriser les accès Wi-Fi", "url": "https://messervices.cyber.gouv.fr/guides/securiser-les-acces-wi-fi", "publisher": "ANSSI (MesServicesCyber)", "verifiedAt": "2026-10-21" },
+      { "title": "IEEE 802.11 Working Group", "url": "https://www.ieee802.org/11/", "publisher": "IEEE", "verifiedAt": "2026-10-21" }
+    ] }
+  ]
+}

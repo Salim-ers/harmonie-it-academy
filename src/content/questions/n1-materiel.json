@@ -1,0 +1,124 @@
+[
+  {
+    "code": "materiel-ram-role",
+    "lesson": "n1-materiel",
+    "skill": "hardware",
+    "prompt": "Un poste de bureautique équipé de 8 Go de RAM devient très lent dès que l'utilisateur ouvre Teams, Excel et une trentaine d'onglets. Aucun écran bleu, aucun plantage. Quelle est l'explication la plus probable ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Une barrette de RAM est défectueuse" },
+        { "id": "b", "text": "La mémoire vive est saturée et Windows utilise le disque comme mémoire d'appoint" },
+        { "id": "c", "text": "Le processeur est en panne" },
+        { "id": "d", "text": "La carte mère doit être remplacée" }
+      ],
+      "answer": "b"
+    },
+    "explanation": "Avec 8 Go et une charge lourde, la RAM se remplit : Windows déplace alors des données vers le fichier d'échange sur le disque, beaucoup plus lent. C'est un manque de capacité, pas une panne. Une barrette défectueuse provoquerait plutôt des écrans bleus ou des plantages aléatoires. Un processeur tombe très rarement en panne, et une carte mère défaillante donne des symptômes plus graves (poste mort, ports inactifs).",
+    "difficulty": 1
+  },
+  {
+    "code": "materiel-symptome-match",
+    "lesson": "n1-materiel",
+    "skill": "diagnostic",
+    "prompt": "Associez chaque symptôme au composant à soupçonner en premier.",
+    "data": {
+      "type": "match",
+      "left": [
+        { "id": "clics", "text": "Clics réguliers et lenteurs croissantes" },
+        { "id": "noir", "text": "Voyants allumés, ventilateur actif, écran noir" },
+        { "id": "bleu", "text": "Écrans bleus aléatoires avec MEMORY_MANAGEMENT" },
+        { "id": "eteint", "text": "Portable qui s'éteint dès qu'on débranche le chargeur" }
+      ],
+      "right": [
+        { "id": "hdd", "text": "Disque dur mécanique" },
+        { "id": "affichage", "text": "Chaîne d'affichage (câble, écran, GPU)" },
+        { "id": "ram", "text": "Mémoire vive" },
+        { "id": "batterie", "text": "Batterie" },
+        { "id": "cpu", "text": "Processeur" }
+      ],
+      "answer": { "clics": "hdd", "noir": "affichage", "bleu": "ram", "eteint": "batterie" }
+    },
+    "explanation": "Les clics viennent de la tête de lecture d'un HDD qui peine. Un PC visiblement allumé sans image oriente vers l'affichage (câble, entrée de l'écran, dock, GPU). Le code MEMORY_MANAGEMENT pointe la mémoire vive. Un portable qui ne tient pas sans chargeur a une batterie hors d'usage. Le processeur, qui tombe très rarement en panne, n'est la première piste d'aucun de ces symptômes.",
+    "difficulty": 1
+  },
+  {
+    "code": "materiel-wmic-vf",
+    "lesson": "n1-materiel",
+    "skill": "hardware",
+    "prompt": "Vrai ou faux : pour obtenir le numéro de série d'un poste Windows 11 récent, la méthode recommandée est la commande wmic bios get serialnumber.",
+    "data": { "type": "truefalse", "answer": false },
+    "explanation": "Faux. L'utilitaire wmic est déprécié depuis 2021 et Microsoft l'a retiré des versions récentes de Windows 11 : la commande peut tout simplement ne pas exister. WMI reste en place ; on l'interroge avec Get-CimInstance -ClassName Win32_BIOS (propriété SerialNumber), ou on consulte msinfo32 ou l'étiquette du constructeur.",
+    "difficulty": 1
+  },
+  {
+    "code": "materiel-stockage-multiple",
+    "lesson": "n1-materiel",
+    "skill": "hardware",
+    "prompt": "Quelles affirmations sur le stockage sont exactes ? (plusieurs réponses)",
+    "data": {
+      "type": "multiple",
+      "choices": [
+        { "id": "a", "text": "Un SSD NVMe est relié au bus PCIe et il est plus rapide qu'un SSD SATA" },
+        { "id": "b", "text": "Un SSD peut cesser de fonctionner sans signe avant-coureur" },
+        { "id": "c", "text": "Un HDD n'a aucune pièce mobile" },
+        { "id": "d", "text": "Le contenu de la RAM est conservé quand le poste est éteint" },
+        { "id": "e", "text": "Un état HealthStatus « Warning » justifie de sauvegarder les données en priorité" }
+      ],
+      "answer": ["a", "b", "e"]
+    },
+    "explanation": "Le NVMe utilise le bus PCIe, plus rapide que le SATA. Un SSD peut disparaître du jour au lendemain, d'où l'importance des sauvegardes. Un état Warning signifie que le disque signale lui-même une dégradation : on sauvegarde d'abord. En revanche, le HDD est justement le disque à pièces mobiles (plateaux, tête), et la RAM est volatile : elle se vide à l'extinction.",
+    "difficulty": 2
+  },
+  {
+    "code": "materiel-cim-fill",
+    "lesson": "n1-materiel",
+    "skill": "hardware",
+    "prompt": "Complétez la commande PowerShell qui affiche le numéro de série du poste.",
+    "data": {
+      "type": "fill",
+      "template": "Get-CimInstance -ClassName ___ | Select-Object SerialNumber",
+      "accepted": ["Win32_BIOS", "Win32_Bios", "win32_bios"]
+    },
+    "explanation": "La classe Win32_BIOS décrit le firmware et contient la propriété SerialNumber. Win32_ComputerSystem donne le fabricant et le modèle mais pas le numéro de série ; Win32_Processor décrit le processeur.",
+    "difficulty": 2
+  },
+  {
+    "code": "materiel-exam-1",
+    "lesson": "n1-materiel",
+    "skill": "diagnostic",
+    "prompt": "Un collaborateur du siège signale que son portable posé sur la station d'accueil n'affiche plus rien sur ses deux écrans externes, et que le réseau filaire ne fonctionne plus. L'écran du portable fonctionne et le Wi-Fi aussi. Quelle est la meilleure première action ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Réinstaller le pilote graphique du portable" },
+        { "id": "b", "text": "Escalader immédiatement pour remplacer la carte mère" },
+        { "id": "c", "text": "Brancher un écran et le câble réseau directement sur le portable, et vérifier l'alimentation et le câble USB-C du dock" },
+        { "id": "d", "text": "Remplacer les deux écrans" }
+      ],
+      "answer": "c"
+    },
+    "explanation": "Les deux écrans et le réseau filaire passent tous par la station d'accueil : la panne simultanée de trois fonctions désigne leur point commun. Brancher directement sur le portable isole le dock en une minute. Réinstaller le pilote graphique n'expliquerait pas la perte du réseau filaire. La carte mère est contredite par l'écran interne et le Wi-Fi qui fonctionnent. Deux écrans qui tombent en panne en même temps est très improbable.",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "code": "materiel-exam-2",
+    "lesson": "n1-materiel",
+    "skill": "diagnostic",
+    "prompt": "Le poste PC-ACH-007 (HDD, HealthStatus Warning, clics audibles) contient des fichiers qui n'existent qu'en local. Remettez les actions dans le bon ordre.",
+    "data": {
+      "type": "order",
+      "items": [
+        { "id": "escalade", "text": "Escalader pour remplacement avec modèle, numéro de série et constats" },
+        { "id": "sauvegarde", "text": "Copier les données locales importantes vers le partage ou OneDrive" },
+        { "id": "constat", "text": "Confirmer l'état du disque avec Get-PhysicalDisk et noter les symptômes" },
+        { "id": "pret", "text": "Proposer un poste de prêt pour que l'utilisateur cesse de travailler sur ce disque" }
+      ],
+      "answer": ["constat", "sauvegarde", "pret", "escalade"]
+    },
+    "explanation": "On confirme d'abord le diagnostic en quelques secondes (état Warning, clics), puis on met les données à l'abri tant que le disque fonctionne encore : c'est l'étape qui ne peut pas attendre. On limite ensuite l'usage du disque avec un poste de prêt, et on escalade avec un ticket complet. Escalader avant de sauvegarder ferait courir un risque de perte définitive pendant le délai d'intervention.",
+    "difficulty": 3,
+    "examOnly": true
+  }
+]

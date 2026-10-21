@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "satisfaction_user_course_uq" ON "satisfaction_surveys" USING btree ("user_id","course_id");

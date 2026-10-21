@@ -1,0 +1,128 @@
+[
+  {
+    "code": "glpi-suivi-tache-solution",
+    "lesson": "n1-glpi",
+    "skill": "itsm-tools",
+    "prompt": "Associez chaque saisie à l'élément GLPI le plus adapté.",
+    "data": {
+      "type": "match",
+      "left": [
+        { "id": "question", "text": "Demander à l'utilisateur à quelle heure le message est apparu" },
+        { "id": "action", "text": "Noter la vérification du compte dans l'annuaire, 10 minutes" },
+        { "id": "resolution", "text": "Expliquer à l'utilisateur ce qui a réglé son problème" }
+      ],
+      "right": [
+        { "id": "suivi", "text": "Suivi" },
+        { "id": "tache", "text": "Tâche" },
+        { "id": "solution", "text": "Solution" },
+        { "id": "document", "text": "Document joint" }
+      ],
+      "answer": { "question": "suivi", "action": "tache", "resolution": "solution" }
+    },
+    "explanation": "Le suivi sert à échanger avec le demandeur, il est donc adapté à une question. La tâche décrit une action technique et porte sa durée, ce qui alimente le temps passé. La solution explique la résolution et fait passer le ticket en Résolu, en attente d'approbation. Un document joint sert à ajouter un fichier, pas à communiquer ni à tracer une action.",
+    "difficulty": 1
+  },
+  {
+    "code": "glpi-observateur",
+    "lesson": "n1-glpi",
+    "skill": "itsm-tools",
+    "prompt": "Le responsable d'une utilisatrice veut être tenu informé de l'avancement de son ticket, sans intervenir. Quel rôle lui donnez-vous ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "obs", "text": "Observateur" },
+        { "id": "dem", "text": "Demandeur" },
+        { "id": "attr", "text": "Attribué à" },
+        { "id": "valid", "text": "Technicien responsable du matériel" }
+      ],
+      "answer": "obs"
+    },
+    "explanation": "L'observateur suit le ticket et reçoit les notifications sans pouvoir le modifier : c'est exactement le besoin du responsable. Le demandeur est la personne concernée par le ticket, ici l'utilisatrice. « Attribué à » désigne celui qui traite. Le technicien responsable du matériel est une information de l'inventaire, pas un rôle d'acteur du ticket.",
+    "difficulty": 1
+  },
+  {
+    "code": "glpi-prive",
+    "lesson": "n1-glpi",
+    "skill": "documentation",
+    "prompt": "Vrai ou faux : un suivi marqué privé dans GLPI est un endroit sûr pour noter un mot de passe temporaire, puisque l'utilisateur ne le voit pas.",
+    "data": { "type": "truefalse", "answer": false },
+    "explanation": "Faux. Privé signifie invisible pour le demandeur, mais visible par tous les comptes autorisés à voir les suivis et tâches, donc par de nombreux techniciens, et conservé dans l'historique. Un mot de passe ne doit jamais être écrit dans un ticket, quelle que soit la visibilité. On utilise le canal prévu par la procédure.",
+    "difficulty": 1
+  },
+  {
+    "code": "glpi-statut-planifie",
+    "lesson": "n1-glpi",
+    "skill": "itsm-tools",
+    "prompt": "Vous ajoutez à un ticket une tâche d'intervention sur site, planifiée demain à 10 h dans le calendrier. Quel statut prend généralement le ticket ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "planifie", "text": "En cours (planifié)" },
+        { "id": "attente", "text": "En attente" },
+        { "id": "resolu", "text": "Résolu" },
+        { "id": "nouveau", "text": "Nouveau" }
+      ],
+      "answer": "planifie"
+    },
+    "explanation": "Dans GLPI, l'ajout d'une tâche planifiée fait passer le ticket en « En cours (planifié) ». « En attente » sert quand on dépend d'un tiers, comme une réponse de l'utilisateur. « Résolu » suppose une solution saisie, ce qui n'est pas encore le cas. « Nouveau » correspond à un ticket que personne n'a encore pris en charge.",
+    "difficulty": 2
+  },
+  {
+    "code": "glpi-correspondance",
+    "lesson": "n1-glpi",
+    "skill": "itsm-tools",
+    "prompt": "Dans ServiceNow, les « work notes » d'un incident correspondent, dans GLPI, plutôt à :",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "prive", "text": "Un suivi ou une tâche privé, réservé aux techniciens" },
+        { "id": "solution", "text": "La solution du ticket" },
+        { "id": "public", "text": "Un suivi public adressé au demandeur" },
+        { "id": "kb", "text": "Un article de la FAQ" }
+      ],
+      "answer": "prive"
+    },
+    "explanation": "Les work notes sont des notes internes, visibles par les équipes de support et non par l'utilisateur : c'est l'équivalent d'un suivi ou d'une tâche privé dans GLPI. L'équivalent du suivi public est plutôt le champ de commentaires visibles par l'utilisateur. La solution décrit la résolution, et la FAQ s'adresse aux utilisateurs : ni l'une ni l'autre n'est une note interne.",
+    "difficulty": 2
+  },
+  {
+    "code": "glpi-exam-1",
+    "lesson": "n1-glpi",
+    "skill": "itsm-tools",
+    "prompt": "Vous recevez l'appel d'une utilisatrice du Groupe Valmont. Remettez dans l'ordre vos actions dans GLPI.",
+    "data": {
+      "type": "order",
+      "items": [
+        { "id": "solution", "text": "Saisir une solution rédigée pour l'utilisatrice" },
+        { "id": "entite", "text": "Vérifier que l'entité active est Groupe Valmont" },
+        { "id": "qualifier", "text": "Qualifier : type, catégorie, urgence, impact, élément associé" },
+        { "id": "chercher", "text": "Rechercher si un ticket ouvert existe déjà pour cette utilisatrice" },
+        { "id": "tache", "text": "Tracer le diagnostic dans une tâche avec sa durée" }
+      ],
+      "answer": ["entite", "chercher", "qualifier", "tache", "solution"]
+    },
+    "explanation": "On vérifie d'abord l'entité pour ne pas travailler chez le mauvais client, puis on cherche un ticket existant pour ne pas créer de doublon. On qualifie ensuite le ticket, nouveau ou repris. Le diagnostic est tracé dans une tâche, avec sa durée, et la solution vient en dernier, une fois le problème réglé. Saisir la solution avant le diagnostic, ou qualifier dans la mauvaise entité, produit un ticket inexploitable.",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "code": "glpi-exam-2",
+    "lesson": "n1-glpi",
+    "skill": "itsm-tools",
+    "prompt": "Un ticket est passé en Résolu hier. Ce matin, le demandeur refuse la solution en écrivant que le problème est revenu. Quelles affirmations sont exactes ? (plusieurs réponses)",
+    "data": {
+      "type": "multiple",
+      "choices": [
+        { "id": "repart", "text": "Le ticket repart en traitement avec le commentaire du demandeur" },
+        { "id": "suivi", "text": "Il faut répondre par un suivi public pour accuser réception et annoncer la suite" },
+        { "id": "historique", "text": "La solution refusée et le commentaire restent dans l'historique, utiles au diagnostic" },
+        { "id": "nouveau", "text": "Il faut obligatoirement créer un nouveau ticket et clore l'ancien" },
+        { "id": "ignorer", "text": "On peut ignorer le refus, car la clôture automatique s'appliquera" }
+      ],
+      "answer": ["repart", "suivi", "historique"]
+    },
+    "explanation": "Le refus de la solution renvoie le ticket en traitement. L'historique conserve la solution précédente et le commentaire, ce qui aide à comprendre pourquoi la correction n'a pas tenu. Un suivi public rassure le demandeur et annonce la suite. Créer un nouveau ticket éclaterait l'historique sans raison. Ignorer le refus est une faute : la clôture automatique s'applique aux tickets résolus sans réponse, pas à un ticket dont la solution a été refusée.",
+    "difficulty": 2,
+    "examOnly": true
+  }
+]

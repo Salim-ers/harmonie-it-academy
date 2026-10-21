@@ -1,0 +1,93 @@
+[
+  {
+    "code": "dhcp-dora-ordre",
+    "lesson": "n1-dhcp",
+    "skill": "network-services",
+    "prompt": "Remettez dans l'ordre les messages échangés lorsqu'un poste obtient son adresse par DHCP.",
+    "data": {
+      "type": "order",
+      "items": [
+        { "id": "request", "text": "Request — le poste accepte l'offre" },
+        { "id": "discover", "text": "Discover — le poste cherche un serveur" },
+        { "id": "ack", "text": "Acknowledge — le serveur confirme le bail" },
+        { "id": "offer", "text": "Offer — le serveur propose une adresse" }
+      ],
+      "answer": ["discover", "offer", "request", "ack"]
+    },
+    "explanation": "DORA : Discover (recherche en diffusion), Offer (proposition), Request (acceptation, elle aussi diffusée pour informer les autres serveurs), Acknowledge (confirmation et début du bail).",
+    "difficulty": 1
+  },
+  {
+    "code": "dhcp-apipa-sens",
+    "lesson": "n1-dhcp",
+    "skill": "network-services",
+    "prompt": "Un poste affiche l'adresse 169.254.58.201 et aucune passerelle. Que pouvez-vous en conclure avec certitude ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Le câble réseau est débranché" },
+        { "id": "b", "text": "La carte est configurée en DHCP mais aucun serveur DHCP n'a répondu" },
+        { "id": "c", "text": "Le serveur DNS est en panne" },
+        { "id": "d", "text": "Outlook est corrompu" }
+      ],
+      "answer": "b"
+    },
+    "explanation": "Une adresse 169.254.x.x est une APIPA : Windows se l'attribue quand il attend le DHCP sans recevoir d'offre. Un câble débranché afficherait plutôt « Média déconnecté » sans adresse. Le DNS et Outlook ne sont pas en cause à ce stade.",
+    "difficulty": 1
+  },
+  {
+    "code": "dhcp-bail-renouvellement",
+    "lesson": "n1-dhcp",
+    "skill": "network-services",
+    "prompt": "Le serveur DHCP est arrêté depuis une heure, mais la plupart des postes fonctionnent encore. Pourquoi ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Les postes gardent leur adresse jusqu'à l'expiration de leur bail" },
+        { "id": "b", "text": "Le switch distribue les adresses à la place du serveur" },
+        { "id": "c", "text": "Windows passe automatiquement en adresse fixe" },
+        { "id": "d", "text": "Le DNS prend le relais du DHCP" }
+      ],
+      "answer": "a"
+    },
+    "explanation": "Un bail accordé reste valable jusqu'à son échéance. Seuls les postes qui démarrent, qui arrivent sur le réseau ou dont le bail expire ont besoin du serveur. C'est pourquoi une panne DHCP se manifeste progressivement, souvent le matin au démarrage.",
+    "difficulty": 2
+  },
+  {
+    "code": "dhcp-option-dns",
+    "lesson": "n1-dhcp",
+    "skill": "network-services",
+    "prompt": "Quelles informations un serveur DHCP fournit-il couramment à un poste de bureau ? (plusieurs réponses)",
+    "data": {
+      "type": "multiple",
+      "choices": [
+        { "id": "ip", "text": "Une adresse IP et son masque" },
+        { "id": "gw", "text": "La passerelle par défaut" },
+        { "id": "dns", "text": "Les serveurs DNS" },
+        { "id": "pwd", "text": "Le mot de passe de session de l'utilisateur" },
+        { "id": "mac", "text": "L'adresse MAC de la carte réseau" }
+      ],
+      "answer": ["ip", "gw", "dns"]
+    },
+    "explanation": "Le DHCP distribue l'adresse, le masque, la passerelle (option 003), les DNS (option 006) et d'autres options. L'adresse MAC est gravée dans la carte : c'est elle qui identifie le poste auprès du serveur. Les mots de passe n'ont rien à voir avec le DHCP.",
+    "difficulty": 1
+  },
+  {
+    "code": "dhcp-diag-voisin",
+    "lesson": "n1-dhcp",
+    "skill": "diagnostic",
+    "prompt": "Vrai ou faux : si un poste est en APIPA mais que son voisin branché sur le même switch obtient une adresse, le serveur DHCP fonctionne pour ce réseau.",
+    "data": { "type": "truefalse", "answer": true },
+    "explanation": "Vrai : le voisin prouve que le serveur, l'étendue et le relais fonctionnent pour ce VLAN. La cause est propre au chemin du poste en panne (prise, brassage, port, VLAN du port, carte). Cette comparaison évite d'escalader une fausse panne générale.",
+    "difficulty": 2
+  },
+  {
+    "code": "dhcp-commande-renew",
+    "lesson": "n1-dhcp",
+    "skill": "powershell",
+    "prompt": "Complétez la commande qui relance une demande d'adresse DHCP sur un poste Windows.",
+    "data": { "type": "fill", "template": "ipconfig ___", "accepted": ["/renew", "-renew"] },
+    "explanation": "ipconfig /renew relance un échange DHCP. ipconfig /release rend d'abord le bail en cours : à éviter pendant une prise en main à distance, car la connexion serait coupée.",
+    "difficulty": 1
+  }
+]

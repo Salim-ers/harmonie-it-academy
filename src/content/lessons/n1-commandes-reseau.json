@@ -1,0 +1,188 @@
+{
+  "meta": {
+    "slug": "n1-commandes-reseau",
+    "title": "Les commandes de diagnostic réseau sous Windows",
+    "summary": "Enchaîner ipconfig, ping, nslookup, tracert et Test-NetConnection dans le bon ordre, lire chaque sortie et situer une panne réseau en quelques minutes.",
+    "level": "debutant",
+    "prerequisites": [
+      "Savoir lire une adresse IP, un masque et une passerelle (leçon « Adresse IP, masque et passerelle »)",
+      "Connaître le rôle du DHCP et du DNS (leçons « DHCP » et « DNS »)"
+    ],
+    "objectives": [
+      "Dérouler une séquence de tests réseau ordonnée, du poste vers Internet",
+      "Lire la sortie d'ipconfig /all, ping, nslookup et tracert et en tirer une conclusion",
+      "Expliquer ce qu'un ping prouve et ce qu'il ne prouve pas",
+      "Tester l'ouverture d'un port applicatif avec Test-NetConnection",
+      "Rédiger une note d'escalade qui indique précisément où la communication s'arrête"
+    ],
+    "durationMin": 45,
+    "skills": [
+      { "code": "network-fundamentals", "weight": 3 },
+      { "code": "diagnostic", "weight": 3 },
+      { "code": "powershell", "weight": 2 }
+    ],
+    "next": "n1-wifi"
+  },
+  "blocks": [
+    { "id": "intro", "kind": "paragraph", "text": "Mardi, 14 h 10, entrepôt de Nordelis Logistique. Le chef de quai appelle : « Le logiciel de gestion des stocks tourne dans le vide depuis le déjeuner. » Deux techniciens prennent l'appel en même temps sur deux sites. Le premier redémarre le poste, réinstalle le client applicatif, puis escalade au bout d'une heure avec la mention « ne marche pas ». Le second ouvre un terminal, lance cinq commandes en quatre minutes et écrit : « Poste OK, passerelle OK, DNS OK, serveur joignable en ICMP, port 1433 fermé depuis ce VLAN. » Le N2 corrige une règle de pare-feu en dix minutes. La différence entre les deux ? Une méthode et quelques commandes bien lues." },
+    { "id": "h-pourquoi", "kind": "heading", "level": 2, "text": "Pourquoi une séquence de commandes plutôt qu'une intuition" },
+    { "id": "p-pourquoi", "kind": "paragraph", "text": "Une communication réseau traverse plusieurs étapes : la carte du poste, le réseau local, la passerelle, éventuellement d'autres routeurs, la résolution du nom, puis enfin le service applicatif sur le serveur. Une panne se situe **à une seule de ces étapes**. Tester dans le désordre, c'est comme chercher une fuite d'eau en commençant par le robinet du voisin. En testant du plus proche au plus lointain, chaque réussite **innocente** une partie du chemin et chaque échec désigne la zone à creuser." },
+    { "id": "def", "kind": "callout", "tone": "definition", "title": "Définition simple", "text": "Une **commande de diagnostic réseau** est un outil en ligne de commande qui interroge la configuration du poste ou envoie un message de test vers une autre machine, puis affiche le résultat. Chacune répond à **une seule question** : « Ai-je une adresse ? », « Ce voisin me répond-il ? », « Ce nom se traduit-il en adresse ? », « Par où passent mes paquets ? », « Ce service accepte-t-il ma connexion ? »." },
+    { "id": "analogie", "kind": "callout", "tone": "analogy", "title": "Analogie", "text": "Pensez à un colis qui n'arrive pas. On vérifie d'abord que l'adresse de l'expéditeur est correcte (ipconfig), que le bureau de poste du quartier est ouvert (ping passerelle), que les camions circulent sur l'autoroute (ping externe), que l'adresse du destinataire existe dans l'annuaire (nslookup), le trajet suivi étape par étape (tracert) et enfin que quelqu'un ouvre bien la porte à l'arrivée (Test-NetConnection sur le port)." },
+    { "id": "diag-packet", "kind": "diagram", "diagram": "packet-journey", "caption": "Le trajet d'un paquet du poste jusqu'au serveur : chaque commande teste une portion précise de ce chemin." },
+    { "id": "tab-ordre", "kind": "table", "caption": "La séquence de référence, du plus proche au plus lointain", "headers": ["Étape", "Commande", "Question posée", "Si cela échoue, la zone suspecte est…"], "rows": [
+      ["1", "ipconfig /all", "Mon poste a-t-il une configuration valide ?", "La carte, le câble, le Wi-Fi ou le DHCP"],
+      ["2", "ping <passerelle>", "Mon réseau local fonctionne-t-il ?", "Le lien local, le switch, le VLAN"],
+      ["3", "ping <IP externe>", "Puis-je sortir de mon réseau ?", "Le routage, le pare-feu, l'accès Internet"],
+      ["4", "nslookup <nom>", "Les noms se traduisent-ils en adresses ?", "Le DNS"],
+      ["5", "tracert / pathping", "Où le trajet s'interrompt-il ?", "Un saut précis du chemin"],
+      ["6", "Test-NetConnection -Port", "Le service écoute-t-il et le port est-il ouvert ?", "Le pare-feu ou l'application côté serveur"]
+    ] },
+    { "id": "h-ipconfig", "kind": "heading", "level": 2, "text": "Étape 1 : ipconfig /all, l'état des lieux" },
+    { "id": "p-ipconfig", "kind": "paragraph", "text": "Avant d'envoyer le moindre paquet, on vérifie que le poste a de quoi communiquer. Vous avez déjà rencontré cette commande dans la leçon DHCP : ici, on s'en sert pour **relever les valeurs dont on aura besoin ensuite**, en particulier l'adresse de la passerelle et celle des serveurs DNS. Ce sont elles que vous allez tester aux étapes 2 et 4." },
+    { "id": "cmd-ipconfig", "kind": "command", "shell": "cmd", "command": "ipconfig /all", "explanation": "Affiche la configuration complète de chaque carte réseau. On repère la carte active, puis on note l'adresse IPv4, la passerelle et les DNS.", "output": "Carte Ethernet Ethernet :\n\n   Suffixe DNS propre à la connexion. . . : valmont.local\n   Description. . . . . . . . . . . . . . : Intel(R) Ethernet Connection I219-LM\n   DHCP activé. . . . . . . . . . . . . . : Oui\n   Adresse IPv4. . . . . . . . . . . . . .: 10.20.10.87(préféré)\n   Masque de sous-réseau. . . . . . . . . : 255.255.255.0\n   Passerelle par défaut. . . . . . . . . : 10.20.10.1\n   Serveur DHCP . . . . . . . . . . . . . : 10.20.1.10\n   Serveurs DNS. . .  . . . . . . . . . . : 10.20.1.10\n                                       10.20.1.11\n\nCarte réseau sans fil Wi-Fi :\n\n   Statut du média. . . . . . . . . . . . : Média déconnecté", "outputNotes": [
+      { "match": "Adresse IPv4", "note": "Une adresse dans 10.20.10.x correspond au VLAN Bureaux : la configuration est cohérente. Une 169.254.x.x arrêterait le diagnostic ici (piste DHCP)." },
+      { "match": "Passerelle par défaut", "note": "Notez-la : c'est la cible du test suivant. Une passerelle vide empêche toute sortie du réseau local." },
+      { "match": "Serveurs DNS", "note": "Notez le premier DNS : c'est lui que nslookup interrogera par défaut." },
+      { "match": "Média déconnecté", "note": "La carte Wi-Fi n'est pas utilisée. On raisonne uniquement sur la carte Ethernet." }
+    ] },
+    { "id": "h-ping", "kind": "heading", "level": 2, "text": "Étapes 2 et 3 : ping, le test d'écho" },
+    { "id": "p-ping", "kind": "paragraph", "text": "La commande `ping` envoie à une machine un petit message **ICMP Echo Request** et attend une **Echo Reply** en retour. Elle mesure au passage le temps d'aller-retour en millisecondes. On l'utilise en deux temps : d'abord vers la **passerelle** (le réseau local fonctionne-t-il ?), puis vers une **adresse IP externe** connue (puis-je sortir ?). On teste une adresse IP et non un nom, justement pour laisser le DNS en dehors du test." },
+    { "id": "cmd-ping-gw", "kind": "command", "shell": "cmd", "command": "ping 10.20.10.1", "explanation": "Envoie quatre requêtes d'écho à la passerelle relevée dans ipconfig. Sur un réseau local sain, la réponse arrive en moins d'une milliseconde ou quelques millisecondes.", "output": "Envoi d’une requête 'Ping'  10.20.10.1 avec 32 octets de données :\nRéponse de 10.20.10.1 : octets=32 temps<1ms TTL=255\nRéponse de 10.20.10.1 : octets=32 temps<1ms TTL=255\nRéponse de 10.20.10.1 : octets=32 temps=1 ms TTL=255\nRéponse de 10.20.10.1 : octets=32 temps<1ms TTL=255\n\nStatistiques Ping pour 10.20.10.1:\n    Paquets : envoyés = 4, reçus = 4, perdus = 0 (perte 0%),\nDurée approximative des boucles en millisecondes :\n    Minimum = 0ms, Maximum = 1ms, Moyenne = 0ms", "outputNotes": [
+      { "match": "Réponse de 10.20.10.1", "note": "La réponse vient bien de la machine visée : le lien local, le switch et le VLAN fonctionnent jusqu'à la passerelle." },
+      { "match": "temps<1ms", "note": "Le temps d'aller-retour. Sur un réseau local filaire, quelques millisecondes au plus. Des centaines de millisecondes en local signalent une saturation ou un Wi-Fi faible." },
+      { "match": "perdus = 0", "note": "Aucune perte. Une perte de 25 % ou 50 % sur le réseau local est anormale et mérite d'être notée dans le ticket." }
+    ] },
+    { "id": "cmd-ping-ext", "kind": "command", "shell": "cmd", "command": "ping -n 2 203.0.113.25", "explanation": "Teste une adresse située hors du réseau de l'entreprise. L'option -n fixe le nombre de requêtes (ici 2). L'adresse utilisée ici est fictive ; dans votre entreprise, on vous indiquera une cible de référence autorisée.", "output": "Envoi d’une requête 'Ping'  203.0.113.25 avec 32 octets de données :\nDélai d’attente de la demande dépassé.\nDélai d’attente de la demande dépassé.\n\nStatistiques Ping pour 203.0.113.25:\n    Paquets : envoyés = 2, reçus = 0, perdus = 2 (perte 100%),", "outputNotes": [
+      { "match": "Délai d’attente de la demande dépassé", "note": "Aucune réponse dans le délai imparti. Cela ne veut pas forcément dire que la machine est éteinte : l'ICMP est peut-être filtré en chemin." },
+      { "match": "perte 100%", "note": "Échec complet. Avant de conclure, on vérifie si une autre cible répond et si l'accès web fonctionne malgré tout." }
+    ] },
+    { "id": "tab-ping-messages", "kind": "table", "caption": "Les messages de ping et leur sens", "headers": ["Message affiché", "Ce que cela signifie", "Piste"], "rows": [
+      ["Réponse de <cible> : octets=32 temps=…", "La cible a répondu à l'écho", "Le chemin IP jusqu'à elle fonctionne"],
+      ["Délai d’attente de la demande dépassé.", "Aucune réponse reçue à temps", "Machine éteinte, ICMP filtré ou chemin coupé"],
+      ["Réponse de <votre propre IP> : Impossible de joindre l’hôte de destination.", "Votre poste ne sait pas atteindre la cible", "Passerelle absente ou cible inconnue sur le réseau local"],
+      ["La requête Ping n’a pas pu trouver l’hôte …", "Le nom n'a pas été traduit en adresse", "Problème DNS ou faute de frappe dans le nom"],
+      ["Échec de la transmission. Défaillance générale.", "Le poste n'a pas pu émettre", "Carte désactivée, pilote ou logiciel de sécurité local"]
+    ] },
+    { "id": "icmp-warning", "kind": "callout", "tone": "warning", "title": "Ce qu'un ping prouve… et ce qu'il ne prouve pas", "text": "Un ping réussi prouve que **le chemin IP fonctionne jusqu'à la cible** et que celle-ci accepte de répondre à l'ICMP. Il ne prouve **pas** que l'application fonctionne : un serveur peut répondre au ping alors que son service web est arrêté. À l'inverse, un ping échoué ne prouve **pas** que la machine est hors service : beaucoup de pare-feu (y compris le pare-feu Windows par défaut sur certains profils) bloquent l'ICMP. Conclusion : le ping est un indice, jamais un verdict à lui seul." },
+    { "id": "h-nslookup", "kind": "heading", "level": 2, "text": "Étape 4 : nslookup, interroger le DNS" },
+    { "id": "p-nslookup", "kind": "paragraph", "text": "Si le réseau fonctionne en adresse IP mais que l'utilisateur ne peut pas ouvrir `intranet.valmont.local`, le suspect suivant est la **résolution de noms**. `nslookup` pose directement la question à un serveur DNS et affiche sa réponse. C'est plus fiable que `ping <nom>`, car on voit **quel serveur** a répondu et **ce qu'il a dit**." },
+    { "id": "cmd-nslookup", "kind": "command", "shell": "cmd", "command": "nslookup intranet.valmont.local", "explanation": "Demande au DNS configuré sur la carte l'adresse correspondant au nom. On peut préciser un autre serveur en second argument (nslookup intranet.valmont.local 10.20.1.11) pour comparer les deux contrôleurs de domaine.", "output": "Serveur :   dc01.valmont.local\nAddress:  10.20.1.10\n\nNom :    intranet.valmont.local\nAddress:  10.20.5.20", "outputNotes": [
+      { "match": "Serveur :", "note": "Le serveur DNS qui a répondu. Il doit correspondre à celui vu dans ipconfig. Un serveur inattendu (box, DNS public) est une anomalie sur un poste du domaine." },
+      { "match": "10.20.5.20", "note": "L'adresse obtenue. Vous pouvez maintenant tester cette IP avec ping ou Test-NetConnection pour séparer un problème DNS d'un problème de serveur." }
+    ] },
+    { "id": "cmd-nslookup-ko", "kind": "command", "shell": "cmd", "command": "nslookup intranett.valmont.local", "explanation": "Même commande avec une faute de frappe : le DNS répond, mais le nom n'existe pas.", "output": "Serveur :   dc01.valmont.local\nAddress:  10.20.1.10\n\n*** dc01.valmont.local ne parvient pas à trouver intranett.valmont.local : Non-existent domain", "outputNotes": [
+      { "match": "Non-existent domain", "note": "Le DNS a bien répondu (il fonctionne), mais il ne connaît pas ce nom. Vérifiez l'orthographe avant d'accuser le serveur." }
+    ] },
+    { "id": "dns-field", "kind": "callout", "tone": "field", "title": "Sur le terrain", "text": "Distinguez trois cas : le DNS répond avec une adresse (DNS sain), le DNS répond « Non-existent domain » (nom inconnu ou mal orthographié), le DNS ne répond pas du tout avec un message de délai dépassé (serveur injoignable ou arrêté). Seul le troisième cas justifie une alerte sur le service DNS lui-même." },
+    { "id": "h-tracert", "kind": "heading", "level": 2, "text": "Étape 5 : tracert et pathping, suivre le trajet" },
+    { "id": "p-tracert", "kind": "paragraph", "text": "Quand une cible lointaine ne répond pas, `tracert` affiche la liste des routeurs traversés, appelés **sauts**. Chaque ligne correspond à un routeur, avec trois mesures de temps. Le principe : le poste envoie des paquets dont la durée de vie (TTL) augmente d'un cran à chaque essai ; chaque routeur qui « tue » un paquet arrivé en fin de vie renvoie un message, ce qui révèle sa présence." },
+    { "id": "cmd-tracert", "kind": "command", "shell": "cmd", "command": "tracert -d 203.0.113.25", "explanation": "L'option -d évite de traduire chaque adresse en nom, ce qui rend la commande beaucoup plus rapide. Le maximum par défaut est de 30 sauts.", "output": "Détermination de l’itinéraire vers 203.0.113.25\navec un maximum de 30 sauts :\n\n  1    <1 ms    <1 ms    <1 ms  10.20.10.1\n  2     1 ms     1 ms     1 ms  10.20.0.254\n  3     4 ms     3 ms     4 ms  198.51.100.1\n  4     *        *        *     Délai d’attente de la demande dépassé.\n  5    12 ms    11 ms    12 ms  203.0.113.25\n\nItinéraire déterminé.", "outputNotes": [
+      { "match": "10.20.10.1", "note": "Premier saut : la passerelle du VLAN Bureaux. Si tout s'arrête ici, le problème est juste après le réseau local." },
+      { "match": "10.20.0.254", "note": "Deuxième saut : probablement le cœur de réseau ou le pare-feu de l'entreprise." },
+      { "match": "*        *        *", "note": "Un saut silencieux n'est pas forcément une panne : ce routeur ne répond simplement pas aux messages de tracert. La preuve : le saut 5 répond ensuite." },
+      { "match": "Itinéraire déterminé", "note": "La cible a été atteinte. Si la liste s'était terminée par une série de lignes en étoiles jusqu'au saut 30, la coupure se situerait après le dernier saut qui répond." }
+    ] },
+    { "id": "p-pathping", "kind": "paragraph", "text": "`pathping` combine tracert et ping : il découvre le chemin, puis interroge chaque saut pendant une durée qui peut dépasser une minute et calcule un **pourcentage de pertes par saut**. Il est utile pour une plainte du type « ça coupe de temps en temps » : on voit si les pertes apparaissent dès le réseau local ou seulement plus loin. Comme pour tracert, une perte affichée sur un saut intermédiaire mais pas sur les suivants signifie souvent que ce routeur traite les tests avec une priorité basse, pas qu'il perd réellement le trafic." },
+    { "id": "h-tnc", "kind": "heading", "level": 2, "text": "Étape 6 : Test-NetConnection, le test qui parle le langage des applications" },
+    { "id": "p-tnc", "kind": "paragraph", "text": "Les applications ne communiquent pas en ICMP, mais via des **ports TCP** : 443 pour un site web en HTTPS, 3389 pour le Bureau à distance, 445 pour les partages de fichiers, 1433 pour une base SQL Server par défaut. La cmdlet PowerShell `Test-NetConnection` tente une véritable ouverture de connexion TCP sur le port demandé. C'est le test le plus proche de ce que fait l'application." },
+    { "id": "cmd-tnc-ok", "kind": "command", "shell": "powershell", "command": "Test-NetConnection -ComputerName intranet.valmont.local -Port 443", "explanation": "Résout le nom, puis tente une connexion TCP sur le port 443. Le paramètre -InformationLevel Quiet renvoie seulement True ou False, pratique dans un script.", "output": "ComputerName     : intranet.valmont.local\nRemoteAddress    : 10.20.5.20\nRemotePort       : 443\nInterfaceAlias   : Ethernet\nSourceAddress    : 10.20.10.87\nTcpTestSucceeded : True", "outputNotes": [
+      { "match": "RemoteAddress", "note": "L'adresse résolue par le DNS : elle doit correspondre à celle obtenue avec nslookup." },
+      { "match": "SourceAddress", "note": "L'adresse et la carte utilisées pour sortir. Sur un portable avec VPN, vérifiez que c'est bien l'interface attendue." },
+      { "match": "TcpTestSucceeded : True", "note": "Le port 443 a accepté la connexion : le réseau et le pare-feu laissent passer, et un service écoute. Si l'utilisateur a toujours un souci, la piste est applicative (navigateur, certificat, compte)." }
+    ] },
+    { "id": "cmd-tnc-ko", "kind": "command", "shell": "powershell", "command": "Test-NetConnection -ComputerName 10.20.5.40 -Port 1433", "explanation": "Le même test vers le serveur de base de données de l'application de stocks, sur le port SQL Server par défaut.", "output": "AVERTISSEMENT : TCP connect to (10.20.5.40 : 1433) failed\n\nComputerName           : 10.20.5.40\nRemoteAddress          : 10.20.5.40\nRemotePort             : 1433\nInterfaceAlias         : Ethernet\nSourceAddress          : 10.20.10.87\nPingSucceeded          : True\nPingReplyDetails (RTT) : 1 ms\nTcpTestSucceeded       : False", "outputNotes": [
+      { "match": "PingSucceeded          : True", "note": "Le serveur répond au ping : il est allumé et joignable en IP." },
+      { "match": "TcpTestSucceeded       : False", "note": "Mais le port 1433 refuse ou ignore la connexion. Deux causes possibles : le service est arrêté sur le serveur, ou un pare-feu bloque ce port depuis votre réseau. C'est exactement l'information dont le N2 a besoin." }
+    ] },
+    { "id": "h-complements", "kind": "heading", "level": 2, "text": "Deux compléments utiles : route print et netsh wlan" },
+    { "id": "cmd-route", "kind": "command", "shell": "cmd", "command": "route print -4", "explanation": "Affiche la table de routage IPv4 du poste : la liste des réseaux connus et la passerelle à utiliser pour chacun. Au niveau N1, on se contente de repérer la route par défaut. Les libellés exacts peuvent varier selon la version et la langue de Windows.", "output": "IPv4 Table de routage\n===========================================================================\nItinéraires actifs :\nDestination réseau    Masque réseau  Adr. passerelle   Adr. interface Métrique\n          0.0.0.0          0.0.0.0       10.20.10.1      10.20.10.87     25\n        10.20.10.0    255.255.255.0         On-link       10.20.10.87    281\n       10.20.10.87  255.255.255.255         On-link       10.20.10.87    281\n         127.0.0.0        255.0.0.0         On-link         127.0.0.1    331\n===========================================================================", "outputNotes": [
+      { "match": "0.0.0.0          0.0.0.0", "note": "La route par défaut : « pour tout ce qui n'est pas connu, passer par 10.20.10.1 ». Deux routes par défaut (Ethernet et VPN, par exemple) peuvent expliquer un comportement étrange : c'est un point à signaler." },
+      { "match": "10.20.10.0    255.255.255.0", "note": "Le réseau local du poste, joignable directement sans passerelle." }
+    ] },
+    { "id": "cmd-wlan", "kind": "command", "shell": "cmd", "command": "netsh wlan show interfaces", "explanation": "Sur un poste en Wi-Fi, affiche le réseau auquel la carte est associée, la qualité du signal et le débit négocié. La leçon suivante l'étudie en détail.", "output": "Il existe 1 interface sur le système :\n\n    Nom                    : Wi-Fi\n    État                   : connecté\n    SSID                   : VALMONT-CORP\n    Type de radio          : 802.11ax\n    Authentification       : WPA2 - Entreprise\n    Canal                  : 44\n    Réception (Mbits/s)    : 573.5\n    Transmission (Mbits/s) : 573.5\n    Signal                 : 38%", "outputNotes": [
+      { "match": "Signal                 : 38%", "note": "Un signal faible explique des pertes et des temps de ping élevés même vers la passerelle. Le problème est alors radio, pas réseau." }
+    ] },
+    { "id": "h-demo", "kind": "heading", "level": 2, "text": "Démonstration : le cas du logiciel de stocks" },
+    { "id": "steps-demo", "kind": "steps", "title": "Situer la panne en six commandes", "steps": [
+      { "title": "Relever la configuration", "text": "Adresse 10.20.10.87, passerelle 10.20.10.1, DNS 10.20.1.10. Rien d'anormal : le poste est bien configuré.", "command": "ipconfig /all" },
+      { "title": "Tester le réseau local", "text": "La passerelle répond en moins d'une milliseconde, sans perte : le câble, le port et le VLAN sont innocentés.", "command": "ping 10.20.10.1" },
+      { "title": "Tester la sortie du réseau", "text": "Le serveur applicatif est dans le réseau des serveurs (10.20.5.0/24). Un ping vers son adresse réussit : le routage interne fonctionne.", "command": "ping 10.20.5.40" },
+      { "title": "Vérifier la résolution de noms", "text": "Le nom configuré dans le logiciel est sql-stocks.valmont.local. nslookup renvoie bien 10.20.5.40 : le DNS est innocenté.", "command": "nslookup sql-stocks.valmont.local" },
+      { "title": "Tester le port applicatif", "text": "TcpTestSucceeded : False sur le port 1433. Le serveur est allumé, mais le service n'est pas accessible depuis ce poste.", "command": "Test-NetConnection -ComputerName sql-stocks.valmont.local -Port 1433" },
+      { "title": "Comparer et escalader", "text": "Un collègue d'un autre VLAN réussit le même test : le service fonctionne, le blocage est propre au chemin depuis le VLAN Bureaux. Escalade au N2 avec les résultats exacts." }
+    ] },
+    { "id": "decision-tree", "kind": "list", "ordered": true, "items": [
+      "**ipconfig /all** montre une adresse 169.254.x.x, un média déconnecté ou une passerelle vide → piste poste, câble, Wi-Fi ou DHCP. On s'arrête là et on traite cette piste.",
+      "**ping passerelle** échoue alors que la configuration est correcte → piste réseau local (port, VLAN, signal Wi-Fi). Comparer avec un voisin.",
+      "**ping IP externe ou serveur distant** échoue alors que la passerelle répond → piste routage ou filtrage. Ne pas conclure trop vite : tester une deuxième cible et l'accès web.",
+      "**nslookup** échoue ou renvoie une adresse inattendue alors que les IP répondent → piste DNS.",
+      "**tracert** s'arrête toujours au même saut → noter le dernier saut qui répond pour l'escalade.",
+      "**Test-NetConnection -Port** échoue alors que tout le reste réussit → piste pare-feu ou service arrêté côté serveur. Si tout réussit, la piste devient applicative ou liée au compte."
+    ] },
+    { "id": "mistakes", "kind": "mistakes", "items": [
+      { "mistake": "Conclure « le serveur est en panne » parce qu'il ne répond pas au ping", "why": "L'ICMP est très souvent filtré par les pare-feu ; le service peut fonctionner parfaitement.", "fix": "Tester le port réel de l'application avec Test-NetConnection avant de conclure." },
+      { "mistake": "Pinger un nom pour tester le réseau", "why": "Si le nom ne se résout pas, on confond un problème DNS avec un problème réseau.", "fix": "Pinger d'abord une adresse IP, puis tester le nom séparément avec nslookup." },
+      { "mistake": "Paniquer devant une ligne d'étoiles dans tracert", "why": "Un routeur peut refuser de répondre aux tests tout en transmettant le trafic normalement.", "fix": "Regarder si les sauts suivants répondent : seule une série d'étoiles jusqu'à la fin indique une coupure." },
+      { "mistake": "Lancer les tests depuis son propre poste au lieu de celui de l'utilisateur", "why": "Votre poste n'est pas dans le même VLAN, ni derrière les mêmes règles de pare-feu.", "fix": "Exécuter les commandes sur le poste concerné (prise en main à distance ou guidage de l'utilisateur), puis comparer avec un autre poste." },
+      { "mistake": "Escalader avec « ping KO »", "why": "Le N2 ne sait ni quelle cible, ni depuis quel poste, ni ce qui a réussi avant.", "fix": "Indiquer chaque test, sa cible et son résultat, dans l'ordre." }
+    ] },
+    { "id": "risks", "kind": "risks", "items": [
+      "N'utilisez pas de ping en rafale ou de gros volumes (options -t ou -l avec de grandes tailles) sur des équipements de production : sur un lien fragile ou un équipement ancien, cela peut dégrader le service et déclencher des alertes de sécurité.",
+      "Ne modifiez jamais la table de routage (route add, route delete) ni le pare-feu du poste « pour tester » : ces changements relèvent du N2 et d'une demande de changement validée.",
+      "N'installez pas d'outils de scan réseau non autorisés : un balayage de ports est assimilé à une attaque par les équipes sécurité, même avec de bonnes intentions.",
+      "Lors d'une prise en main à distance, évitez toute commande qui coupe la carte réseau (désactivation, ipconfig /release) : vous perdriez la session."
+    ] },
+    { "id": "quiz", "kind": "quiz", "title": "Vérifiez votre compréhension", "questions": ["netcmd-ordre-tests", "netcmd-ping-preuve", "netcmd-nxdomain", "netcmd-tnc-port", "netcmd-commande-cible"] },
+    { "id": "exercise", "kind": "exercise", "title": "Le partage réseau inaccessible", "context": "Chez Groupe Valmont, M. Bernard (poste PC-RH-022, VLAN Bureaux) ne peut plus ouvrir le partage \\\\fic01.valmont.local\\RH. Vous obtenez sur son poste : ipconfig correct (10.20.10.112, passerelle 10.20.10.1, DNS 10.20.1.10) ; ping 10.20.10.1 réussi ; nslookup fic01.valmont.local renvoie 10.20.5.15 ; ping 10.20.5.15 donne « Délai d’attente de la demande dépassé » quatre fois ; Test-NetConnection fic01.valmont.local -Port 445 renvoie RemoteAddress 10.20.5.15 et TcpTestSucceeded : True.", "task": "Expliquez ce que prouvent ces résultats, indiquez où se situe probablement le problème et ce que vous faites ensuite.", "hints": [
+      "Reprenez chaque test dans l'ordre et demandez-vous ce qu'il innocente.",
+      "Le ping échoue mais le test de port 445 réussit : que peut-on en déduire sur le filtrage de l'ICMP ?",
+      "Le chemin réseau jusqu'au service de fichiers est ouvert : la piste se déplace vers le compte, les droits ou la session de l'utilisateur."
+    ], "solution": [
+      "La configuration IP est correcte, la passerelle répond et le DNS traduit correctement le nom : le poste, le réseau local et la résolution de noms sont innocentés.",
+      "Le ping vers 10.20.5.15 échoue, mais Test-NetConnection réussit sur le port 445 (TcpTestSucceeded True). Le serveur est donc allumé, joignable et le service de partage écoute : il bloque simplement l'ICMP. Le ping échoué était une fausse piste.",
+      "Le problème n'est donc pas réseau. On vérifie le message exact affiché à l'utilisateur (accès refusé, identifiants demandés), ses groupes avec whoami /groups, et si un collègue du même service accède au partage. Un ajout récent dans un groupe peut nécessiter une fermeture et réouverture de session.",
+      "Note de ticket attendue : « Réseau validé depuis PC-RH-022 : IP, passerelle, DNS OK ; fic01 bloque l'ICMP mais port 445 ouvert (Test-NetConnection OK). Problème probablement lié aux droits ou à la session. Vérification des groupes en cours. »"
+    ], "rubric": {
+      "criteria": [
+        { "id": "innocente", "label": "Indique que la configuration, la passerelle et le DNS sont corrects", "points": 2, "patterns": ["dns ok", "dns fonctionne", "passerelle ok", "passerelle repond", "configuration correcte", "resolution correcte", "dns correct"] },
+        { "id": "icmp", "label": "Explique que l'ICMP est filtré / le ping n'est pas fiable ici", "points": 3, "patterns": ["icmp", "ping bloque", "ping filtre", "bloque le ping", "filtre le ping", "pare-feu", "pare feu", "firewall"], "required": true },
+        { "id": "port", "label": "Exploite le succès du test sur le port 445", "points": 3, "patterns": ["445", "tcptestsucceeded", "port ouvert", "test de port", "test-netconnection"], "required": true },
+        { "id": "pas-reseau", "label": "Conclut que le problème n'est pas réseau", "points": 2, "patterns": ["pas reseau", "pas un probleme reseau", "reseau ok", "reseau fonctionne", "reseau valide", "hors reseau"] },
+        { "id": "droits", "label": "Oriente vers les droits, groupes, compte ou session", "points": 2, "patterns": ["droit*", "groupe*", "permission*", "session", "compte", "whoami"] }
+      ],
+      "redFlags": [
+        { "id": "serveur-hs", "label": "Conclut que le serveur est en panne", "patterns": ["serveur en panne", "serveur hs", "serveur eteint", "serveur down", "redemarrer le serveur"], "penalty": 3 }
+      ],
+      "passPercent": 60
+    } },
+    { "id": "interview", "kind": "interview", "questions": [
+      { "question": "Un utilisateur dit « Internet ne marche pas ». Quelles commandes lancez-vous, et dans quel ordre ?", "expectedPoints": ["ipconfig /all pour vérifier adresse, passerelle et DNS", "ping de la passerelle puis d'une IP externe", "nslookup pour isoler le DNS", "tracert ou Test-NetConnection selon le résultat", "Comparer avec un autre poste et documenter"], "modelAnswer": "Je pars du poste vers l'extérieur. ipconfig /all d'abord, pour vérifier que la carte a une adresse cohérente, une passerelle et des DNS. Ensuite un ping de la passerelle pour valider le réseau local, puis un ping vers une adresse IP externe de référence pour valider la sortie. Si les IP répondent mais pas les sites, je teste le DNS avec nslookup. Si une cible ne répond pas, tracert me montre où le trajet s'arrête, et Test-NetConnection sur le port 443 me dit si le web passe vraiment, car l'ICMP peut être filtré. Je compare avec un poste voisin et je note chaque résultat dans le ticket." },
+      { "question": "Un serveur ne répond pas au ping. Est-il en panne ?", "expectedPoints": ["Pas forcément : l'ICMP est souvent filtré", "Tester le port du service avec Test-NetConnection", "Vérifier si d'autres utilisateurs accèdent au service", "Ne pas redémarrer ni escalader en urgence sur ce seul indice"], "modelAnswer": "Pas nécessairement. Beaucoup de serveurs et de pare-feu bloquent l'ICMP pour des raisons de sécurité. Je teste le port réel du service avec Test-NetConnection, par exemple 443 ou 445, et je vérifie si d'autres utilisateurs accèdent normalement au service. Un ping est un indice ; c'est le test du port applicatif qui me dit si le service est accessible." },
+      { "question": "Quelle différence faites-vous entre ping et Test-NetConnection -Port ?", "expectedPoints": ["ping utilise l'ICMP et teste le chemin IP", "Test-NetConnection -Port ouvre une connexion TCP sur un port précis", "Le second se rapproche du comportement réel de l'application"], "modelAnswer": "ping envoie un écho ICMP : il me dit si le chemin IP fonctionne et si la cible accepte de répondre à ce type de message. Test-NetConnection avec -Port tente une vraie connexion TCP sur le port de l'application : il me dit si un pare-feu laisse passer et si un service écoute. C'est donc le test le plus proche de ce que vit l'utilisateur." }
+    ] },
+    { "id": "glossary", "kind": "glossary", "terms": [
+      { "term": "ICMP", "en": "Internet Control Message Protocol", "definition": "Protocole de messages de contrôle utilisé notamment par ping et tracert ; souvent filtré par les pare-feu." },
+      { "term": "Saut", "en": "Hop", "definition": "Passage par un routeur sur le trajet d'un paquet." },
+      { "term": "Durée de vie", "en": "Time To Live (TTL)", "definition": "Compteur décrémenté à chaque routeur ; le paquet est détruit quand il atteint zéro." },
+      { "term": "Temps d'aller-retour", "en": "Round-Trip Time (RTT)", "definition": "Temps entre l'envoi d'un message et la réception de sa réponse, en millisecondes." },
+      { "term": "Port TCP", "en": "TCP port", "definition": "Numéro qui identifie un service sur une machine (443 pour HTTPS, 445 pour les partages, 3389 pour le Bureau à distance)." },
+      { "term": "Route par défaut", "en": "Default route", "definition": "Chemin utilisé pour toute destination inconnue ; elle pointe vers la passerelle." },
+      { "term": "Résolution de noms", "en": "Name resolution", "definition": "Traduction d'un nom (intranet.valmont.local) en adresse IP par le DNS." }
+    ] },
+    { "id": "summary", "kind": "summary", "points": [
+      "On teste du plus proche au plus lointain : ipconfig, ping passerelle, ping IP externe, nslookup, tracert, Test-NetConnection -Port.",
+      "Chaque test réussi innocente une portion du chemin ; le premier test qui échoue désigne la zone à creuser.",
+      "Un ping réussi prouve le chemin IP, pas le service. Un ping échoué ne prouve pas une panne : l'ICMP est souvent filtré.",
+      "nslookup sépare un problème DNS d'un problème réseau ; « Non-existent domain » signifie que le DNS fonctionne mais ignore le nom.",
+      "Test-NetConnection -Port est le test le plus proche de l'application : TcpTestSucceeded True ou False.",
+      "Une bonne escalade cite chaque test, sa cible, son résultat et le poste d'où il a été lancé."
+    ] },
+    { "id": "references", "kind": "references", "items": [
+      { "title": "Commande ping", "url": "https://learn.microsoft.com/windows-server/administration/windows-commands/ping", "publisher": "Microsoft Learn", "verifiedAt": "2026-10-21" },
+      { "title": "Commande tracert", "url": "https://learn.microsoft.com/windows-server/administration/windows-commands/tracert", "publisher": "Microsoft Learn", "verifiedAt": "2026-10-21" },
+      { "title": "Commande nslookup", "url": "https://learn.microsoft.com/windows-server/administration/windows-commands/nslookup", "publisher": "Microsoft Learn", "verifiedAt": "2026-10-21" },
+      { "title": "Test-NetConnection (module NetTCPIP)", "url": "https://learn.microsoft.com/powershell/module/nettcpip/test-netconnection", "publisher": "Microsoft Learn", "verifiedAt": "2026-10-21" }
+    ] }
+  ]
+}

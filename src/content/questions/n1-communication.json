@@ -1,0 +1,130 @@
+[
+  {
+    "code": "comm-question-ouverte",
+    "lesson": "n1-communication",
+    "skill": "communication",
+    "prompt": "En tout début d'appel, vous ne savez encore rien du problème. Quelle question est la plus adaptée ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "« Pouvez-vous me décrire ce qui se passe à l'écran ? »" },
+        { "id": "b", "text": "« Vous avez bien redémarré ? »" },
+        { "id": "c", "text": "« C'est le Wi-Fi qui ne marche pas, c'est ça ? »" },
+        { "id": "d", "text": "« Votre câble est-il branché, votre poste est-il allumé et avez-vous un message d'erreur ? »" }
+      ],
+      "answer": "a"
+    },
+    "explanation": "Au début, une question ouverte laisse l'utilisateur décrire le symptôme avec ses mots, sans l'orienter. « Vous avez bien redémarré ? » est une question fermée prématurée. « C'est le Wi-Fi, c'est ça ? » impose une hypothèse que l'utilisateur risque d'accepter par politesse. La dernière enchaîne trois questions : l'utilisateur ne répondra qu'à la dernière.",
+    "difficulty": 1
+  },
+  {
+    "code": "comm-reformulation",
+    "lesson": "n1-communication",
+    "skill": "communication",
+    "prompt": "Vrai ou faux : reformuler ce que dit l'utilisateur est surtout une marque de politesse, qui fait perdre du temps quand on a déjà compris.",
+    "data": { "type": "truefalse", "answer": false },
+    "explanation": "Faux. La reformulation vérifie que vous avez compris le bon problème et donne à l'utilisateur l'occasion de corriger ou de compléter, souvent avec l'indice décisif. Elle coûte quelques secondes et évite de résoudre le mauvais problème. C'est aussi ce qui montre à l'utilisateur qu'il a été entendu, ce qui apaise les échanges tendus.",
+    "difficulty": 1
+  },
+  {
+    "code": "comm-phrase-mecontent",
+    "lesson": "n1-communication",
+    "skill": "communication",
+    "prompt": "Un utilisateur s'emporte : son poste est en panne pour la deuxième fois de la semaine. Quelle réponse est la plus appropriée ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "« Je comprends que ce soit pénible, surtout deux fois en une semaine. Je regarde l'historique et je m'en occupe maintenant. »" },
+        { "id": "b", "text": "« Calmez-vous, s'il vous plaît, sinon je ne pourrai pas vous aider. »" },
+        { "id": "c", "text": "« Ce n'est pas nous, c'est le fabricant qui fait du mauvais matériel. »" },
+        { "id": "d", "text": "« Vous avez sûrement fait une fausse manipulation. »" }
+      ],
+      "answer": "a"
+    },
+    "explanation": "La bonne réponse reconnaît la gêne, montre que l'historique sera pris en compte et engage une action immédiate. Demander de se calmer produit l'effet inverse. Rejeter la faute sur le fabricant ne règle rien et donne une image peu professionnelle. Accuser l'utilisateur sans preuve le braque et ferme la discussion.",
+    "difficulty": 1
+  },
+  {
+    "code": "comm-ticket-elements",
+    "lesson": "n1-communication",
+    "skill": "documentation",
+    "prompt": "Quels éléments doivent figurer dans la description d'un ticket exploitable ? (plusieurs réponses)",
+    "data": {
+      "type": "multiple",
+      "choices": [
+        { "id": "symptome", "text": "Le symptôme exact, avec le message d'erreur recopié" },
+        { "id": "impact", "text": "L'impact : nombre de personnes et travail bloqué" },
+        { "id": "actions", "text": "Les actions réalisées et leur résultat" },
+        { "id": "suite", "text": "La prochaine étape et le rappel prévu" },
+        { "id": "humeur", "text": "L'humeur de l'utilisateur pendant l'appel" },
+        { "id": "mdp", "text": "Le mot de passe temporaire communiqué à l'utilisateur" }
+      ],
+      "answer": ["symptome", "impact", "actions", "suite"]
+    },
+    "explanation": "Symptôme exact, impact, actions avec résultats et prochaine étape permettent à un collègue de reprendre le ticket sans appeler personne. L'humeur de l'utilisateur est un jugement qui n'aide pas le traitement et n'a pas sa place dans un document professionnel. Un mot de passe, même temporaire, ne doit jamais être écrit dans un ticket, qui est lu par de nombreuses personnes et conservé longtemps.",
+    "difficulty": 1
+  },
+  {
+    "code": "comm-titre-ticket",
+    "lesson": "n1-communication",
+    "skill": "documentation",
+    "prompt": "Classez ces titres de ticket du moins exploitable au plus exploitable.",
+    "data": {
+      "type": "order",
+      "items": [
+        { "id": "t3", "text": "Imprimante paie en panne" },
+        { "id": "t1", "text": "Urgent !!!" },
+        { "id": "t4", "text": "[Siège 2e] IMP-PAIE-01 ne répond plus au ping – service paie bloqué" },
+        { "id": "t2", "text": "Problème imprimante" }
+      ],
+      "answer": ["t1", "t2", "t3", "t4"]
+    },
+    "explanation": "« Urgent !!! » ne dit rien du problème. « Problème imprimante » indique le domaine mais ni le lieu ni l'impact. « Imprimante paie en panne » précise le service. Le dernier titre donne le lieu, l'équipement exact, un fait vérifiable (pas de réponse au ping) et l'impact : il permet de prioriser et d'orienter le ticket depuis la simple liste.",
+    "difficulty": 1
+  },
+  {
+    "code": "comm-exam-1",
+    "lesson": "n1-communication",
+    "skill": "communication",
+    "prompt": "Pendant une prise en main à distance chez Maison Aubrac, la directrice financière vous demande, pour gagner du temps, de noter son mot de passe dans le ticket afin que le N2 puisse se connecter à sa session ce soir. Que faites-vous ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Je refuse poliment, j'explique que le mot de passe ne doit jamais être partagé, et j'organise avec le N2 d'un créneau en sa présence ou d'une autre méthode prévue par la procédure" },
+        { "id": "b", "text": "Je le note dans un suivi privé du ticket, invisible pour l'utilisatrice" },
+        { "id": "c", "text": "Je l'envoie au N2 par messagerie instantanée plutôt que dans le ticket" },
+        { "id": "d", "text": "J'accepte, car c'est elle qui le propose et elle est prioritaire" }
+      ],
+      "answer": "a"
+    },
+    "explanation": "Un mot de passe ne se partage jamais, quel que soit le canal : un suivi privé reste lisible par tous les techniciens et conservé, une messagerie instantanée laisse aussi une trace, et l'accord de l'utilisatrice ne change rien au risque ni à la règle. Le statut prioritaire accélère le traitement mais ne crée pas d'exception de sécurité. La bonne réponse protège l'utilisatrice tout en organisant la suite du dépannage.",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "code": "comm-exam-2",
+    "lesson": "n1-communication",
+    "skill": "documentation",
+    "prompt": "Associez chaque phrase extraite d'un ticket à la rubrique de la structure où elle doit figurer.",
+    "data": {
+      "type": "match",
+      "left": [
+        { "id": "p1", "text": "« Outlook affiche : Impossible de se connecter au serveur. »" },
+        { "id": "p2", "text": "« 10 h 12 : test sur un autre poste avec le même compte → même erreur. »" },
+        { "id": "p3", "text": "« Équipe de 5 personnes ; envoi de devis bloqué. »" },
+        { "id": "p4", "text": "« Escalade au N2 messagerie ; rappel de l'utilisateur prévu avant 14 h. »" }
+      ],
+      "right": [
+        { "id": "symptome", "text": "Symptôme" },
+        { "id": "actions", "text": "Actions réalisées" },
+        { "id": "impact", "text": "Impact" },
+        { "id": "suite", "text": "Prochaine étape" },
+        { "id": "demandeur", "text": "Demandeur" }
+      ],
+      "answer": { "p1": "symptome", "p2": "actions", "p3": "impact", "p4": "suite" }
+    },
+    "explanation": "Le message d'erreur recopié décrit le symptôme. Un test horodaté avec son résultat est une action réalisée ; il montre ici que le problème suit le compte et non le poste. Le nombre de personnes et le travail bloqué décrivent l'impact. L'escalade et le rappel prévu sont la prochaine étape. Aucune de ces phrases n'identifie le demandeur, qui se résume au nom, au service, au poste et au téléphone.",
+    "difficulty": 2,
+    "examOnly": true
+  }
+]

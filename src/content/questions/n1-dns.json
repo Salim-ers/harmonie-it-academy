@@ -1,0 +1,122 @@
+[
+  {
+    "code": "dns-ordre-resolution",
+    "lesson": "n1-dns",
+    "skill": "network-services",
+    "prompt": "Le cache du poste et celui du serveur DNS interne sont vides. Remettez dans l'ordre les étapes de la résolution de www.exemple.fr.",
+    "data": {
+      "type": "order",
+      "items": [
+        { "id": "tld", "text": "Le serveur DNS interroge les serveurs du TLD .fr" },
+        { "id": "poste", "text": "Le poste envoie une requête récursive à son serveur DNS" },
+        { "id": "auth", "text": "Le serveur DNS interroge le serveur faisant autorité pour exemple.fr" },
+        { "id": "racine", "text": "Le serveur DNS interroge un serveur racine" },
+        { "id": "reponse", "text": "Le serveur DNS met la réponse en cache et la renvoie au poste" }
+      ],
+      "answer": ["poste", "racine", "tld", "auth", "reponse"]
+    },
+    "explanation": "Le poste délègue tout le travail à son serveur DNS (requête récursive). Celui-ci descend l'arbre de façon itérative : la racine indique les serveurs de .fr, qui indiquent les serveurs faisant autorité pour exemple.fr, lesquels donnent la réponse finale. La mise en cache intervient à la fin, une fois la réponse obtenue. Interroger le TLD avant la racine est impossible quand le cache est vide : c'est la racine qui indique où se trouvent les serveurs du TLD.",
+    "difficulty": 2
+  },
+  {
+    "code": "dns-types-enregistrements",
+    "lesson": "n1-dns",
+    "skill": "network-services",
+    "prompt": "Associez chaque type d'enregistrement DNS à son rôle.",
+    "data": {
+      "type": "match",
+      "left": [
+        { "id": "a", "text": "A" },
+        { "id": "cname", "text": "CNAME" },
+        { "id": "mx", "text": "MX" },
+        { "id": "ptr", "text": "PTR" },
+        { "id": "aaaa", "text": "AAAA" }
+      ],
+      "right": [
+        { "id": "ipv4", "text": "Nom vers adresse IPv4" },
+        { "id": "alias", "text": "Alias d'un nom vers un autre nom" },
+        { "id": "mail", "text": "Serveur de messagerie d'un domaine" },
+        { "id": "inverse", "text": "Adresse IP vers nom" },
+        { "id": "ipv6", "text": "Nom vers adresse IPv6" },
+        { "id": "service", "text": "Localisation d'un service avec son port" }
+      ],
+      "answer": { "a": "ipv4", "cname": "alias", "mx": "mail", "ptr": "inverse", "aaaa": "ipv6" }
+    },
+    "explanation": "A donne une adresse IPv4 et AAAA une adresse IPv6 (quatre fois plus de bits, d'où les quatre A). CNAME crée un alias vers un autre nom. MX désigne le serveur de messagerie d'un domaine. PTR sert à la résolution inverse. La proposition « localisation d'un service avec son port » correspond au SRV, qui n'est pas dans la liste de gauche : c'est un distracteur.",
+    "difficulty": 1
+  },
+  {
+    "code": "dns-srv-ad",
+    "lesson": "n1-dns",
+    "skill": "network-services",
+    "prompt": "Quel type d'enregistrement DNS un poste Windows interroge-t-il pour trouver un contrôleur de domaine Active Directory ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "mx", "text": "MX" },
+        { "id": "srv", "text": "SRV" },
+        { "id": "ptr", "text": "PTR" },
+        { "id": "cname", "text": "CNAME" }
+      ],
+      "answer": "srv"
+    },
+    "explanation": "Les enregistrements SRV, comme _ldap._tcp.dc._msdcs.valmont.local, indiquent le nom des serveurs qui fournissent un service et le port à utiliser : c'est ainsi que Windows localise ses contrôleurs de domaine. MX sert à la messagerie, PTR à la résolution inverse et CNAME à créer des alias : aucun ne permet de localiser un service avec son port.",
+    "difficulty": 2
+  },
+  {
+    "code": "dns-dns-public",
+    "lesson": "n1-dns",
+    "skill": "diagnostic",
+    "prompt": "Vrai ou faux : sur un poste membre du domaine valmont.local, configurer 10.20.1.10 en DNS principal et 8.8.8.8 en DNS secondaire est une bonne pratique qui améliore la disponibilité.",
+    "data": { "type": "truefalse", "answer": false },
+    "explanation": "Faux. Un résolveur public ne connaît pas la zone valmont.local ni les enregistrements SRV des contrôleurs de domaine. Si le poste bascule sur lui, il reçoit des réponses « nom inexistant » pour tous les noms internes et les garde en cache : pannes intermittentes, session ouverte sans accès au domaine. La bonne pratique est d'utiliser deux DNS internes (10.20.1.10 et 10.20.1.11), qui résolvent eux-mêmes les noms d'Internet via leurs redirecteurs.",
+    "difficulty": 2
+  },
+  {
+    "code": "dns-commande-flush",
+    "lesson": "n1-dns",
+    "skill": "diagnostic",
+    "prompt": "Complétez la commande qui vide le cache du client DNS sur un poste Windows.",
+    "data": { "type": "fill", "template": "ipconfig ___", "accepted": ["/flushdns", "-flushdns"] },
+    "explanation": "ipconfig /flushdns vide le cache du client DNS, y compris les réponses négatives. ipconfig /displaydns, à ne pas confondre, se contente d'afficher ce cache. Le flush ne supprime pas les entrées du fichier hosts, rechargées immédiatement, et ne corrige pas un mauvais serveur DNS configuré sur la carte.",
+    "difficulty": 1
+  },
+  {
+    "code": "dns-exam-1",
+    "lesson": "n1-dns",
+    "skill": "diagnostic",
+    "prompt": "Un utilisateur du Groupe Valmont signale que l'intranet est inaccessible. Sur son poste, ping 10.20.30.15 répond, mais ping intranet.valmont.local renvoie « La requête Ping n'a pas pu trouver l'hôte ». Quelle est la vérification la plus pertinente à faire ensuite ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Remplacer le câble réseau du poste" },
+        { "id": "b", "text": "Vérifier les serveurs DNS de la carte avec ipconfig /all, puis tester le nom avec nslookup" },
+        { "id": "c", "text": "Réinstaller le navigateur web" },
+        { "id": "d", "text": "Redémarrer le serveur intranet" }
+      ],
+      "answer": "b"
+    },
+    "explanation": "Le ping par adresse prouve que le réseau et le serveur répondent ; seul le nom échoue. La résolution de noms est donc en cause : il faut vérifier les serveurs DNS configurés puis interroger le DNS avec nslookup. Le câble fonctionne puisque le ping par adresse répond (a faux), le navigateur n'intervient pas dans un ping (c faux) et le serveur est joignable, le redémarrer ne servirait à rien (d faux).",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "code": "dns-exam-2",
+    "lesson": "n1-dns",
+    "skill": "network-services",
+    "prompt": "Après la migration d'un serveur, un seul poste continue de joindre l'ancienne adresse. nslookup sur ce poste renvoie la nouvelle adresse, mais l'entrée réapparaît avec l'ancienne adresse juste après un ipconfig /flushdns. Que soupçonnez-vous ? (plusieurs réponses possibles)",
+    "data": {
+      "type": "multiple",
+      "choices": [
+        { "id": "hosts", "text": "Une entrée statique dans le fichier hosts du poste" },
+        { "id": "dns", "text": "Un enregistrement erroné sur le serveur DNS interne" },
+        { "id": "cable", "text": "Un câble réseau défectueux" },
+        { "id": "chemin", "text": "Une différence entre ce que teste nslookup et ce qu'utilise le résolveur de Windows" }
+      ],
+      "answer": ["hosts", "chemin"]
+    },
+    "explanation": "nslookup interroge directement le serveur DNS, qui donne la bonne adresse : le serveur n'est donc pas en cause (réponse « enregistrement erroné » fausse). Le résolveur de Windows, lui, consulte d'abord le fichier hosts, dont les entrées sont rechargées dans le cache aussitôt après un flush : c'est exactement le comportement observé. Un câble défectueux n'expliquerait pas une adresse différente.",
+    "difficulty": 3,
+    "examOnly": true
+  }
+]

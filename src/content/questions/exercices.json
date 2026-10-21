@@ -1,0 +1,718 @@
+[
+  {
+    "code": "ex-sr-reseau-bureaux",
+    "skill": "network-ip",
+    "prompt": "Nordelis Logistique (bloc 10.30.0.0/16) refait le plan d'adressage de son entrepôt. Le poste du bureau d'exploitation a l'adresse 10.30.14.77/22. Quelle est l'adresse du réseau auquel il appartient ?",
+    "data": {
+      "type": "fill",
+      "template": "Adresse réseau : ___",
+      "accepted": ["10.30.12.0", "10.30.12.0/22"]
+    },
+    "explanation": "Un /22 donne le masque 255.255.252.0 : le troisième octet avance par blocs de 4 (0, 4, 8, 12, 16…). 14 se trouve dans le bloc 12 à 15, donc le réseau commence à 10.30.12.0. Vérification : 12 est le plus grand multiple de 4 inférieur ou égal à 14. Répondre 10.30.14.0 revient à raisonner comme en /24, ce qui est l'erreur la plus courante.",
+    "difficulty": 2
+  },
+  {
+    "code": "ex-sr-broadcast-bureaux",
+    "skill": "network-ip",
+    "prompt": "Toujours chez Nordelis Logistique : le réseau des bureaux d'exploitation est 10.30.12.0/22. Quelle est son adresse de diffusion (broadcast) ?",
+    "data": {
+      "type": "fill",
+      "template": "Adresse de diffusion : ___",
+      "accepted": ["10.30.15.255"]
+    },
+    "explanation": "Le bloc /22 couvre quatre valeurs du troisième octet : 12, 13, 14 et 15. La diffusion est la toute dernière adresse du bloc : 10.30.15.255. Vérification : réseau suivant = 10.30.16.0, moins une adresse = 10.30.15.255. 10.30.12.255 n'est que la fin du premier quart du bloc ; c'est une adresse d'hôte valide en /22.",
+    "difficulty": 2
+  },
+  {
+    "code": "ex-sr-derniere-rf",
+    "skill": "network-ip",
+    "prompt": "Nordelis Logistique place les terminaux RF des quais dans le réseau 10.30.40.0/23. Quelle est la dernière adresse utilisable par un équipement dans ce réseau ?",
+    "data": {
+      "type": "fill",
+      "template": "Dernière adresse utilisable : ___",
+      "accepted": ["10.30.41.254"]
+    },
+    "explanation": "Un /23 (masque 255.255.254.0) regroupe deux valeurs du troisième octet : 40 et 41. Le réseau va de 10.30.40.0 (adresse réseau) à 10.30.41.255 (diffusion). La dernière adresse utilisable est donc 10.30.41.254. Vérification : 2^9 = 512 adresses, soit 510 utilisables, de 10.30.40.1 à 10.30.41.254. 10.30.40.254 serait juste en /24.",
+    "difficulty": 2
+  },
+  {
+    "code": "ex-sr-hotes-cameras",
+    "skill": "network-ip",
+    "prompt": "Les caméras de l'entrepôt Nordelis sont dans le réseau 10.30.50.64/26. Combien d'adresses peuvent être attribuées à des équipements dans ce réseau ?",
+    "data": {
+      "type": "fill",
+      "template": "Nombre d'adresses utilisables : ___",
+      "accepted": ["62"]
+    },
+    "explanation": "Un /26 laisse 32 − 26 = 6 bits pour les hôtes : 2^6 = 64 adresses, moins l'adresse réseau (10.30.50.64) et la diffusion (10.30.50.127), soit 62 adresses utilisables (10.30.50.65 à 10.30.50.126). Répondre 64 oublie ces deux adresses réservées.",
+    "difficulty": 1
+  },
+  {
+    "code": "ex-sr-masque-imprimantes",
+    "skill": "network-ip",
+    "prompt": "Nordelis Logistique veut un sous-réseau dédié à ses 50 imprimantes thermiques, avec 20 % de marge, soit 60 adresses. Quel est le plus petit préfixe qui convient ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "p27", "text": "/27 — masque 255.255.255.224" },
+        { "id": "p26", "text": "/26 — masque 255.255.255.192" },
+        { "id": "p25", "text": "/25 — masque 255.255.255.128" },
+        { "id": "p24", "text": "/24 — masque 255.255.255.0" }
+      ],
+      "answer": "p26"
+    },
+    "explanation": "Un /27 n'offre que 30 adresses utilisables (2^5 − 2) : insuffisant. Un /26 en offre 62 (2^6 − 2), ce qui couvre les 60 adresses demandées. Le /25 (126) et le /24 (254) conviendraient aussi, mais gaspilleraient de l'espace : la question demande le plus petit préfixe suffisant.",
+    "difficulty": 2
+  },
+  {
+    "code": "ex-sr-meme-reseau",
+    "skill": "network-ip",
+    "prompt": "Vrai ou faux : chez Nordelis Logistique, un terminal RF configuré en 10.30.41.200 avec le masque 255.255.254.0 peut utiliser directement la passerelle 10.30.40.1.",
+    "data": { "type": "truefalse", "answer": true },
+    "explanation": "Vrai. Le masque 255.255.254.0 correspond à un /23 : le réseau 10.30.40.0/23 va de 10.30.40.0 à 10.30.41.255. Le terminal (10.30.41.200) et la passerelle (10.30.40.1) sont donc dans le même sous-réseau, même si leur troisième octet diffère. En raisonnant à tort en /24, on conclurait qu'ils sont séparés.",
+    "difficulty": 2
+  },
+
+  {
+    "code": "ex-ipc-poste-a",
+    "skill": "network-services",
+    "prompt": "Groupe Valmont, siège (domaine valmont.local, 10.20.0.0/16). Chaque étage a son sous-réseau /24 dont la passerelle est l'adresse .1 ; le serveur DHCP 10.20.0.5 distribue les DNS internes 10.20.0.10 et 10.20.0.11.\n\nPoste A — l'utilisatrice vient de changer de bureau au 3e étage : « plus rien ne marche ». Extrait de ipconfig /all :\n\nCarte Ethernet Ethernet :\n   Description . . . . . . . . . . . . . : Intel(R) Ethernet Connection I219-LM\n   Adresse physique. . . . . . . . . . . : 3C-52-82-A1-07-4E\n   DHCP activé . . . . . . . . . . . . . : Oui\n   Configuration automatique activée . . : Oui\n   Adresse d'autoconfiguration IPv4. . . : 169.254.112.47(préféré)\n   Masque de sous-réseau . . . . . . . . : 255.255.0.0\n   Passerelle par défaut . . . . . . . . :\n\nQuelle lecture est correcte ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Une adresse fixe a été mal saisie sur la carte" },
+        { "id": "b", "text": "La carte attend le DHCP mais n'a reçu aucune réponse : Windows s'est attribué une adresse APIPA" },
+        { "id": "c", "text": "Les serveurs DNS internes sont en panne" },
+        { "id": "d", "text": "Le câble est débranché" }
+      ],
+      "answer": "b"
+    },
+    "explanation": "« DHCP activé : Oui » exclut une adresse fixe. L'adresse 169.254.x.x sans passerelle est une APIPA : le poste a demandé une adresse et aucun serveur DHCP n'a répondu. Un câble débranché afficherait « Média déconnecté » sans adresse. Le DNS n'est pas en cause à ce stade : sans adresse valide, le poste ne peut joindre personne. Piste suivante : prise, brassage ou port du nouveau bureau, en comparant avec un poste voisin.",
+    "difficulty": 1
+  },
+  {
+    "code": "ex-ipc-poste-b",
+    "skill": "network-services",
+    "prompt": "Groupe Valmont, siège (valmont.local). Le DHCP distribue normalement les DNS internes 10.20.0.10 et 10.20.0.11.\n\nPoste B — « Internet fonctionne, mais impossible d'ouvrir \\\\srv-fichiers.valmont.local ni l'intranet. » Extrait de ipconfig /all :\n\n   DHCP activé . . . . . . . . . . . . . : Oui\n   Adresse IPv4. . . . . . . . . . . . . : 10.20.14.52(préféré)\n   Masque de sous-réseau . . . . . . . . : 255.255.255.0\n   Bail obtenu . . . . . . . . . . . . . : mardi 20 octobre 2026 08:12:40\n   Bail expirant . . . . . . . . . . . . : mercredi 21 octobre 2026 08:12:40\n   Passerelle par défaut . . . . . . . . : 10.20.14.1\n   Serveur DHCP. . . . . . . . . . . . . : 10.20.0.5\n   Serveurs DNS. . . . . . . . . . . . . : 8.8.8.8\n\nQuelle est la cause la plus probable ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Le bail DHCP a expiré" },
+        { "id": "b", "text": "La passerelle est incorrecte" },
+        { "id": "c", "text": "Un DNS public a été saisi manuellement : il ne connaît pas la zone interne valmont.local" },
+        { "id": "d", "text": "Le serveur de fichiers est arrêté pour tout le siège" }
+      ],
+      "answer": "c"
+    },
+    "explanation": "Le bail est valide et la passerelle 10.20.14.1 est cohérente avec le réseau 10.20.14.0/24 : Internet fonctionne d'ailleurs. En revanche, le poste interroge 8.8.8.8 alors que le DHCP distribue 10.20.0.10 et 10.20.0.11 : le DNS a été forcé à la main. Un DNS public ne connaît pas les noms internes en valmont.local, d'où l'échec sur les partages et l'intranet. Conclure à une panne générale du serveur serait prématuré sans avoir comparé avec un autre poste.",
+    "difficulty": 2
+  },
+  {
+    "code": "ex-ipc-passerelle-c",
+    "skill": "network-ip",
+    "prompt": "Groupe Valmont, siège : chaque étage a son sous-réseau /24 dont la passerelle est l'adresse .1.\n\nPoste C — l'utilisateur imprime sur l'imprimante de son étage (10.20.16.40), mais n'accède ni à Internet, ni aux partages, et ne peut pas joindre 10.20.0.10. Extrait de ipconfig /all :\n\n   DHCP activé . . . . . . . . . . . . . : Non\n   Adresse IPv4. . . . . . . . . . . . . : 10.20.16.88(préféré)\n   Masque de sous-réseau . . . . . . . . : 255.255.255.0\n   Passerelle par défaut . . . . . . . . : 10.20.61.1\n   Serveurs DNS. . . . . . . . . . . . . : 10.20.0.10\n                                           10.20.0.11\n\nQuelle passerelle ce poste devrait-il utiliser ?",
+    "data": {
+      "type": "fill",
+      "template": "Passerelle attendue : ___",
+      "accepted": ["10.20.16.1"]
+    },
+    "explanation": "Le poste est dans 10.20.16.0/24. La passerelle 10.20.61.1 n'appartient pas à ce réseau (inversion probable des chiffres 16 et 61) : le poste ne peut rien envoyer hors de son sous-réseau, ce qui explique qu'il imprime localement mais ne joigne ni les DNS (10.20.0.x) ni Internet. Selon la convention du siège, la passerelle est 10.20.16.1. Il faut aussi se demander pourquoi ce poste est en adresse fixe alors que l'étage est en DHCP.",
+    "difficulty": 2
+  },
+  {
+    "code": "ex-ipc-actions",
+    "skill": "diagnostic",
+    "prompt": "Groupe Valmont, siège. Rappel des trois diagnostics : poste A en APIPA (169.254.112.47) après un changement de bureau ; poste B avec le DNS 8.8.8.8 au lieu des DNS internes ; poste C en adresse fixe avec la passerelle 10.20.61.1 au lieu de 10.20.16.1. Associez à chaque poste la première action adaptée.",
+    "data": {
+      "type": "match",
+      "left": [
+        { "id": "a", "text": "Poste A (APIPA)" },
+        { "id": "b", "text": "Poste B (DNS 8.8.8.8)" },
+        { "id": "c", "text": "Poste C (passerelle 10.20.61.1)" }
+      ],
+      "right": [
+        { "id": "physique", "text": "Vérifier câble, prise et port en comparant avec un poste voisin, puis ipconfig /renew" },
+        { "id": "dns-auto", "text": "Remettre l'obtention des DNS en automatique, puis ipconfig /flushdns et test par le nom" },
+        { "id": "passerelle", "text": "Corriger la passerelle en 10.20.16.1, ou repasser la carte en DHCP si c'est la norme de l'étage" },
+        { "id": "reinstall", "text": "Réinstaller Windows" },
+        { "id": "dns-secondaire", "text": "Ajouter 8.8.8.8 en DNS secondaire sur tous les postes" },
+        { "id": "reboot-dhcp", "text": "Redémarrer soi-même le serveur DHCP 10.20.0.5" }
+      ],
+      "answer": { "a": "physique", "b": "dns-auto", "c": "passerelle" }
+    },
+    "explanation": "Pour A, un seul poste en APIPA juste après un déménagement oriente vers le chemin physique (prise, brassage, port ou VLAN) : on compare avec le voisin avant de soupçonner le serveur, qu'un N1 ne redémarre de toute façon pas. Pour B, on supprime la saisie manuelle pour revenir aux DNS internes distribués par le DHCP. Pour C, on corrige la passerelle erronée. Ajouter un DNS public en secondaire provoquerait des échecs aléatoires sur les noms internes ; réinstaller Windows est disproportionné.",
+    "difficulty": 1
+  },
+  {
+    "code": "ex-ipc-note-b",
+    "skill": "documentation",
+    "prompt": "Groupe Valmont, poste B : le DNS était forcé sur 8.8.8.8 alors que le DHCP distribue les DNS internes 10.20.0.10 et 10.20.0.11 ; Internet fonctionnait mais pas \\\\srv-fichiers.valmont.local ni l'intranet. Vous avez corrigé le problème. Rédigez le commentaire de résolution du ticket (4 à 6 phrases) : constat, explication, correction, vérification et cause.",
+    "data": {
+      "type": "text_rubric",
+      "minWords": 40,
+      "rubric": {
+        "criteria": [
+          { "id": "constat", "label": "Constat : DNS public saisi manuellement", "points": 3, "required": true, "patterns": ["8.8.8.8", "dns public", "dns externe", "dns google", "dns manuel*", "dns saisi*", "dns force*", "force* manuellement", "force* sur", "saisi* manuellement", "configure* manuellement", "dns en dur", "dns fixe*"] },
+          { "id": "explication", "label": "Explication : les noms internes ne sont pas résolus", "points": 2, "patterns": ["valmont.local", "noms internes", "zone interne", "ressources internes", "serveurs internes", "ne connait pas", "ne peut pas resoudre", "resolution des noms internes", "resolution interne"] },
+          { "id": "correction", "label": "Correction : retour aux DNS internes / automatique", "points": 3, "required": true, "patterns": ["automatique*", "dns internes", "10.20.0.10", "par le dhcp", "via le dhcp", "repasse* en dhcp"] },
+          { "id": "cache", "label": "Vidage du cache DNS", "points": 1, "patterns": ["flushdns", "vider le cache", "vide le cache", "cache dns", "clear-dnsclientcache"] },
+          { "id": "verification", "label": "Vérification de la résolution", "points": 3, "required": true, "patterns": ["nslookup", "resolve-dnsname", "ping srv-fichiers*", "teste*", "verifie*", "confirme*", "acces au partage", "fonctionne a nouveau", "fonctionnent a nouveau"] },
+          { "id": "cause", "label": "Cause ou prévention", "points": 2, "patterns": ["cause", "origine", "modifi* manuellement", "droits administrateur", "droits d administration", "prevention", "eviter", "signale*"] }
+        ],
+        "redFlags": [
+          { "id": "dns-public-garde", "label": "Garder un DNS public en secondaire", "patterns": ["8.8.8.8 en secondaire", "ajoute 8.8.8.8", "ajout de 8.8.8.8"], "penalty": 3 }
+        ],
+        "passPercent": 60
+      }
+    },
+    "explanation": "Un bon commentaire de résolution permet à un collègue de comprendre le cas sans rappeler l'utilisatrice : ce qui a été vu (DNS 8.8.8.8 saisi à la main), pourquoi cela casse les noms internes, ce qui a été corrigé (DNS en automatique, cache vidé), comment c'est vérifié (nslookup, accès au partage, confirmation) et la cause probable. Garder 8.8.8.8 en secondaire n'est pas une correction : le poste l'interrogerait parfois et les noms internes échoueraient de façon aléatoire.",
+    "difficulty": 2
+  },
+
+  {
+    "code": "ex-prio-ordre",
+    "skill": "itsm",
+    "prompt": "Centre de services du Groupe Valmont, 8 h 50. Règle du service : score = impact × urgence. Impact : 1 = une personne, 2 = un service, 3 = tout le siège. Urgence : 1 = peut attendre plusieurs jours, 2 = gêne avec contournement possible, 3 = travail bloqué ou échéance proche.\n\nA — La messagerie est inaccessible pour tout le siège.\nB — Le service paie (6 personnes) ne peut plus ouvrir son logiciel ; les virements des salaires doivent partir avant 15 h.\nC — L'imprimante de la comptabilité fait des bourrages à répétition ; l'imprimante de l'étage fonctionne.\nD — Une commerciale a son compte verrouillé et ne peut plus travailler.\nE — Le second écran du directeur commercial ne s'allume plus ; il travaille sur l'écran de son portable.\nF — Une assistante demande un logiciel de retouche photo pour un projet du mois prochain.\n\nClassez les tickets du plus prioritaire au moins prioritaire selon cette règle.",
+    "data": {
+      "type": "order",
+      "items": [
+        { "id": "e", "text": "E — Second écran du directeur commercial" },
+        { "id": "c", "text": "C — Bourrages de l'imprimante de la comptabilité" },
+        { "id": "a", "text": "A — Messagerie inaccessible pour tout le siège" },
+        { "id": "f", "text": "F — Demande de logiciel de retouche photo" },
+        { "id": "d", "text": "D — Compte verrouillé d'une commerciale" },
+        { "id": "b", "text": "B — Logiciel de paie inaccessible, échéance 15 h" }
+      ],
+      "answer": ["a", "b", "c", "d", "e", "f"]
+    },
+    "explanation": "Scores : A = 3 × 3 = 9 ; B = 2 × 3 = 6 ; C = 2 × 2 = 4 (un service gêné, contournement par l'imprimante de l'étage) ; D = 1 × 3 = 3 (une personne bloquée) ; E = 1 × 2 = 2 (une personne gênée qui peut travailler) ; F = 1 × 1 = 1 (une demande planifiable). La fonction du demandeur n'entre pas dans la règle de Valmont. Dans la pratique, un déverrouillage de deux minutes peut être traité au passage, mais la file d'attente suit la matrice.",
+    "difficulty": 2
+  },
+  {
+    "code": "ex-prio-actions",
+    "skill": "itsm",
+    "prompt": "Groupe Valmont, mêmes six tickets (A messagerie du siège, B paie bloquée avant 15 h, C bourrages de l'imprimante comptable, D compte verrouillé d'une commerciale, E second écran du directeur commercial, F demande de logiciel de retouche). Associez à chaque ticket la première action la plus adaptée.",
+    "data": {
+      "type": "match",
+      "left": [
+        { "id": "a", "text": "A — Messagerie du siège" },
+        { "id": "b", "text": "B — Paie bloquée, échéance 15 h" },
+        { "id": "c", "text": "C — Bourrages imprimante comptable" },
+        { "id": "d", "text": "D — Compte verrouillé" },
+        { "id": "e", "text": "E — Second écran du directeur" },
+        { "id": "f", "text": "F — Logiciel de retouche photo" }
+      ],
+      "right": [
+        { "id": "majeur", "text": "Déclarer un incident majeur, alerter le N2 et le responsable, informer les utilisateurs par un message général" },
+        { "id": "escalade-echeance", "text": "Escalader au N2 applicatif en précisant l'échéance de 15 h et le nombre de personnes touchées" },
+        { "id": "contournement", "text": "Orienter vers l'imprimante de l'étage et planifier l'intervention" },
+        { "id": "identite", "text": "Vérifier l'identité de l'utilisatrice, déverrouiller le compte et chercher la source des échecs" },
+        { "id": "creneau", "text": "Confirmer le contournement et proposer un créneau pour tester câble et écran" },
+        { "id": "demande", "text": "Requalifier en demande et la soumettre à la validation du manager" },
+        { "id": "reboot", "text": "Redémarrer soi-même le serveur de messagerie pour gagner du temps" }
+      ],
+      "answer": { "a": "majeur", "b": "escalade-echeance", "c": "contournement", "d": "identite", "e": "creneau", "f": "demande" }
+    },
+    "explanation": "Une panne de messagerie pour tout le siège relève de l'incident majeur : on alerte et on communique, on ne redémarre pas un serveur sans en avoir le rôle. Pour la paie, l'échéance de 15 h est l'information clé à transmettre au N2. C et E disposent d'un contournement : on le confirme et on planifie. D demande une vérification d'identité avant tout déverrouillage. F n'est pas un incident mais une demande, soumise à validation.",
+    "difficulty": 1
+  },
+  {
+    "code": "ex-prio-vip",
+    "skill": "communication",
+    "prompt": "Groupe Valmont. Pendant que vous traitez le ticket B (paie bloquée, virements avant 15 h), le directeur commercial (ticket E : son second écran ne s'allume plus, il travaille sur son portable) appelle et exige d'être dépanné immédiatement. Quelle réponse est la plus adaptée ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Interrompre le ticket de la paie et monter immédiatement à son bureau" },
+        { "id": "b", "text": "Lui répondre qu'il doit attendre son tour comme tout le monde, sans autre précision" },
+        { "id": "c", "text": "Reconnaître la gêne, expliquer qu'un incident bloquant est en cours et lui proposer un créneau précis aujourd'hui, en rappelant le contournement" },
+        { "id": "d", "text": "Escalader son ticket au N2 pour qu'il soit traité plus vite" }
+      ],
+      "answer": "c"
+    },
+    "explanation": "La réponse c respecte la priorisation sans négliger la personne : elle reconnaît la gêne, donne une raison compréhensible et un engagement concret (un créneau). Abandonner la paie ferait manquer une échéance qui touche tous les salariés. Une réponse sèche dégrade la relation sans rien apporter. Escalader un écran éteint au N2 détourne un niveau d'expertise d'incidents qui en ont besoin.",
+    "difficulty": 1
+  },
+  {
+    "code": "ex-prio-justification",
+    "skill": "itsm",
+    "prompt": "Groupe Valmont. Le responsable du centre de services vous demande pourquoi vous avez traité le ticket B (service paie de 6 personnes bloqué, virements avant 15 h) avant le ticket E (second écran du directeur commercial éteint, il travaille sur son portable). Justifiez votre choix en quelques phrases.",
+    "data": {
+      "type": "text_rubric",
+      "minWords": 30,
+      "rubric": {
+        "criteria": [
+          { "id": "impact", "label": "Comparer l'impact (un service contre une personne)", "points": 3, "required": true, "patterns": ["impact", "nombre de personnes", "six personnes", "6 personnes", "plusieurs personnes", "tout un service", "service entier", "service paie", "un seul utilisateur", "une seule personne"] },
+          { "id": "urgence", "label": "Comparer l'urgence (échéance de 15 h)", "points": 3, "required": true, "patterns": ["urgence", "urgent", "15 h", "15h", "echeance", "avant 15", "salaires", "virement*"] },
+          { "id": "contournement", "label": "Noter le contournement disponible pour E", "points": 2, "patterns": ["contournement", "ecran du portable", "ecran de son portable", "peut continuer", "peut travailler", "n est pas bloque", "pas bloque", "travaille quand meme"] },
+          { "id": "regle", "label": "S'appuyer sur la règle du service", "points": 2, "patterns": ["matrice", "score", "impact x urgence", "impact × urgence", "impact fois urgence", "grille", "regle du service", "regle de priorisation", "priorite"] },
+          { "id": "fonction", "label": "La fonction du demandeur ne change pas le calcul", "points": 1, "patterns": ["vip", "fonction", "statut", "hierarchi*", "rang", "quel que soit", "meme pour un directeur", "titre"] },
+          { "id": "communication", "label": "Informer le directeur d'un délai", "points": 2, "patterns": ["informe*", "prevenu", "explique*", "creneau", "rappel*", "tenu au courant", "delai"] }
+        ],
+        "redFlags": [
+          { "id": "mepris", "label": "Négliger le second demandeur", "patterns": ["il attendra", "je l ignore", "tant pis pour lui"], "penalty": 2 }
+        ],
+        "passPercent": 60
+      }
+    },
+    "explanation": "La justification doit reposer sur les critères partagés du service : B touche un service entier (impact 2) avec une échéance le jour même (urgence 3), soit un score de 6 ; E touche une personne qui dispose d'un contournement (1 × 2 = 2). La fonction du demandeur ne modifie pas la règle de Valmont, mais elle n'autorise pas à le laisser sans nouvelles : lui donner un créneau fait partie d'une bonne priorisation.",
+    "difficulty": 2
+  },
+
+  {
+    "code": "ex-nc-elements",
+    "skill": "documentation",
+    "prompt": "Groupe Valmont, ticket INC-2026-08812. Lundi 9 h 10, Sophie Lemaire (comptabilité) signale qu'Excel met plus d'une minute à ouvrir ses classeurs et affiche « Espace disque insuffisant » à l'enregistrement. Le disque C: n'a plus que 2,1 Go libres sur 237 Go : le dossier C:\\Exports\\Compta occupe 46 Go (exports du logiciel comptable depuis 2023) et les fichiers temporaires 9 Go. Avec son accord, vous avez nettoyé les fichiers temporaires, déplacé les exports antérieurs à 2026 vers le partage sauvegardé \\\\srv-fichiers\\compta\\archives-exports, redirigé le dossier d'export par défaut vers ce partage et redémarré le poste. Résultat : 58 Go libres, classeur ouvert en 5 secondes, confirmation de Mme Lemaire à 10 h 05.\n\nQuels éléments doivent figurer dans la note de clôture ? (plusieurs réponses)",
+    "data": {
+      "type": "multiple",
+      "choices": [
+        { "id": "cause", "text": "La cause identifiée (disque C: saturé par les exports comptables)" },
+        { "id": "actions", "text": "Les actions réalisées, avec l'accord de l'utilisatrice" },
+        { "id": "validation", "text": "La validation : mesures après correction et confirmation de l'utilisatrice" },
+        { "id": "prevention", "text": "Les mesures pour éviter que cela se reproduise" },
+        { "id": "jugement", "text": "Un avis sur la façon dont l'utilisatrice range ses fichiers" },
+        { "id": "mdp", "text": "Le mot de passe de session utilisé pendant l'intervention" }
+      ],
+      "answer": ["cause", "actions", "validation", "prevention"]
+    },
+    "explanation": "Une note de clôture sert au demandeur, aux collègues et à l'analyse des problèmes récurrents : cause, actions, validation et prévention suffisent à comprendre et à reproduire la résolution. Un jugement sur l'utilisatrice n'apporte rien et nuit à la relation. Un mot de passe ne doit jamais apparaître dans un ticket, lisible par de nombreuses personnes.",
+    "difficulty": 1
+  },
+  {
+    "code": "ex-nc-ton",
+    "skill": "documentation",
+    "prompt": "Groupe Valmont, ticket INC-2026-08812 (disque C: saturé par les exports comptables sur le poste de Sophie Lemaire, résolu et confirmé à 10 h 05). Quelle phrase de conclusion convient le mieux à la note de clôture ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Problème réglé, l'utilisatrice stockait n'importe quoi sur son C:." },
+        { "id": "b", "text": "Résolu après nettoyage. Ça marche." },
+        { "id": "c", "text": "Résolution confirmée par Mme Lemaire à 10 h 05 ; dossier d'export par défaut redirigé vers le partage pour éviter une nouvelle saturation ; article de base de connaissances créé." },
+        { "id": "d", "text": "Purge WinSxS via DISM /StartComponentCleanup et défragmentation NTFS, cluster optimisé." }
+      ],
+      "answer": "c"
+    },
+    "explanation": "La phrase c est factuelle, datée, mentionne la validation et la prévention. La a contient un jugement de valeur, inacceptable dans un ticket que l'utilisatrice peut lire. La b ne permet pas de comprendre ce qui a été fait. La d est du jargon qui ne correspond même pas aux actions réalisées : une note de clôture décrit ce qui a vraiment été fait, en termes compréhensibles.",
+    "difficulty": 1
+  },
+  {
+    "code": "ex-nc-validation",
+    "skill": "itsm",
+    "prompt": "Groupe Valmont, ticket INC-2026-08812. Vrai ou faux : dès que vous constatez 58 Go libres sur le disque C: de Sophie Lemaire, vous pouvez clôturer le ticket sans la recontacter, puisque la cause est supprimée. Justifiez en une ou deux phrases.",
+    "data": {
+      "type": "truefalse",
+      "answer": false,
+      "justification": {
+        "criteria": [
+          { "id": "utilisatrice", "label": "La validation revient à l'utilisatrice", "points": 3, "required": true, "patterns": ["confirm*", "valid*", "accord", "recontacter", "rappeler", "demander a l utilisatrice", "avec l utilisatrice"] },
+          { "id": "symptome", "label": "Vérifier le symptôme signalé, pas seulement la mesure", "points": 2, "patterns": ["symptome", "excel", "lenteur", "son besoin", "ce qu elle constate", "ressenti", "ouvrir ses classeurs", "enregistrer"] },
+          { "id": "autre-cause", "label": "Une autre cause peut subsister", "points": 1, "patterns": ["autre cause", "pas forcement", "peut persister", "pas certain", "pas sur", "n est pas la seule"] }
+        ],
+        "passPercent": 60
+      }
+    },
+    "explanation": "Faux. L'espace libre est une mesure technique, mais l'incident signalé est la lenteur d'Excel et l'erreur à l'enregistrement : seule l'utilisatrice peut confirmer qu'elle travaille à nouveau normalement, et une autre cause peut subsister. Clôturer sans confirmation est la première source de tickets rouverts et d'utilisateurs mécontents.",
+    "difficulty": 1
+  },
+  {
+    "code": "ex-nc-redaction",
+    "skill": "documentation",
+    "prompt": "Groupe Valmont, ticket INC-2026-08812. Rappel des faits : lundi 9 h 10, Sophie Lemaire (comptabilité) signale qu'Excel met plus d'une minute à ouvrir ses classeurs et affiche « Espace disque insuffisant » à l'enregistrement. Constat : 2,1 Go libres sur 237 Go ; C:\\Exports\\Compta occupe 46 Go (exports du logiciel comptable depuis 2023, dossier par défaut défini à l'installation) ; fichiers temporaires : 9 Go. Actions, avec son accord : nettoyage des fichiers temporaires, déplacement des exports antérieurs à 2026 vers le partage sauvegardé \\\\srv-fichiers\\compta\\archives-exports, redirection du dossier d'export par défaut vers ce partage, redémarrage. Résultat : 58 Go libres, classeur de clôture ouvert en 5 secondes, enregistrement possible, confirmation de Mme Lemaire à 10 h 05. Vous avez demandé au N2 une alerte à 90 % d'occupation des disques et rédigé un article de base de connaissances.\n\nRédigez la note de clôture du ticket (8 à 12 lignes), sur un ton professionnel.",
+    "data": {
+      "type": "text_rubric",
+      "minWords": 60,
+      "rubric": {
+        "criteria": [
+          { "id": "symptome", "label": "Symptôme signalé", "points": 1, "patterns": ["lenteur", "lent*", "espace disque insuffisant", "ouverture des classeurs", "plus d une minute"] },
+          { "id": "cause", "label": "Cause identifiée", "points": 3, "required": true, "patterns": ["disque c plein", "disque plein", "disque sature*", "disque c sature*", "saturation", "2,1 go", "2.1 go", "manque d espace", "exports comptables", "exports du logiciel", "dossier d export*", "c:\\exports*"] },
+          { "id": "actions", "label": "Actions réalisées", "points": 3, "required": true, "patterns": ["nettoyage", "nettoye*", "suppression", "supprime*", "fichiers temporaires", "deplace*", "deplacement", "archive*", "transfere*"] },
+          { "id": "accord", "label": "Accord de l'utilisatrice avant les actions", "points": 1, "patterns": ["avec son accord", "avec l accord", "accord de mme", "accord de l utilisatrice", "apres accord", "en accord avec"] },
+          { "id": "validation", "label": "Validation de la résolution", "points": 3, "required": true, "patterns": ["confirme*", "confirmation", "valide*", "validation", "teste*", "58 go", "5 secondes", "5 s"] },
+          { "id": "prevention", "label": "Prévention", "points": 2, "patterns": ["prevention", "prevenir", "alerte", "eviter", "ne se reproduise", "par defaut", "base de connaissance*", "article", "supervision", "surveill*", "seuil", "90 %"] }
+        ],
+        "redFlags": [
+          { "id": "jugement", "label": "Jugement sur l'utilisatrice", "patterns": ["n importe quoi", "faute de l utilisatrice", "sa faute", "elle aurait du", "aucune rigueur"], "penalty": 3 },
+          { "id": "familier", "label": "Ton familier", "patterns": ["lol", "mdr", "tkt", "ca marche", "c est bon", "bidouill*", "truc"], "penalty": 2 }
+        ],
+        "passPercent": 60
+      }
+    },
+    "explanation": "La grille vérifie la présence des éléments qui rendent une note de clôture utile : symptôme, cause, actions (réalisées avec l'accord de l'utilisatrice), validation chiffrée et confirmée, prévention. Elle pénalise le jugement sur l'utilisatrice et le ton familier, car la note est lisible par le demandeur et sert de référence aux collègues. Elle ne juge pas le style : une note juste peut être rédigée de bien des façons.",
+    "difficulty": 3
+  },
+
+  {
+    "code": "ex-jrn-kernel-power",
+    "skill": "windows",
+    "prompt": "Nordelis Logistique. Le poste de l'accueil des quais s'éteint brutalement plusieurs fois par semaine : l'écran devient noir et le PC redémarre. Extrait du journal Système :\n\nCritique | 03/10/2026 14:02:15 | Kernel-Power | ID 41\nLe système a redémarré sans s'arrêter correctement au préalable. Cette erreur peut se produire si le système ne répond plus, s'est arrêté brutalement ou si l'alimentation a été interrompue de manière inattendue.\n\nErreur | 03/10/2026 14:02:20 | EventLog | ID 6008\nL'arrêt système précédent à 13:47:03 le 03/10/2026 n'était pas prévu.\n\nQuelle conclusion pouvez-vous en tirer ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Windows Update redémarre le poste pour installer des mises à jour" },
+        { "id": "b", "text": "Le poste s'est arrêté sans que Windows le contrôle : la piste est l'alimentation ou le matériel, à confirmer sur place" },
+        { "id": "c", "text": "Le compte de l'utilisateur est verrouillé" },
+        { "id": "d", "text": "La cause est certaine : la carte mère est défectueuse" }
+      ],
+      "answer": "b"
+    },
+    "explanation": "Les événements 41 (Kernel-Power) et 6008 signifient que l'arrêt n'a pas été piloté par Windows : coupure d'alimentation, blocage complet ou défaillance matérielle. Un redémarrage pour mises à jour est un arrêt propre qui ne produit pas ces deux événements. Ils ne désignent pas pour autant une pièce précise : on vérifie l'alimentation (câble, multiprise, onduleur), la température et l'environnement, et on interroge l'utilisateur sur ce qui se passe au moment de la coupure.",
+    "difficulty": 2
+  },
+  {
+    "code": "ex-jrn-correspondances",
+    "skill": "windows",
+    "prompt": "Nordelis Logistique. Pour préparer votre analyse des journaux, associez chaque identifiant d'événement à sa signification.",
+    "data": {
+      "type": "match",
+      "left": [
+        { "id": "e41", "text": "41 — Kernel-Power (Système)" },
+        { "id": "e6008", "text": "6008 — EventLog (Système)" },
+        { "id": "e7031", "text": "7031 — Service Control Manager (Système)" },
+        { "id": "e7001", "text": "7001 — Service Control Manager (Système)" },
+        { "id": "e4740", "text": "4740 — Sécurité, contrôleur de domaine" }
+      ],
+      "right": [
+        { "id": "reboot", "text": "Le système a redémarré sans arrêt correct préalable" },
+        { "id": "unexpected", "text": "Signale après coup que l'arrêt précédent n'était pas prévu" },
+        { "id": "crash", "text": "Un service s'est arrêté de façon inattendue, avec le nombre d'occurrences et l'action corrective" },
+        { "id": "dependency", "text": "Un service n'a pas démarré parce qu'un service dont il dépend a échoué" },
+        { "id": "lockout", "text": "Un compte d'utilisateur a été verrouillé, avec le nom de l'ordinateur appelant" },
+        { "id": "logon", "text": "Une ouverture de session a réussi" },
+        { "id": "update", "text": "Une mise à jour Windows a été installée avec succès" }
+      ],
+      "answer": { "e41": "reboot", "e6008": "unexpected", "e7031": "crash", "e7001": "dependency", "e4740": "lockout" }
+    },
+    "explanation": "41 et 6008 vont souvent ensemble après une coupure brutale. Le Service Control Manager journalise 7000 quand un service ne démarre pas, 7001 quand un service échoue à cause d'une dépendance et 7031 quand un service s'arrête de façon inattendue. 4740 est enregistré dans le journal Sécurité du contrôleur de domaine : son champ « Nom de l'ordinateur appelant » indique d'où viennent les tentatives qui ont provoqué le verrouillage.",
+    "difficulty": 2
+  },
+  {
+    "code": "ex-jrn-scm-dependance",
+    "skill": "windows",
+    "prompt": "Nordelis Logistique. Ce matin, le poste NRD-QUAI-04 ne transmet plus les scans au WMS. Extrait du journal Système :\n\nErreur | 21/10/2026 06:58:12 | Service Control Manager | ID 7000\nLe service Pilote Scanner Quai n'a pas pu démarrer en raison de l'erreur : Le fichier spécifié est introuvable.\n\nErreur | 21/10/2026 06:58:12 | Service Control Manager | ID 7001\nLe service Passerelle WMS Quai dépend du service Pilote Scanner Quai qui n'a pas pu démarrer en raison de l'erreur : Le fichier spécifié est introuvable.\n\nQuelle lecture est correcte ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "La Passerelle WMS Quai est la cause : il faut la relancer jusqu'à ce qu'elle démarre" },
+        { "id": "b", "text": "La cause racine est le Pilote Scanner Quai, dont l'exécutable est introuvable ; la Passerelle ne démarre pas par dépendance" },
+        { "id": "c", "text": "Le Wi-Fi de l'entrepôt est en panne" },
+        { "id": "d", "text": "Le disque du poste est plein" }
+      ],
+      "answer": "b"
+    },
+    "explanation": "L'événement 7000 désigne le service qui échoue lui-même, le 7001 celui qui échoue par ricochet. Relancer la Passerelle ne sert à rien tant que le Pilote Scanner Quai ne démarre pas. « Fichier introuvable » oriente vers un exécutable supprimé, déplacé ou mis en quarantaine : on vérifie le chemin de l'exécutable dans les propriétés du service, ce qui a changé récemment, puis on escalade avec ces éléments. Ni le Wi-Fi ni le disque ne produisent ce message.",
+    "difficulty": 2
+  },
+  {
+    "code": "ex-jrn-verrouillage",
+    "skill": "identity",
+    "prompt": "Nordelis Logistique. Julien Morel, chef de quai, a changé son mot de passe vendredi. Depuis, son compte se verrouille chaque matin vers 8 h 40. Il affirme n'utiliser que son poste NRD-PC-112. Extrait du journal Sécurité du contrôleur de domaine NRD-DC01 :\n\nAudit des succès | 21/10/2026 08:41:37 | ID 4740\nUn compte d'utilisateur a été verrouillé.\nCompte verrouillé — Nom du compte : j.morel\nInformations supplémentaires — Nom de l'ordinateur appelant : NRD-TAB-07\n\nNRD-TAB-07 est une tablette partagée de la salle de pause. Quelle est la piste la plus probable ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Une attaque en cours : il faut réinitialiser les mots de passe de tout le site" },
+        { "id": "b", "text": "La tablette NRD-TAB-07 garde une session ou une messagerie avec l'ancien mot de passe et multiplie les tentatives" },
+        { "id": "c", "text": "La politique de verrouillage est trop stricte : il faut demander sa désactivation" },
+        { "id": "d", "text": "Le poste NRD-PC-112 est infecté" }
+      ],
+      "answer": "b"
+    },
+    "explanation": "Le champ « Nom de l'ordinateur appelant » désigne la tablette, pas le poste de M. Morel. Un changement de mot de passe récent suivi de verrouillages réguliers est le scénario classique d'un appareil qui réessaie l'ancien mot de passe. Conclure à une attaque généralisée sans autre indice serait disproportionné ; désactiver le verrouillage affaiblirait la sécurité de tous ; le poste NRD-PC-112 n'apparaît pas dans l'événement.",
+    "difficulty": 2
+  },
+  {
+    "code": "ex-jrn-note-verrouillage",
+    "skill": "documentation",
+    "prompt": "Nordelis Logistique. L'événement 4740 du contrôleur de domaine NRD-DC01 montre que le compte j.morel est verrouillé depuis l'ordinateur appelant NRD-TAB-07, une tablette partagée de la salle de pause ; M. Morel a changé son mot de passe vendredi. Rédigez la note que vous ajoutez au ticket : votre analyse, les actions que vous menez ou proposez, et comment vous vérifierez que le problème est réglé.",
+    "data": {
+      "type": "text_rubric",
+      "minWords": 40,
+      "rubric": {
+        "criteria": [
+          { "id": "source", "label": "Source identifiée dans l'événement", "points": 3, "required": true, "patterns": ["nrd-tab-07", "tablette", "4740", "ordinateur appelant"] },
+          { "id": "hypothese", "label": "Hypothèse de l'ancien mot de passe", "points": 3, "required": true, "patterns": ["ancien mot de passe", "mot de passe enregistre", "identifiants enregistres", "mot de passe memorise", "session restee ouverte", "session ouverte", "changement de mot de passe", "mot de passe change*"] },
+          { "id": "action", "label": "Action sur l'appareil en cause", "points": 2, "patterns": ["deconnect*", "supprime*", "suppression", "retire*", "mettre a jour", "mis a jour", "fermer la session", "ferme* la session", "gestionnaire d identification"] },
+          { "id": "deverrouillage", "label": "Déverrouillage du compte", "points": 1, "patterns": ["deverrouill*"] },
+          { "id": "verification", "label": "Vérification dans la durée", "points": 2, "patterns": ["demain matin", "surveill*", "ne se reverrouille", "plus de verrouillage", "nouveau verrouillage", "suivi", "je verifierai", "verifier demain", "48 h", "confirm*"] },
+          { "id": "securite", "label": "Bon réflexe sur appareil partagé", "points": 1, "patterns": ["identite", "appareil partage", "tablette partagee", "poste partage", "ne pas enregistrer", "bonnes pratiques", "sensibilis*"] }
+        ],
+        "redFlags": [
+          { "id": "desactivation", "label": "Désactiver la protection", "patterns": ["desactiver le verrouillage", "desactive le verrouillage", "supprimer la politique de verrouillage"], "penalty": 3 },
+          { "id": "mdp", "label": "Communiquer un mot de passe", "patterns": ["je donne le mot de passe", "je lui donne son mot de passe", "mot de passe par mail"], "penalty": 3 }
+        ],
+        "passPercent": 60
+      }
+    },
+    "explanation": "Une note d'analyse utile cite la preuve (événement 4740, ordinateur appelant NRD-TAB-07), formule l'hypothèse (un appareil qui conserve l'ancien mot de passe), décrit l'action ciblée (fermer la session ou supprimer les identifiants enregistrés sur la tablette, déverrouiller le compte) et prévoit une vérification dans la durée, car un verrouillage qui revient le lendemain prouverait qu'une autre source existe. Désactiver la politique de verrouillage n'est jamais une réponse de support.",
+    "difficulty": 3
+  },
+
+  {
+    "code": "ex-ps-service-spouleur",
+    "skill": "powershell",
+    "prompt": "Groupe Valmont. Vous êtes en session PowerShell sur le poste VLM-PC-0231, dont les impressions restent bloquées. Complétez la commande qui affiche l'état du service Spouleur d'impression à partir de son nom court.",
+    "data": {
+      "type": "fill",
+      "template": "Get-Service -Name ___",
+      "accepted": ["Spooler", "'Spooler'", "\"Spooler\""]
+    },
+    "explanation": "Le paramètre -Name attend le nom court du service : Spooler. « Spouleur d'impression » est le nom d'affichage, utilisable avec -DisplayName. La colonne Status indique Running ou Stopped, première information à vérifier avant toute action sur la file d'impression.",
+    "difficulty": 1
+  },
+  {
+    "code": "ex-ps-top-cpu",
+    "skill": "powershell",
+    "prompt": "Groupe Valmont, poste VLM-PC-0231 jugé très lent. Complétez la commande qui affiche les cinq processus ayant consommé le plus de temps processeur.",
+    "data": {
+      "type": "fill",
+      "template": "Get-Process | Sort-Object ___ -Descending | Select-Object -First 5",
+      "accepted": ["CPU", "-Property CPU"]
+    },
+    "explanation": "Sort-Object trie sur une propriété des objets transmis par le pipeline. La propriété CPU de Get-Process indique le temps processeur cumulé en secondes ; -Descending place les plus gros consommateurs en tête et Select-Object -First 5 limite l'affichage. Pour la mémoire, on trierait sur WorkingSet.",
+    "difficulty": 2
+  },
+  {
+    "code": "ex-ps-port",
+    "skill": "powershell",
+    "prompt": "Groupe Valmont. Depuis le poste VLM-PC-0231, l'intranet ne s'ouvre pas alors que le ping du serveur répond. Complétez la commande qui vérifie que le serveur accepte les connexions sur le port HTTPS.",
+    "data": {
+      "type": "fill",
+      "template": "Test-NetConnection -ComputerName srv-intranet.valmont.local ___ 443",
+      "accepted": ["-Port", "-RemotePort"]
+    },
+    "explanation": "Test-NetConnection avec -Port (alias -RemotePort) tente une connexion TCP sur le port indiqué : TcpTestSucceeded : True signifie que le service écoute et que rien ne bloque sur le chemin. Un ping qui répond ne prouve que la joignabilité ICMP, pas la disponibilité du service web.",
+    "difficulty": 2
+  },
+  {
+    "code": "ex-ps-volume",
+    "skill": "powershell",
+    "prompt": "Groupe Valmont, poste VLM-PC-0231. Complétez la commande qui affiche la taille et l'espace libre du disque C:.",
+    "data": {
+      "type": "fill",
+      "template": "___ -DriveLetter C",
+      "accepted": ["Get-Volume"]
+    },
+    "explanation": "Get-Volume -DriveLetter C affiche le système de fichiers, la taille et l'espace restant (SizeRemaining) du volume. Un disque C: presque plein est une cause fréquente de lenteur et d'erreurs d'enregistrement ; c'est un contrôle à faire tôt dans un diagnostic de poste lent.",
+    "difficulty": 1
+  },
+  {
+    "code": "ex-ps-besoins",
+    "skill": "powershell",
+    "prompt": "Groupe Valmont. Pendant votre intervention à distance sur VLM-PC-0231, associez chaque besoin à la commande PowerShell adaptée.",
+    "data": {
+      "type": "match",
+      "left": [
+        { "id": "ip", "text": "Afficher l'adresse IP, la passerelle et les DNS de chaque carte" },
+        { "id": "print", "text": "Lister les documents en attente sur l'imprimante COMPTA-2E" },
+        { "id": "svc", "text": "Savoir si le service Windows Update est démarré" },
+        { "id": "mem", "text": "Trouver les 5 processus qui consomment le plus de mémoire" },
+        { "id": "rdp", "text": "Vérifier qu'un serveur répond sur le port 3389 (bureau à distance)" }
+      ],
+      "right": [
+        { "id": "netip", "text": "Get-NetIPConfiguration" },
+        { "id": "printjob", "text": "Get-PrintJob -PrinterName \"COMPTA-2E\"" },
+        { "id": "getsvc", "text": "Get-Service -Name wuauserv" },
+        { "id": "sortmem", "text": "Get-Process | Sort-Object WorkingSet -Descending | Select-Object -First 5" },
+        { "id": "tnc", "text": "Test-NetConnection srv-rds01 -Port 3389" },
+        { "id": "restart", "text": "Restart-Computer -Force" },
+        { "id": "remove", "text": "Remove-Item C:\\Windows\\Temp -Recurse" }
+      ],
+      "answer": { "ip": "netip", "print": "printjob", "svc": "getsvc", "mem": "sortmem", "rdp": "tnc" }
+    },
+    "explanation": "Les commandes Get- et Test- interrogent sans rien modifier : ce sont les premières à utiliser en diagnostic. Get-NetIPConfiguration résume la configuration IP, Get-PrintJob liste la file d'une imprimante, Get-Service donne l'état d'un service (wuauserv est le nom court de Windows Update), le tri sur WorkingSet classe par mémoire, Test-NetConnection -Port teste un port TCP. Restart-Computer -Force et Remove-Item modifient le poste : ils ne répondent à aucun de ces besoins.",
+    "difficulty": 2
+  },
+  {
+    "code": "ex-ps-restart",
+    "skill": "powershell",
+    "prompt": "Groupe Valmont, poste VLM-PC-0231. Get-Service -Name Spooler indique Status : Running, mais les documents restent bloqués dans la file. Après accord de l'utilisateur, quelle commande relance le service de façon ciblée ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Start-Service -Name Spooler" },
+        { "id": "b", "text": "Restart-Service -Name Spooler" },
+        { "id": "c", "text": "Get-Service -Name Spooler -Restart" },
+        { "id": "d", "text": "Restart-Computer -Force" }
+      ],
+      "answer": "b"
+    },
+    "explanation": "Restart-Service arrête puis redémarre le service : c'est l'action ciblée quand il est démarré mais bloqué. Start-Service n'a aucun effet sur un service déjà en cours d'exécution. Le paramètre -Restart n'existe pas pour Get-Service. Restart-Computer -Force fonctionnerait peut-être, mais coupe le travail de l'utilisateur sans nécessité.",
+    "difficulty": 1
+  },
+
+  {
+    "code": "ex-um-elements",
+    "skill": "communication",
+    "prompt": "Groupe Valmont. Laurent Mercier, directeur commercial, vous écrit pour la troisième fois en cinq jours : en déplacement, son Outlook reste « Déconnecté » et ses e-mails restent dans la boîte d'envoi. Les deux tickets précédents ont été clôturés après une réparation d'Office, sans que personne ne vérifie avec lui. Son message : « C'est la troisième fois que je vous signale le problème. Vous fermez les tickets sans rien régler. Jeudi je présente notre offre à un client à Lyon, je ne peux pas me permettre de rester sans e-mails. J'attends une vraie solution. »\n\nQuels éléments votre réponse doit-elle contenir ? (plusieurs réponses)",
+    "data": {
+      "type": "multiple",
+      "choices": [
+        { "id": "gene", "text": "La reconnaissance de sa gêne et des tickets clôturés trop vite" },
+        { "id": "reformulation", "text": "Une reformulation du problème tel qu'il le vit" },
+        { "id": "engagement", "text": "Un engagement concret avec un délai ou un créneau avant jeudi" },
+        { "id": "contournement", "text": "Une solution de secours en attendant (webmail, téléphone)" },
+        { "id": "jargon", "text": "Le détail technique de la reconstruction du profil Outlook et du cache Exchange" },
+        { "id": "faute", "text": "La précision que ce sont des collègues, et non vous, qui ont clôturé les tickets" },
+        { "id": "promesse", "text": "La promesse que le problème ne se reproduira jamais" }
+      ],
+      "answer": ["gene", "reformulation", "engagement", "contournement"]
+    },
+    "explanation": "Un utilisateur qui rappelle pour la troisième fois attend d'abord d'être entendu, puis un engagement vérifiable. Reconnaître la gêne, reformuler, s'engager sur un créneau et proposer un contournement répondent à cette attente. Le jargon ne le rassure pas, rejeter la faute sur des collègues abîme la crédibilité de tout le service, et une promesse absolue est intenable si le problème réapparaît.",
+    "difficulty": 1
+  },
+  {
+    "code": "ex-um-ouverture",
+    "skill": "communication",
+    "prompt": "Groupe Valmont. Laurent Mercier, directeur commercial, signale pour la troisième fois que ses e-mails ne partent pas en déplacement ; il présente une offre à un client jeudi. Quelle phrase d'ouverture choisissez-vous ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Monsieur, les tickets précédents ont été clôturés par mes collègues, pas par moi." },
+        { "id": "b", "text": "Je comprends votre agacement : c'est la troisième fois que vous nous signalez ce problème, et ce n'est pas acceptable à l'approche d'un rendez-vous client important." },
+        { "id": "c", "text": "Votre problème vient sûrement du Wi-Fi de l'hôtel, nous n'y pouvons pas grand-chose." },
+        { "id": "d", "text": "La procédure standard a été appliquée, les tickets étaient donc résolus." }
+      ],
+      "answer": "b"
+    },
+    "explanation": "La phrase b reconnaît l'émotion, le fait objectif (troisième signalement) et l'enjeu pour l'utilisateur, sans se défausser. La a rejette la responsabilité sur des collègues, la c avance une cause non vérifiée qui renvoie le problème vers lui, la d défend le processus au lieu de répondre au besoin : toutes trois aggravent le mécontentement.",
+    "difficulty": 1
+  },
+  {
+    "code": "ex-um-etapes",
+    "skill": "itsm",
+    "prompt": "Groupe Valmont, troisième signalement de Laurent Mercier (e-mails bloqués en déplacement, présentation client jeudi). Remettez dans l'ordre les étapes de votre prise en charge.",
+    "data": {
+      "type": "order",
+      "items": [
+        { "id": "valider", "text": "Faire valider la résolution par l'utilisateur, puis clôturer" },
+        { "id": "historique", "text": "Relire l'historique des deux tickets précédents" },
+        { "id": "repondre", "text": "Répondre à l'utilisateur : excuses, reformulation, engagement et créneau" },
+        { "id": "rouvrir", "text": "Rouvrir le ticket en le liant aux deux précédents" },
+        { "id": "reproduire", "text": "Reproduire le problème avec lui lors du créneau, puis corriger ou escalader" }
+      ],
+      "answer": ["historique", "rouvrir", "repondre", "reproduire", "valider"]
+    },
+    "explanation": "On relit d'abord l'historique pour ne pas reproposer ce qui a déjà échoué. Rouvrir et lier le ticket permet ensuite d'annoncer à l'utilisateur un suivi réel et traçable dans la réponse. Le créneau sert à reproduire le problème dans ses conditions d'usage, ce que les deux interventions précédentes n'avaient pas fait. La clôture n'intervient qu'après sa validation.",
+    "difficulty": 2
+  },
+  {
+    "code": "ex-um-reponse",
+    "skill": "communication",
+    "prompt": "Groupe Valmont. Laurent Mercier, directeur commercial, vous écrit pour la troisième fois en cinq jours : « C'est la troisième fois que je vous signale le problème. Vous fermez les tickets sans rien régler. Jeudi je présente notre offre à un client à Lyon, je ne peux pas me permettre de rester sans e-mails. J'attends une vraie solution. » En déplacement, son Outlook reste « Déconnecté » et ses e-mails restent dans la boîte d'envoi ; les deux tickets précédents ont été clôturés sans vérification avec lui.\n\nRédigez votre réponse écrite (e-mail de 8 à 15 lignes).",
+    "data": {
+      "type": "text_rubric",
+      "minWords": 60,
+      "rubric": {
+        "criteria": [
+          { "id": "empathie", "label": "Empathie et excuses", "points": 3, "required": true, "patterns": ["je comprends", "comprends votre", "desole*", "excuse*", "regrette*", "navre*", "agacement", "frustration", "mecontentement", "legitime"] },
+          { "id": "historique", "label": "Reconnaissance des signalements précédents", "points": 2, "patterns": ["troisieme", "3e", "trois fois", "deux tickets", "tickets precedents", "precedents tickets", "precedentes demandes", "deja signale", "plusieurs fois", "clotures sans"] },
+          { "id": "reformulation", "label": "Reformulation du problème", "points": 2, "patterns": ["si je comprends bien", "si je resume", "vous m indiquez", "vous constatez", "en deplacement", "ne partent pas", "boite d envoi", "deconnecte"] },
+          { "id": "engagement", "label": "Engagement concret", "points": 3, "required": true, "patterns": ["je prends", "prends en charge", "pris en charge", "rouvert", "reouvert", "j ai transmis", "escalade*", "niveau 2", "technicien dedie", "je m engage", "je m occupe"] },
+          { "id": "delai", "label": "Délai ou créneau précis", "points": 3, "required": true, "patterns": ["demain", "aujourd hui", "avant jeudi", "avant votre", "9 h", "14 h", "d ici", "dans l heure", "ce matin", "cet apres-midi", "rendez-vous", "creneau"] },
+          { "id": "contournement", "label": "Solution de secours en attendant", "points": 2, "patterns": ["en attendant", "d ici la", "outlook sur le web", "webmail", "telephone", "smartphone", "solution provisoire", "solution de secours"] },
+          { "id": "suivi", "label": "Suivi et validation avec lui", "points": 2, "patterns": ["sans votre confirmation", "votre accord", "je vous rappelle", "je vous recontacte", "faire le point", "verifier avec vous", "vous tenir informe"] }
+        ],
+        "redFlags": [
+          { "id": "faute", "label": "Rejet de la faute", "patterns": ["pas de ma faute", "pas notre faute", "votre faute", "la faute de", "mes collegues ont clos", "mon collegue a clos", "vous avez du mal"], "penalty": 3 },
+          { "id": "promesse", "label": "Promesse irréaliste", "patterns": ["plus jamais", "je vous garantis", "garanti a 100", "100 %", "en 5 minutes", "definitivement regle"], "penalty": 2 },
+          { "id": "jargon", "label": "Jargon technique", "patterns": ["profil mapi", "mapi", "fichier ost", ".ost", "cache exchange", "mode cache", "smtp", "tls", "autodiscover", "registre", "regedit"], "penalty": 2 }
+        ],
+        "passPercent": 60
+      }
+    },
+    "explanation": "La grille recherche ce qui fait retomber la tension d'un utilisateur excédé : excuses sincères, reconnaissance de l'historique, reformulation, engagement concret avec un créneau avant son échéance, solution de secours et promesse de ne clôturer qu'avec son accord. Elle pénalise le rejet de faute, les promesses intenables et le jargon. Elle ne juge pas le style : deux réponses très différentes peuvent obtenir le même score.",
+    "difficulty": 3
+  },
+
+  {
+    "code": "ex-arr-procedure",
+    "skill": "identity",
+    "prompt": "Groupe Valmont. Mercredi, les RH transmettent l'arrivée d'Inès Garnier, chargée de clientèle au service ADV, lundi 9 h : portable et deux écrans, licence Microsoft 365, accès à l'ERP commercial et au partage \\\\srv-fichiers\\adv, MFA obligatoire. Remettez les étapes dans l'ordre.",
+    "data": {
+      "type": "order",
+      "items": [
+        { "id": "poste", "text": "Préparer le portable et les écrans, puis tester avec le compte créé (session, Outlook, partage)" },
+        { "id": "groupes", "text": "Ajouter le compte aux groupes du service validés par le manager (partage ADV, ERP)" },
+        { "id": "demande", "text": "Vérifier que la demande est complète et validée par le manager" },
+        { "id": "j1", "text": "Le jour J : accueillir, faire changer le mot de passe, enrôler la MFA et vérifier les accès avec elle" },
+        { "id": "compte", "text": "Créer le compte dans l'Active Directory, dans l'OU du service, avec un mot de passe temporaire" },
+        { "id": "cloture", "text": "Clôturer la demande après validation des accès" },
+        { "id": "licence", "text": "Attribuer la licence Microsoft 365 une fois le compte synchronisé" }
+      ],
+      "answer": ["demande", "compte", "groupes", "licence", "poste", "j1", "cloture"]
+    },
+    "explanation": "On ne crée rien sans demande complète et validée. Le compte doit exister avant d'être ajouté aux groupes et de recevoir une licence, qui n'est attribuable qu'une fois le compte synchronisé dans le cloud. Le poste se teste avec le compte réel pour éviter les surprises du lundi. La MFA s'enrôle avec l'utilisatrice et son propre téléphone, le jour J ; la demande se clôture après vérification avec elle.",
+    "difficulty": 2
+  },
+  {
+    "code": "ex-arr-elements",
+    "skill": "identity",
+    "prompt": "Groupe Valmont, arrivée d'Inès Garnier (chargée de clientèle ADV) lundi 9 h. Quels éléments devez-vous prévoir ? (plusieurs réponses)",
+    "data": {
+      "type": "multiple",
+      "choices": [
+        { "id": "compte", "text": "Un compte Active Directory dans l'OU du service, avec mot de passe temporaire" },
+        { "id": "licence", "text": "Une licence Microsoft 365" },
+        { "id": "groupes", "text": "Les groupes donnant accès au partage ADV et à l'ERP, validés par le manager" },
+        { "id": "materiel", "text": "Le portable, les deux écrans et un casque, préparés et testés" },
+        { "id": "mfa", "text": "L'enrôlement MFA, à faire avec elle le jour de son arrivée" },
+        { "id": "admin", "text": "Des droits d'administrateur local permanents pour qu'elle installe ses logiciels" },
+        { "id": "copie", "text": "Les mêmes groupes que le directeur commercial, pour aller plus vite" }
+      ],
+      "answer": ["compte", "licence", "groupes", "materiel", "mfa"]
+    },
+    "explanation": "Compte, licence, groupes validés, matériel testé et MFA couvrent ce dont une nouvelle collaboratrice a besoin pour travailler dès la première heure. Les droits d'administrateur local permanents contredisent le principe du moindre privilège. Copier les groupes d'un autre profil, surtout d'un directeur, donne des accès non justifiés : les droits se déduisent du poste et de la validation du manager.",
+    "difficulty": 1
+  },
+  {
+    "code": "ex-arr-mot-de-passe",
+    "skill": "security-hygiene",
+    "prompt": "Groupe Valmont, arrivée d'Inès Garnier lundi. Comment transmettez-vous son mot de passe initial ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Par e-mail à son adresse personnelle, avec son identifiant, pour qu'elle soit prête dès lundi" },
+        { "id": "b", "text": "Un mot de passe temporaire unique, remis le jour J par un canal distinct de l'identifiant, avec changement obligatoire à la première connexion" },
+        { "id": "c", "text": "Le même mot de passe que pour tous les nouveaux arrivants, plus simple à retenir" },
+        { "id": "d", "text": "Sur un post-it collé sur l'écran du portable" }
+      ],
+      "answer": "b"
+    },
+    "explanation": "Un mot de passe temporaire unique, transmis séparément de l'identifiant et à changer dès la première connexion, limite le risque si l'un des deux canaux est compromis. Un e-mail personnel regroupe identifiant et secret au même endroit, hors de tout contrôle. Un mot de passe commun à tous les arrivants est connu de nombreuses personnes. Le post-it est lisible par n'importe qui passant près du poste.",
+    "difficulty": 1
+  },
+  {
+    "code": "ex-arr-mfa",
+    "skill": "m365",
+    "prompt": "Groupe Valmont, arrivée d'Inès Garnier lundi. Vrai ou faux : pour gagner du temps, vous pouvez enregistrer votre propre téléphone comme méthode MFA de son compte, puis le remplacer par le sien plus tard.",
+    "data": { "type": "truefalse", "answer": false },
+    "explanation": "Faux. La MFA prouve que la personne qui se connecte possède un appareil qui lui appartient. Avec votre téléphone enregistré, vous pourriez valider des connexions à sa place : le compte n'est plus protégé et la traçabilité est faussée. L'enrôlement se fait avec l'utilisatrice et son propre appareil, le jour de son arrivée.",
+    "difficulty": 1
+  },
+  {
+    "code": "ex-arr-message",
+    "skill": "documentation",
+    "prompt": "Groupe Valmont, arrivée d'Inès Garnier (chargée de clientèle ADV) lundi 9 h. Rédigez le message de bienvenue, avec la checklist du premier jour, que le support lui remettra lundi matin (10 à 15 lignes). Il doit lui permettre de démarrer seule et en sécurité.",
+    "data": {
+      "type": "text_rubric",
+      "minWords": 50,
+      "rubric": {
+        "criteria": [
+          { "id": "identifiant", "label": "Identifiant ou adresse de connexion", "points": 2, "patterns": ["identifiant", "adresse e-mail", "adresse mail", "adresse electronique", "nom d utilisateur", "login", "@valmont"] },
+          { "id": "mdp", "label": "Mot de passe temporaire à changer", "points": 3, "required": true, "patterns": ["changer votre mot de passe", "changement du mot de passe", "nouveau mot de passe", "mot de passe temporaire", "mot de passe provisoire", "modifier votre mot de passe", "personnaliser votre mot de passe"] },
+          { "id": "mfa", "label": "Enrôlement MFA", "points": 3, "required": true, "patterns": ["mfa", "double authentification", "authentification multifacteur", "authentification a deux facteurs", "authenticator", "deuxieme facteur", "2fa"] },
+          { "id": "materiel", "label": "Poste et matériel", "points": 1, "patterns": ["portable", "ordinateur", "ecran*", "casque", "materiel"] },
+          { "id": "acces", "label": "Accès et applications à vérifier", "points": 2, "patterns": ["outlook", "teams", "erp", "partage", "onedrive", "applications", "acces"] },
+          { "id": "support", "label": "Comment contacter le support", "points": 2, "required": true, "patterns": ["support", "service informatique", "centre de services", "assistance", "ticket", "hotline"] },
+          { "id": "securite", "label": "Rappel de sécurité", "points": 2, "patterns": ["ne communiquez jamais", "ne jamais communiquer", "ne donnez jamais", "ne le communiquez", "hameconnage", "phishing", "personne ne vous demandera", "confidentiel", "verrouill*", "windows + l", "windows+l"] }
+        ],
+        "redFlags": [
+          { "id": "mdp-clair", "label": "Mot de passe écrit dans le message", "patterns": ["votre mot de passe est", "mot de passe temporaire est", "mot de passe initial est", "bienvenue2026", "valmont2026", "azerty"], "penalty": 4 },
+          { "id": "canal-perso", "label": "Envoi vers une adresse personnelle", "patterns": ["adresse personnelle", "gmail", "hotmail"], "penalty": 2 }
+        ],
+        "passPercent": 60
+      }
+    },
+    "explanation": "Un bon message d'accueil rend la nouvelle collaboratrice autonome et prudente : identifiant, mot de passe temporaire à changer, enrôlement MFA sur son téléphone, vérification des accès et du matériel, contact du support et rappel des réflexes de sécurité. Le mot de passe lui-même ne doit jamais figurer dans ce document, qui peut circuler ou rester sur un bureau.",
+    "difficulty": 2
+  }
+]

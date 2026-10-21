@@ -1,0 +1,158 @@
+{
+  "meta": {
+    "slug": "n1-m365",
+    "title": "Microsoft 365 et Entra ID : comptes, licences et MFA",
+    "summary": "Comprendre tenant, Entra ID, licences et MFA, diagnostiquer un service Microsoft 365 inaccessible et accompagner une perte de téléphone sans ouvrir la porte aux attaquants.",
+    "level": "debutant",
+    "prerequisites": [
+      "Connaître les comptes et groupes Active Directory (leçon « Active Directory : domaine, OU, comptes et groupes »)"
+    ],
+    "objectives": [
+      "Expliquer ce que sont un tenant Microsoft 365 et Microsoft Entra ID",
+      "Distinguer une identité synchronisée d'une identité cloud",
+      "Relier une licence aux services qu'elle débloque et comprendre l'attribution par groupe",
+      "Décrire le fonctionnement de la MFA et accompagner une perte de téléphone",
+      "Utiliser Outlook sur le web comme test pour isoler un problème de poste",
+      "Reconnaître l'hameçonnage et la fatigue MFA et appliquer le moindre privilège"
+    ],
+    "durationMin": 45,
+    "skills": [
+      { "code": "m365", "weight": 3 },
+      { "code": "security-hygiene", "weight": 3 }
+    ],
+    "next": "n1-virtualisation"
+  },
+  "blocks": [
+    { "id": "intro", "kind": "paragraph", "text": "Mercredi, 7 h 55, Nordelis Logistique. Une assistante appelle, inquiète : « Mon téléphone n'arrête pas de vibrer depuis cette nuit, il me demande d'approuver une connexion. J'ai fini par appuyer sur Approuver pour que ça s'arrête. » Une heure plus tard, une dizaine de partenaires reçoivent depuis sa boîte un faux avis de facture. Le mot de passe avait été volé quelques jours plus tôt via une fausse page de connexion ; la dernière barrière, la MFA, a cédé par lassitude. Cette leçon vous apprend comment fonctionnent les comptes Microsoft 365, ce que débloquent les licences, et comment le support peut, ou non, devenir le maillon faible." },
+    { "id": "h-tenant", "kind": "heading", "level": 2, "text": "Le tenant : l'espace Microsoft 365 de l'entreprise" },
+    { "id": "p-tenant", "kind": "paragraph", "text": "Quand une entreprise souscrit à Microsoft 365, Microsoft lui crée un **tenant** (on dit aussi « locataire ») : un espace isolé dans le cloud qui contient ses utilisateurs, ses groupes, ses licences, ses boîtes aux lettres, ses sites et ses fichiers. Chaque tenant reçoit un nom technique en **.onmicrosoft.com**, par exemple valmont.onmicrosoft.com (fictif), puis l'entreprise y ajoute ses propres domaines de messagerie. Les données d'un tenant ne sont pas visibles depuis un autre tenant, même si les deux utilisent les mêmes serveurs Microsoft." },
+    { "id": "def", "kind": "callout", "tone": "definition", "title": "Définition simple", "text": "**Microsoft Entra ID** (anciennement Azure Active Directory, ou Azure AD) est le service d'identité cloud de Microsoft. Il stocke les comptes du tenant, vérifie l'identité des utilisateurs à chaque connexion à Microsoft 365 (Outlook, Teams, OneDrive, SharePoint…), applique la MFA et les règles d'accès. Ce n'est pas une copie d'Active Directory dans le cloud : il ne gère ni OU ni GPO, et repose sur des protocoles web modernes." },
+    { "id": "analogie", "kind": "callout", "tone": "analogy", "title": "Analogie", "text": "Le tenant, c'est un immeuble de bureaux loué dans un grand centre d'affaires : Microsoft fournit le bâtiment, la sécurité générale et les services communs ; l'entreprise a ses propres locaux, fermés aux autres locataires. Entra ID, c'est l'accueil de vos locaux : il connaît chaque salarié, vérifie son badge et, pour les zones sensibles, demande un deuxième justificatif (la MFA). Les licences, ce sont les abonnements qui ouvrent l'accès à certaines salles : la salle de réunion (Teams), le casier (OneDrive), la boîte aux lettres (Exchange)." },
+    { "id": "diag-m365", "kind": "diagram", "diagram": "m365-identity", "caption": "Du compte Active Directory au service Microsoft 365 : synchronisation, authentification par Entra ID, MFA, puis accès aux services débloqués par la licence." },
+    { "id": "h-identites", "kind": "heading", "level": 2, "text": "Identité synchronisée ou identité cloud" },
+    { "id": "p-identites", "kind": "paragraph", "text": "Beaucoup d'entreprises ont déjà un Active Directory sur site. Plutôt que de créer chaque compte deux fois, elles installent un outil de **synchronisation** (Microsoft Entra Connect, ou son équivalent cloud) qui recopie les comptes d'AD vers Entra ID. On parle alors d'**identité synchronisée** (ou hybride). D'autres comptes n'existent que dans le cloud : ce sont des **identités cloud**, souvent utilisées pour les petites structures, les prestataires ou les comptes techniques." },
+    { "id": "tab-identites", "kind": "table", "caption": "Ce que cela change pour le support", "headers": ["Question", "Identité synchronisée", "Identité cloud"], "rows": [
+      ["Où est la « source de vérité » ?", "Active Directory sur site", "Entra ID"],
+      ["Où modifier le nom, le service, les groupes AD ?", "Dans AD, puis la synchronisation propage", "Dans le centre d'administration cloud"],
+      ["Changement de mot de passe", "En général dans AD ou via une fonction de réécriture si elle est activée", "Directement dans le cloud"],
+      ["Délai de prise en compte", "Attendre le prochain cycle de synchronisation (souvent environ 30 minutes)", "Quasi immédiat"]
+    ] },
+    { "id": "sync-tip", "kind": "callout", "tone": "tip", "title": "Astuce", "text": "Un nouvel arrivant créé ce matin dans AD n'a pas encore de boîte aux lettres ? Avant de signaler une panne, vérifiez l'heure de création du compte : la synchronisation n'a peut-être pas encore eu lieu, et la licence n'est peut-être pas encore attribuée. Chez Groupe Valmont, les comptes sont synchronisés depuis valmont.local : on ne modifie donc pas leurs attributs directement dans le cloud." },
+    { "id": "h-licences", "kind": "heading", "level": 2, "text": "Les licences et ce qu'elles débloquent" },
+    { "id": "p-licences", "kind": "paragraph", "text": "Avoir un compte dans Entra ID ne donne accès à rien de particulier. Ce sont les **licences** qui activent les services. Une offre Microsoft 365 regroupe plusieurs **plans de service** : messagerie (Exchange Online), communication (Teams), stockage personnel (OneDrive), sites d'équipe (SharePoint), applications de bureau, etc. Les noms commerciaux des offres changent régulièrement et varient selon les pays : raisonnez en services débloqués plutôt qu'en noms d'offres." },
+    { "id": "tab-services", "kind": "table", "caption": "Les principaux services et leur symptôme sans licence", "headers": ["Service", "Ce qu'il apporte", "Symptôme typique sans licence ou plan désactivé"], "rows": [
+      ["Exchange Online", "Boîte aux lettres, calendrier, contacts", "Outlook ne trouve pas la boîte, OWA indique qu'il n'y a pas de boîte aux lettres"],
+      ["Teams", "Conversations, réunions, appels", "Teams refuse la connexion ou indique que le compte n'a pas accès"],
+      ["OneDrive", "Stockage de fichiers personnel synchronisé", "Pas d'espace OneDrive professionnel, synchronisation impossible"],
+      ["SharePoint", "Sites et bibliothèques de documents d'équipe", "Accès refusé aux sites de l'entreprise"],
+      ["Applications Microsoft 365", "Word, Excel, Outlook installés sur le poste", "Message « produit sans licence » ou mode lecture seule"]
+    ] },
+    { "id": "p-groupes-licences", "kind": "paragraph", "text": "Attribuer les licences une par une devient vite ingérable. La bonne pratique est l'**attribution par groupe** : on associe une licence à un groupe (par exemple « LIC_M365_Standard »), et chaque compte ajouté au groupe reçoit automatiquement la licence. Le départ d'un salarié, retiré du groupe, libère la licence. Conséquence pour le support : une licence manquante se règle souvent en **ajoutant la personne au bon groupe**, selon la procédure, plutôt qu'en attribuant une licence à la main. Attention aussi au **stock** : s'il n'y a plus de licences disponibles, l'attribution échoue silencieusement pour les derniers arrivés." },
+    { "id": "h-mfa", "kind": "heading", "level": 2, "text": "La MFA : prouver son identité deux fois" },
+    { "id": "p-mfa", "kind": "paragraph", "text": "L'**authentification multifacteur** (MFA) demande deux preuves de nature différente : quelque chose que l'on **sait** (le mot de passe), que l'on **possède** (un téléphone, une clé de sécurité) ou que l'on **est** (empreinte, visage). Un mot de passe volé ne suffit donc plus. Les méthodes courantes sont l'application **Microsoft Authenticator** (notification à approuver, avec saisie d'un nombre affiché à l'écran, ou code à usage unique), les **clés de sécurité** et passkeys, **Windows Hello Entreprise**, et, en dernier recours, le SMS ou l'appel vocal, considérés comme moins robustes." },
+    { "id": "mfa-info", "kind": "callout", "tone": "info", "title": "La saisie du nombre", "text": "Avec la **correspondance de nombres**, l'écran de connexion affiche un nombre que l'utilisateur doit taper dans Authenticator. Un attaquant qui déclenche des notifications à distance ne peut pas fournir ce nombre à la victime : on ne peut plus « approuver par réflexe » une connexion que l'on n'a pas lancée. Si un utilisateur reçoit une demande avec un nombre alors qu'il n'est pas en train de se connecter, c'est une alerte : son mot de passe est probablement connu d'un tiers." },
+    { "id": "h-telephone", "kind": "heading", "level": 3, "text": "Perte ou changement de téléphone" },
+    { "id": "p-telephone", "kind": "paragraph", "text": "« J'ai perdu mon téléphone » ou « j'ai changé de téléphone et Authenticator est vide » sont des demandes fréquentes. Elles sont **aussi sensibles qu'une réinitialisation de mot de passe** : réenregistrer une méthode MFA, c'est permettre à quelqu'un de prouver qu'il est l'utilisateur. Selon les droits délégués et la procédure, le N1 peut vérifier les méthodes enregistrées, demander au N2 de supprimer l'ancienne méthode ou de fournir un **passe d'accès temporaire** (un code à durée limitée qui permet à l'utilisateur d'enregistrer sa nouvelle méthode). Dans tous les cas, **la vérification d'identité vient d'abord**." },
+    { "id": "lost-field", "kind": "callout", "tone": "field", "title": "Sur le terrain", "text": "Un téléphone **perdu ou volé** n'est pas un simple désagrément : il peut contenir la messagerie ouverte et l'application d'authentification. Le réflexe est de signaler la perte selon la procédure (souvent à l'équipe sécurité ou au N2), de faire retirer l'ancienne méthode MFA et, si nécessaire, de révoquer les sessions ouvertes sur l'appareil. Un téléphone simplement **changé**, avec l'ancien toujours en main, est beaucoup moins urgent." },
+    { "id": "h-test", "kind": "heading", "level": 2, "text": "Outlook sur le web : le test qui isole le poste" },
+    { "id": "p-owa", "kind": "paragraph", "text": "Quand Outlook ne fonctionne pas sur un poste, le meilleur premier test est de se connecter à **Outlook sur le web** (OWA) depuis un navigateur, idéalement en navigation privée. Si la boîte s'affiche normalement, **le compte, la licence, la MFA et la boîte aux lettres fonctionnent** : le problème est local au poste (profil Outlook, cache, application, réseau du poste). Si OWA échoue aussi, le problème est lié au compte ou au service, et le message affiché vous oriente." },
+    { "id": "tab-owa", "kind": "table", "caption": "Ce que révèle le test OWA", "headers": ["Résultat dans OWA", "Interprétation", "Suite"], "rows": [
+      ["La boîte s'affiche normalement", "Compte, licence et service OK", "Piste poste : profil Outlook, mise à jour, cache, réseau local"],
+      ["Mot de passe refusé", "Mot de passe erroné, expiré ou compte bloqué", "Vérifier l'état du compte, procédure de réinitialisation"],
+      ["Pas de boîte aux lettres trouvée", "Licence Exchange absente ou boîte pas encore créée", "Vérifier la licence et la date de création du compte"],
+      ["Accès bloqué par une règle de l'organisation", "Règle d'accès conditionnel (pays, appareil non conforme…)", "Noter le message et l'identifiant de corrélation, escalader"]
+    ] },
+    { "id": "cmd-dsreg", "kind": "command", "shell": "cmd", "command": "dsregcmd /status", "explanation": "Affiche l'état d'inscription du poste auprès d'Entra ID et du domaine local. Utile pour savoir si un poste est joint à Entra ID, joint en hybride ou seulement au domaine, information souvent demandée par le N2 en cas de blocage d'accès conditionnel. Extrait ; la sortie est en anglais même sur un Windows en français.", "output": "+----------------------------------------------------------------------+\n| Device State                                                         |\n+----------------------------------------------------------------------+\n\n             AzureAdJoined : YES\n          EnterpriseJoined : NO\n              DomainJoined : YES\n                DomainName : VALMONT\n\n+----------------------------------------------------------------------+\n| SSO State                                                            |\n+----------------------------------------------------------------------+\n\n                AzureAdPrt : YES", "outputNotes": [
+      { "match": "AzureAdJoined : YES", "note": "Le poste est inscrit dans Entra ID. Le libellé garde l'ancien nom Azure AD. Combiné à DomainJoined YES, il s'agit d'une jonction hybride." },
+      { "match": "DomainJoined : YES", "note": "Le poste est aussi membre du domaine Active Directory valmont.local." },
+      { "match": "AzureAdPrt : YES", "note": "Le poste dispose d'un jeton d'authentification principal : l'authentification unique vers Microsoft 365 peut fonctionner. NO peut expliquer des demandes répétées d'identifiants." }
+    ] },
+    { "id": "h-admin", "kind": "heading", "level": 2, "text": "Centres d'administration et moindre privilège" },
+    { "id": "p-admin", "kind": "paragraph", "text": "L'administration de Microsoft 365 passe par plusieurs **centres d'administration** web : un centre général (utilisateurs, licences, groupes), le centre d'administration Entra (identités, MFA, accès conditionnel), et des centres par service (Exchange, Teams, SharePoint). Leurs menus et libellés évoluent souvent : apprenez **ce que vous cherchez** (l'état d'un compte, ses licences, ses méthodes d'authentification) plutôt qu'un chemin de clics précis." },
+    { "id": "p-roles", "kind": "paragraph", "text": "L'accès à ces consoles est contrôlé par des **rôles d'administration**. Le plus puissant, **Administrateur général**, peut tout faire, y compris supprimer le tenant ou attribuer ses propres droits : il doit être réservé à très peu de personnes. Pour le support, il existe des rôles limités, par exemple un rôle de support technique qui permet de réinitialiser le mot de passe des utilisateurs non administrateurs, ou un rôle de lecture. C'est le **principe du moindre privilège** : un compte de technicien compromis doit pouvoir faire le moins de dégâts possible. Idéalement, les droits d'administration sont accordés **à la demande et pour une durée limitée**, et le compte d'administration est distinct du compte de travail quotidien." },
+    { "id": "h-phishing", "kind": "heading", "level": 2, "text": "Hameçonnage et fatigue MFA" },
+    { "id": "p-phishing", "kind": "paragraph", "text": "L'**hameçonnage** (phishing) vise à voler des identifiants avec un faux message : « votre boîte est pleine », « document partagé avec vous », « facture en attente ». Le lien mène vers une page qui imite parfaitement l'écran de connexion Microsoft. Certaines attaques modernes relaient même la saisie en temps réel vers le vrai site, pour récupérer aussi la session après la MFA. La **fatigue MFA** consiste à bombarder la victime de demandes d'approbation jusqu'à ce qu'elle cède, comme dans notre histoire d'introduction." },
+    { "id": "tab-phishing", "kind": "table", "caption": "Signaux d'alerte et réaction du support", "headers": ["Signal rapporté par l'utilisateur", "Ce que cela peut signifier", "Réaction N1"], "rows": [
+      ["Demandes MFA qu'il n'a pas déclenchées", "Le mot de passe est connu d'un attaquant", "Refuser les demandes, changement de mot de passe selon la procédure, alerte sécurité"],
+      ["« J'ai saisi mon mot de passe sur une page après avoir cliqué un lien »", "Identifiants probablement volés", "Alerte sécurité immédiate, réinitialisation et révocation des sessions par le N2"],
+      ["Des contacts reçoivent des messages qu'il n'a pas envoyés", "Boîte compromise ou usurpation", "Alerte sécurité, ne pas supprimer les traces, recherche de règles de transfert par le N2"],
+      ["Message suspect reçu, rien cliqué", "Tentative en cours", "Faire signaler le message selon la procédure, prévenir les collègues si campagne"]
+    ] },
+    { "id": "phish-warning", "kind": "callout", "tone": "danger", "title": "Ne culpabilisez jamais l'utilisateur", "text": "Un utilisateur qui avoue avoir cliqué ou approuvé une demande par erreur vous rend service : chaque minute compte. Si vous le sermonnez, il ne vous appellera pas la prochaine fois. Remerciez-le, agissez vite, et transmettez à l'équipe sécurité l'heure, le message reçu et ce qui a été saisi." },
+    { "id": "h-demo", "kind": "heading", "level": 2, "text": "Démonstration : « Outlook ne s'ouvre plus »" },
+    { "id": "steps-demo", "kind": "steps", "title": "Isoler un problème Microsoft 365 en cinq étapes", "steps": [
+      { "title": "Faire préciser le symptôme", "text": "M. Faure, Groupe Valmont : Outlook reste bloqué sur « Connexion en cours » depuis ce matin. Teams fonctionne. Aucun changement récent connu." },
+      { "title": "Tester OWA en navigation privée", "text": "Connexion à Outlook sur le web : mot de passe accepté, MFA validée, la boîte s'affiche avec les messages du jour. Compte, licence et service sont innocentés." },
+      { "title": "Vérifier l'état du poste", "text": "Le poste est bien inscrit dans Entra ID et dispose d'un jeton : l'authentification unique n'est pas en cause.", "command": "dsregcmd /status" },
+      { "title": "Traiter la piste locale", "text": "Fermer Outlook, le relancer ; si le problème persiste, appliquer la procédure interne (réparation de l'application, nouveau profil Outlook) en prévenant l'utilisateur que la boîte se resynchronisera." },
+      { "title": "Documenter", "text": "« OWA OK, Teams OK : compte et licence valides. Poste joint en hybride, PRT présent. Problème local au profil Outlook, nouveau profil créé, synchronisation OK à 10 h 05. »" }
+    ] },
+    { "id": "mistakes", "kind": "mistakes", "items": [
+      { "mistake": "Attribuer une licence à la main alors que l'entreprise utilise l'attribution par groupe", "why": "L'attribution manuelle échappe aux règles, se perd lors des réorganisations et fausse le suivi du stock.", "fix": "Ajouter la personne au groupe de licences prévu, selon la procédure." },
+      { "mistake": "Modifier dans le cloud un attribut d'un compte synchronisé", "why": "La source de vérité est AD : la modification est refusée ou écrasée à la synchronisation suivante.", "fix": "Faire la modification dans Active Directory, puis attendre la synchronisation." },
+      { "mistake": "Réenregistrer la MFA d'un utilisateur sur simple appel", "why": "C'est offrir le compte à quiconque se fait passer pour lui.", "fix": "Vérifier l'identité selon la procédure avant toute action sur les méthodes d'authentification." },
+      { "mistake": "Conseiller d'« approuver pour que ça s'arrête »", "why": "Chaque approbation non sollicitée ouvre une session à l'attaquant.", "fix": "Refuser toute demande non sollicitée et déclencher la procédure de compromission." },
+      { "mistake": "Réinstaller Office dès qu'Outlook bloque", "why": "Le problème peut venir du compte, de la licence ou du service.", "fix": "Tester OWA d'abord pour savoir si le problème est local ou lié au compte." }
+    ] },
+    { "id": "risks", "kind": "risks", "items": [
+      "Toute action sur un mot de passe ou une méthode MFA exige une vérification d'identité préalable selon la procédure ; une demande pressante ou venant d'un dirigeant n'est jamais une exception.",
+      "N'utilisez que les rôles d'administration délégués à votre fonction ; ne demandez jamais le rôle d'administrateur général « pour aller plus vite » et ne travaillez pas au quotidien avec un compte privilégié.",
+      "Ne communiquez jamais un passe d'accès temporaire ou un mot de passe par courriel ou dans un ticket.",
+      "En cas de suspicion de compromission, ne supprimez ni messages ni règles de la boîte : ces traces sont utiles à l'équipe sécurité.",
+      "Les libellés des consoles évoluent : en cas de doute sur une option, ne cliquez pas « pour voir » dans un centre d'administration, demandez au N2."
+    ] },
+    { "id": "quiz", "kind": "quiz", "title": "Vérifiez votre compréhension", "questions": ["m365-entra-ancien-nom", "m365-licence-services", "m365-owa-test", "m365-fatigue-mfa", "m365-moindre-privilege"] },
+    { "id": "exercise", "kind": "exercise", "title": "Le nouvel arrivant sans boîte aux lettres", "context": "Chez Groupe Valmont, Léa Marchand a été créée ce matin à 9 h 30 dans Active Directory, dans l'OU Siege/Utilisateurs/RH, et ajoutée par le N2 au groupe GG_RH. À 9 h 50, son manager appelle : elle a pu ouvrir sa session Windows, mais Outlook indique qu'aucune boîte aux lettres n'est trouvée, et Outlook sur le web affiche le même message. Teams refuse aussi la connexion. Chez Valmont, les licences sont attribuées par le groupe LIC_M365_Standard, et la synchronisation AD vers Entra ID a lieu environ toutes les 30 minutes.", "task": "Analysez la situation : quelles sont les deux causes possibles, comment les vérifier, et que répondez-vous au manager ?", "hints": [
+      "La session Windows fonctionne : le compte AD existe. Mais Microsoft 365 repose sur Entra ID : le compte y est-il déjà ?",
+      "Comparez l'heure de création, l'heure de l'appel et la fréquence de synchronisation. Puis regardez les groupes dans lesquels elle a été ajoutée.",
+      "Elle est dans GG_RH, mais pas dans LIC_M365_Standard : sans licence, ni boîte Exchange ni Teams. Même synchronisée, elle n'aurait accès à rien."
+    ], "solution": [
+      "La session Windows prouve que le compte existe dans AD, mais pas qu'il est déjà dans Entra ID. Créé à 9 h 30 avec une synchronisation toutes les 30 minutes environ, le compte n'a peut-être pas encore été recopié dans le cloud à 9 h 50.",
+      "Deuxième cause, plus probable encore : elle a été ajoutée à GG_RH (droits sur les ressources RH) mais pas au groupe de licences LIC_M365_Standard. Sans licence, Exchange Online ne crée pas de boîte et Teams refuse l'accès, ce qui correspond exactement au symptôme dans Outlook, OWA et Teams.",
+      "Vérifications : consulter le compte dans le centre d'administration (présent ou non, licences attribuées), vérifier ses groupes dans AD. Si le groupe de licences manque, demander l'ajout selon la procédure d'arrivée (ou le faire si c'est délégué), puis attendre la synchronisation suivante et la création de la boîte, qui peut prendre encore un peu de temps.",
+      "Réponse au manager : « Le compte de Léa existe, mais sa licence Microsoft 365 n'est pas encore active : nous l'ajoutons au groupe prévu. Comptez environ une heure pour la messagerie et Teams. En attendant, elle peut utiliser sa session Windows et les dossiers partagés RH. » Noter dans le ticket l'oubli du groupe de licences pour améliorer la procédure d'arrivée."
+    ], "rubric": {
+      "criteria": [
+        { "id": "sync", "label": "Évoque le délai de synchronisation AD vers Entra ID", "points": 2, "patterns": ["synchronis*", "entra connect", "30 minutes", "pas encore dans le cloud", "delai"] },
+        { "id": "licence", "label": "Identifie l'absence de licence / du groupe de licences", "points": 3, "patterns": ["licence", "lic_m365", "groupe de licences"], "required": true },
+        { "id": "verif", "label": "Propose de vérifier dans le centre d'administration ou les groupes", "points": 2, "patterns": ["centre d'administration", "console", "verifier les groupes", "verifier la licence", "groupes du compte", "admin center"] },
+        { "id": "procedure", "label": "Passe par la procédure ou le N2 pour l'ajout au groupe", "points": 1, "patterns": ["procedure", "n2", "demander l'ajout", "escalad*"] },
+        { "id": "manager", "label": "Donne au manager un délai et un contournement", "points": 2, "patterns": ["manager", "en attendant", "delai", "environ une heure", "dans l'heure"] }
+      ],
+      "redFlags": [
+        { "id": "admin-global", "label": "Propose de donner des droits administrateur ou d'utiliser un compte partagé", "patterns": ["administrateur general", "admin global", "compte partage", "compte d'un collegue"], "penalty": 3 }
+      ],
+      "passPercent": 60
+    } },
+    { "id": "interview", "kind": "interview", "questions": [
+      { "question": "Un utilisateur a perdu son téléphone, qui portait Microsoft Authenticator. Que faites-vous ?", "expectedPoints": ["Vérifier l'identité selon la procédure avant toute action", "Signaler la perte (équipe sécurité/N2) si le téléphone est perdu ou volé", "Faire retirer l'ancienne méthode MFA et révoquer les sessions si nécessaire", "Permettre l'enregistrement d'une nouvelle méthode (passe d'accès temporaire selon les droits)", "Tracer l'intervention"], "modelAnswer": "Je vérifie d'abord l'identité de la personne avec la méthode prévue, par exemple un rappel sur un numéro connu de l'entreprise ou une validation par son manager, car réenregistrer une MFA revient à donner l'accès au compte. Comme le téléphone est perdu, je signale la perte selon la procédure : il faut faire retirer l'ancienne méthode et, si besoin, révoquer les sessions ouvertes sur l'appareil. Ensuite, selon mes droits, je fournis ou je fais fournir par le N2 un passe d'accès temporaire pour que l'utilisateur enregistre son nouveau téléphone. Je trace tout dans le ticket, sans y écrire de code." },
+      { "question": "Quelle différence faites-vous entre Active Directory et Microsoft Entra ID ?", "expectedPoints": ["AD : annuaire sur site, domaine, OU, GPO, protocoles réseau locaux", "Entra ID : service d'identité cloud pour Microsoft 365 et les applications web", "Entra ID s'appelait Azure AD", "Les deux peuvent être reliés par la synchronisation"], "modelAnswer": "Active Directory est l'annuaire installé sur les serveurs de l'entreprise : il gère le domaine, les OU, les GPO et l'ouverture de session sur les postes du réseau local. Microsoft Entra ID, anciennement Azure AD, est le service d'identité cloud de Microsoft : il authentifie les utilisateurs pour Microsoft 365 et les applications web, avec la MFA et l'accès conditionnel. Ce n'est pas un AD dans le cloud : il n'a pas d'OU ni de GPO. Dans beaucoup d'entreprises, les comptes AD sont synchronisés vers Entra ID, AD restant la source de vérité." },
+      { "question": "Comment réagissez-vous si un utilisateur dit avoir reçu plusieurs demandes MFA qu'il n'a pas déclenchées ?", "expectedPoints": ["Lui demander de refuser toutes les demandes", "Le mot de passe est probablement compromis", "Alerte sécurité et changement de mot de passe selon la procédure", "Ne pas le culpabiliser, demander s'il a approuvé"], "modelAnswer": "C'est un signe que quelqu'un connaît son mot de passe et tente de passer la MFA par lassitude. Je lui demande de refuser toutes les demandes et de me dire, sans crainte, s'il en a approuvé une. Je déclenche la procédure de compromission : alerte à l'équipe sécurité, changement de mot de passe après vérification d'identité et, côté N2, révocation des sessions et contrôle de la boîte. Je le remercie de l'avoir signalé, parce que la rapidité est essentielle." }
+    ] },
+    { "id": "glossary", "kind": "glossary", "terms": [
+      { "term": "Locataire", "en": "Tenant", "definition": "Espace isolé d'une organisation dans Microsoft 365, avec ses comptes, licences et données." },
+      { "term": "Microsoft Entra ID", "en": "Microsoft Entra ID (formerly Azure AD)", "definition": "Service d'identité cloud de Microsoft qui authentifie les utilisateurs de Microsoft 365." },
+      { "term": "Identité synchronisée", "en": "Synchronized (hybrid) identity", "definition": "Compte créé dans AD sur site et recopié vers Entra ID." },
+      { "term": "Licence", "en": "License", "definition": "Droit d'utilisation qui active un ou plusieurs services pour un compte." },
+      { "term": "Attribution de licences par groupe", "en": "Group-based licensing", "definition": "Attribution automatique d'une licence à tous les membres d'un groupe." },
+      { "term": "Authentification multifacteur", "en": "Multifactor authentication (MFA)", "definition": "Connexion qui exige au moins deux preuves de nature différente." },
+      { "term": "Passe d'accès temporaire", "en": "Temporary Access Pass (TAP)", "definition": "Code à durée limitée permettant d'enregistrer une nouvelle méthode d'authentification." },
+      { "term": "Fatigue MFA", "en": "MFA fatigue / prompt bombing", "definition": "Attaque qui multiplie les demandes d'approbation jusqu'à ce que la victime cède." },
+      { "term": "Hameçonnage", "en": "Phishing", "definition": "Message frauduleux visant à voler des identifiants ou à faire exécuter une action." }
+    ] },
+    { "id": "summary", "kind": "summary", "points": [
+      "Le tenant est l'espace isolé de l'entreprise dans Microsoft 365 ; Microsoft Entra ID (ex-Azure AD) y gère les identités.",
+      "Une identité synchronisée a AD comme source de vérité : on la modifie dans AD, puis on attend la synchronisation.",
+      "Les licences débloquent les services (Exchange Online, Teams, OneDrive, SharePoint) ; l'attribution par groupe est la bonne pratique.",
+      "La MFA combine plusieurs preuves ; la correspondance de nombres limite la fatigue MFA ; toute demande non sollicitée est une alerte.",
+      "Outlook sur le web est le test qui sépare un problème de poste d'un problème de compte, de licence ou de service.",
+      "Moindre privilège : rôles d'administration limités, comptes séparés, et vérification d'identité avant toute action sur un mot de passe ou une MFA."
+    ] },
+    { "id": "references", "kind": "references", "items": [
+      { "title": "Nouveau nom d'Azure Active Directory", "url": "https://learn.microsoft.com/entra/fundamentals/new-name", "publisher": "Microsoft Learn", "verifiedAt": "2026-10-21" },
+      { "title": "Vue d'ensemble de l'authentification multifacteur Microsoft Entra", "url": "https://learn.microsoft.com/entra/identity/authentication/concept-mfa-howitworks", "publisher": "Microsoft Learn", "verifiedAt": "2026-10-21" },
+      { "title": "Bonnes pratiques pour les rôles Microsoft Entra", "url": "https://learn.microsoft.com/entra/identity/role-based-access-control/best-practices", "publisher": "Microsoft Learn", "verifiedAt": "2026-10-21" },
+      { "title": "Recommandations relatives à l'authentification multifacteur et aux mots de passe", "url": "https://messervices.cyber.gouv.fr/guides/recommandations-relatives-lauthentification-multifacteur-et-aux-mots-de-passe", "publisher": "ANSSI (MesServicesCyber)", "verifiedAt": "2026-10-21" }
+    ] }
+  ]
+}

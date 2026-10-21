@@ -1,0 +1,126 @@
+[
+  {
+    "code": "vlan-definition",
+    "lesson": "n1-vlan",
+    "skill": "vlan",
+    "prompt": "Quelle phrase décrit le mieux un VLAN ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Un réseau Wi-Fi réservé aux invités" },
+        { "id": "b", "text": "Un réseau logique créé dans les switchs, séparé des autres VLAN qui doivent passer par un routeur pour communiquer" },
+        { "id": "c", "text": "Un tunnel chiffré entre un portable et l'entreprise" },
+        { "id": "d", "text": "Un câble réseau de catégorie supérieure" }
+      ],
+      "answer": "b"
+    },
+    "explanation": "Un VLAN est un réseau logique : plusieurs réseaux cohabitent dans les mêmes switchs et ne communiquent entre eux qu'en passant par un routeur ou un pare-feu. Un réseau invités peut reposer sur un VLAN, mais ce n'est qu'un usage parmi d'autres ; le tunnel chiffré décrit un VPN ; un câble est un support physique, sans rapport avec la segmentation logique.",
+    "difficulty": 1
+  },
+  {
+    "code": "vlan-acces-trunk",
+    "lesson": "n1-vlan",
+    "skill": "vlan",
+    "prompt": "Associez chaque situation au type de port de switch le plus probable.",
+    "data": {
+      "type": "match",
+      "left": [
+        { "id": "pc", "text": "Prise murale d'un poste de bureau" },
+        { "id": "uplink", "text": "Lien entre le switch d'étage et le cœur de réseau" },
+        { "id": "ap", "text": "Borne Wi-Fi qui diffuse trois SSID vers trois VLAN" },
+        { "id": "imp", "text": "Imprimante réseau du couloir" }
+      ],
+      "right": [
+        { "id": "acces", "text": "Port d'accès" },
+        { "id": "trunk", "text": "Port trunk" }
+      ],
+      "answer": { "pc": "acces", "uplink": "trunk", "ap": "trunk", "imp": "acces" }
+    },
+    "explanation": "Un poste et une imprimante n'ont besoin que d'un seul VLAN de données : port d'accès, sans étiquette. Le lien vers le cœur de réseau transporte tous les VLAN de l'étage, et une borne qui relie plusieurs SSID à plusieurs VLAN doit les recevoir séparément : ce sont des trunks, avec étiquettes 802.1Q. Mettre un poste sur un trunk ou une borne multi-SSID sur un port d'accès ne permettrait pas de séparer correctement les réseaux.",
+    "difficulty": 2
+  },
+  {
+    "code": "vlan-adresse-identifie",
+    "lesson": "n1-vlan",
+    "skill": "vlan",
+    "prompt": "Vrai ou faux : au siège du Groupe Valmont, un PC de bureau qui obtient l'adresse 10.20.30.117 est branché sur une prise rattachée au VLAN Imprimantes.",
+    "data": { "type": "truefalse", "answer": true },
+    "explanation": "Vrai. Un VLAN correspond à un sous-réseau : 10.20.30.0/24 est le réseau du VLAN Imprimantes (ID 30). Sur un port d'accès, c'est le port du switch qui fixe le VLAN, pas l'ordinateur : le PC a reçu une adresse de l'étendue de ce VLAN parce que sa prise y est rattachée. Penser que le poste « choisit » son réseau conduit à de mauvaises actions, comme une adresse fixe.",
+    "difficulty": 1
+  },
+  {
+    "code": "vlan-relais-dhcp",
+    "lesson": "n1-vlan",
+    "skill": "network-fundamentals",
+    "prompt": "Pourquoi faut-il configurer un relais DHCP sur la passerelle de chaque VLAN lorsque le serveur DHCP se trouve dans le réseau des serveurs ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Parce que les demandes DHCP initiales sont des diffusions qui ne franchissent pas un routeur" },
+        { "id": "b", "text": "Parce que le relais chiffre les échanges DHCP" },
+        { "id": "c", "text": "Parce que le serveur DHCP ne peut gérer qu'un seul VLAN" },
+        { "id": "d", "text": "Parce que le relais remplace le serveur DNS" }
+      ],
+      "answer": "a"
+    },
+    "explanation": "Le Discover est diffusé à tout le réseau local, et une diffusion s'arrête au routeur. Le relais capte ces demandes sur la passerelle du VLAN et les transmet au serveur, en indiquant le réseau d'origine pour que le serveur choisisse la bonne étendue. Le relais ne chiffre rien ; un serveur DHCP peut gérer de nombreuses étendues, une par VLAN ; et le DNS est un service distinct.",
+    "difficulty": 2
+  },
+  {
+    "code": "vlan-voix",
+    "lesson": "n1-vlan",
+    "skill": "vlan",
+    "prompt": "Un PC est branché derrière un téléphone IP, sur un port configuré avec un VLAN de données et un VLAN voix. Quelles affirmations sont correctes ? (plusieurs réponses)",
+    "data": {
+      "type": "multiple",
+      "choices": [
+        { "id": "pc-data", "text": "Le PC doit obtenir une adresse du VLAN de données (Bureaux)" },
+        { "id": "tel-voix", "text": "Le téléphone doit obtenir une adresse du VLAN voix (Téléphonie)" },
+        { "id": "prio", "text": "Séparer la voix permet de lui donner la priorité sur le réseau" },
+        { "id": "meme", "text": "Le PC et le téléphone partagent obligatoirement la même adresse IP" },
+        { "id": "inutile", "text": "Le VLAN voix est inutile si le PC fonctionne" }
+      ],
+      "answer": ["pc-data", "tel-voix", "prio"]
+    },
+    "explanation": "Le port transporte deux VLAN : le trafic du PC reste dans le VLAN de données, le téléphone étiquette le sien dans le VLAN voix, et chacun obtient une adresse de son propre réseau. Isoler la voix permet de la prioriser, car une conversation supporte mal le retard. Deux appareils ne partagent jamais la même adresse IP, et un PC qui fonctionne ne dit rien de l'état du téléphone.",
+    "difficulty": 2
+  },
+  {
+    "code": "vlan-exam-1",
+    "lesson": "n1-vlan",
+    "skill": "vlan",
+    "prompt": "Après un déménagement, un poste de Groupe Valmont affiche 10.20.30.88 au lieu d'une adresse 10.20.10.x. Branché sur la prise voisine, il obtient 10.20.10.150. Quelle est la meilleure action du N1 ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Configurer l'adresse fixe 10.20.10.88 sur la carte du poste branché sur la prise d'origine" },
+        { "id": "b", "text": "Laisser le poste sur la prise voisine avec l'accord de l'utilisateur et escalader au N2 réseau en indiquant la prise d'origine, l'adresse obtenue (VLAN 30) et le VLAN attendu (10)" },
+        { "id": "c", "text": "Redémarrer le switch de l'étage pour qu'il réaffecte les ports" },
+        { "id": "d", "text": "Réinstaller le pilote de la carte réseau" }
+      ],
+      "answer": "b"
+    },
+    "explanation": "Le test sur la prise voisine prouve que le poste est sain : la prise d'origine est rattachée au VLAN Imprimantes. Le contournement documenté et l'escalade précise sont la bonne réponse. Une adresse fixe du VLAN 10 sur un port du VLAN 30 ne joindrait pas sa passerelle ; redémarrer un switch coupe tout l'étage sans rien corriger (la configuration du port reste la même) ; le pilote n'est pas en cause puisque le poste fonctionne sur une autre prise.",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "code": "vlan-exam-2",
+    "lesson": "n1-vlan",
+    "skill": "network-fundamentals",
+    "prompt": "Le N2 vous lit cette ligne de show interfaces status : « Gi1/0/14  Bur-2.07-A  connected  20  a-full a-1000 ». L'utilisatrice du bureau 2.07 se plaint que son PC (branché directement sur la prise 2.07-A, sans téléphone) obtient une adresse 10.20.20.x. Qu'en concluez-vous ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Le port de la prise 2.07-A est en accès dans le VLAN 20 (Téléphonie) : il devrait être dans le VLAN 10 pour ce PC" },
+        { "id": "b", "text": "Le port est un trunk, donc le PC peut choisir son VLAN" },
+        { "id": "c", "text": "Le câble est défectueux car la vitesse est de 1000" },
+        { "id": "d", "text": "Le PC a un virus qui change son VLAN" }
+      ],
+      "answer": "a"
+    },
+    "explanation": "La colonne Vlan indique 20 : le port est en accès dans le VLAN Téléphonie, ce qui explique l'adresse 10.20.20.x reçue par le PC. Un trunk afficherait « trunk » dans cette colonne ; « connected » et « a-1000 » indiquent au contraire un lien sain à 1 Gbit/s ; et un poste ne choisit pas son VLAN sur un port d'accès, la cause n'est donc pas logicielle.",
+    "difficulty": 3,
+    "examOnly": true
+  }
+]

@@ -1,0 +1,117 @@
+[
+  {
+    "code": "wifi-bandes-portee",
+    "lesson": "n1-wifi",
+    "skill": "wifi",
+    "prompt": "Quelle bande Wi-Fi offre en général la meilleure portée et traverse le mieux les murs ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "b24", "text": "2,4 GHz" },
+        { "id": "b5", "text": "5 GHz" },
+        { "id": "b6", "text": "6 GHz" },
+        { "id": "same", "text": "Les trois bandes ont la même portée" }
+      ],
+      "answer": "b24"
+    },
+    "explanation": "Plus la fréquence est basse, mieux le signal porte et traverse les obstacles : le 2,4 GHz a donc la meilleure portée, au prix d'un débit plus faible et d'un fort encombrement. Le 5 GHz et surtout le 6 GHz offrent plus de débit mais portent moins loin. Affirmer que les trois bandes se valent ignore ce compromis fondamental entre portée et débit.",
+    "difficulty": 1
+  },
+  {
+    "code": "wifi-rssi-lecture",
+    "lesson": "n1-wifi",
+    "skill": "wifi",
+    "prompt": "Classez ces valeurs de RSSI du meilleur signal au plus mauvais.",
+    "data": {
+      "type": "order",
+      "items": [
+        { "id": "m78", "text": "-78 dBm" },
+        { "id": "m48", "text": "-48 dBm" },
+        { "id": "m85", "text": "-85 dBm" },
+        { "id": "m63", "text": "-63 dBm" }
+      ],
+      "answer": ["m48", "m63", "m78", "m85"]
+    },
+    "explanation": "Le RSSI est une valeur négative en dBm : plus elle est proche de zéro, plus le signal est fort. -48 dBm est excellent, -63 dBm bon, -78 dBm faible (coupures probables), -85 dBm très mauvais. L'erreur classique consiste à lire ces nombres comme des valeurs positives et à croire que -85 est « plus » que -48.",
+    "difficulty": 1
+  },
+  {
+    "code": "wifi-8021x-acteurs",
+    "lesson": "n1-wifi",
+    "skill": "wifi",
+    "prompt": "En authentification WPA2/WPA3-Entreprise (802.1X), associez chaque acteur à son rôle.",
+    "data": {
+      "type": "match",
+      "left": [
+        { "id": "client", "text": "Le poste de l'utilisateur" },
+        { "id": "borne", "text": "La borne ou le contrôleur Wi-Fi" },
+        { "id": "radius", "text": "Le serveur RADIUS" }
+      ],
+      "right": [
+        { "id": "presente", "text": "Présente une identité (compte ou certificat)" },
+        { "id": "relaie", "text": "Relaie la demande et applique la décision" },
+        { "id": "decide", "text": "Vérifie l'identité et accepte ou refuse" },
+        { "id": "distribue", "text": "Distribue les adresses IP" }
+      ],
+      "answer": { "client": "presente", "borne": "relaie", "radius": "decide" }
+    },
+    "explanation": "Le poste (supplicant) présente son identité ; la borne (authentificateur) ne décide rien, elle relaie vers le serveur RADIUS et ouvre ou ferme l'accès selon sa réponse ; le serveur RADIUS vérifie le compte ou le certificat, souvent en s'appuyant sur Active Directory. La distribution d'adresses IP est le rôle du DHCP, qui intervient seulement après une authentification réussie : c'est un leurre.",
+    "difficulty": 2
+  },
+  {
+    "code": "wifi-portail-captif",
+    "lesson": "n1-wifi",
+    "skill": "diagnostic",
+    "prompt": "Vrai ou faux : un visiteur connecté au SSID invités, avec une adresse IP valide, peut ne pas avoir accès à Internet simplement parce qu'il n'a pas validé le portail captif.",
+    "data": { "type": "truefalse", "answer": true },
+    "explanation": "Vrai. Sur un réseau avec portail captif, l'appareil s'associe à la borne et reçoit une adresse, mais le trafic vers Internet reste bloqué tant que la page d'accueil (conditions, code du jour) n'a pas été validée. Répondre « faux » reviendrait à croire qu'une adresse IP valide suffit toujours ; ici, l'accès est conditionné à une étape supplémentaire dans le navigateur.",
+    "difficulty": 1
+  },
+  {
+    "code": "wifi-ssid-bssid",
+    "lesson": "n1-wifi",
+    "skill": "wifi",
+    "prompt": "Complétez : dans la sortie de netsh wlan show interfaces, le champ qui identifie la radio précise de la borne à laquelle le poste est associé s'appelle le ___.",
+    "data": { "type": "fill", "template": "Le champ qui identifie la radio précise de la borne s'appelle le ___.", "accepted": ["BSSID"] },
+    "explanation": "Le BSSID est l'adresse MAC de la radio de la borne. Le SSID, lui, est le nom du réseau, identique sur toutes les bornes : il ne permet pas de savoir à quelle borne précise le poste est relié. Relever le BSSID à plusieurs endroits permet de vérifier si le poste change bien de borne en se déplaçant.",
+    "difficulty": 2
+  },
+  {
+    "code": "wifi-exam-1",
+    "lesson": "n1-wifi",
+    "skill": "wifi",
+    "prompt": "Dans une boutique Maison Aubrac, toutes les tablettes se déconnectent uniquement dans la réserve. netsh wlan show interfaces y affiche Rssi : -82, avec le même BSSID qu'en zone de vente où le Rssi est de -50. Quelle est la conclusion la plus juste ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Les tablettes ont un pilote défectueux : il faut les réinitialiser" },
+        { "id": "b", "text": "La couverture radio de la réserve est insuffisante : escalader au N2 réseau avec les mesures" },
+        { "id": "c", "text": "Le serveur RADIUS refuse les tablettes dans la réserve" },
+        { "id": "d", "text": "Il faut connecter les tablettes au réseau invités dans la réserve" }
+      ],
+      "answer": "b"
+    },
+    "explanation": "Tous les appareils sont touchés au même endroit, avec un signal très faible (-82 dBm) sur la même borne que la zone de vente : c'est un problème de couverture, pas d'appareil. Réinitialiser les tablettes ne changerait rien ; le serveur RADIUS ne tient pas compte de l'emplacement et les tablettes étaient déjà authentifiées ; basculer sur le réseau invités ferait sortir les terminaux d'encaissement du réseau sécurisé, sans régler le signal.",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "code": "wifi-exam-2",
+    "lesson": "n1-wifi",
+    "skill": "diagnostic",
+    "prompt": "Lundi matin, chez Groupe Valmont, une trentaine de portables échouent à se connecter au SSID VALMONT-CORP (WPA2-Entreprise, certificats), alors que les postes filaires fonctionnent. Le signal est bon partout. Le N2 a renouvelé un certificat vendredi soir. Que faites-vous ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Supprimer et recréer le profil Wi-Fi sur chaque portable" },
+        { "id": "b", "text": "Distribuer la clé du réseau invités aux utilisateurs en attendant" },
+        { "id": "c", "text": "Ouvrir un incident majeur auprès du N2 en signalant le nombre de postes, l'heure de début, le message d'erreur et le lien possible avec le renouvellement de certificat" },
+        { "id": "d", "text": "Redémarrer le contrôleur Wi-Fi pour forcer la reconnexion" }
+      ],
+      "answer": "c"
+    },
+    "explanation": "Un échec massif d'authentification juste après un changement de certificat, avec un bon signal, désigne l'authentification 802.1X côté serveur : il faut escalader vite, avec l'ampleur et le lien probable avec le changement. Recréer les profils ne corrige pas un certificat non approuvé et peut casser des réglages gérés ; le réseau invités prive les utilisateurs des ressources internes et contourne la sécurité ; redémarrer un contrôleur de production sans changement validé couperait aussi les appareils encore connectés.",
+    "difficulty": 3,
+    "examOnly": true
+  }
+]

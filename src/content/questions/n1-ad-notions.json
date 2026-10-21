@@ -1,0 +1,118 @@
+[
+  {
+    "code": "ad-etats-compte",
+    "lesson": "n1-ad-notions",
+    "skill": "identity",
+    "prompt": "Associez chaque état de compte à l'action N1 la plus adaptée.",
+    "data": {
+      "type": "match",
+      "left": [
+        { "id": "verrou", "text": "Compte verrouillé après des tentatives erronées" },
+        { "id": "expire", "text": "Mot de passe expiré" },
+        { "id": "desactive", "text": "Compte désactivé" }
+      ],
+      "right": [
+        { "id": "deverrouiller", "text": "Vérifier l'identité, chercher la cause, puis déverrouiller" },
+        { "id": "changer", "text": "Guider l'utilisateur pour changer son mot de passe" },
+        { "id": "escalader", "text": "Ne pas réactiver soi-même : vérifier la raison auprès du manager, des RH ou du N2" },
+        { "id": "supprimer", "text": "Supprimer et recréer le compte" }
+      ],
+      "answer": { "verrou": "deverrouiller", "expire": "changer", "desactive": "escalader" }
+    },
+    "explanation": "Un verrouillage se règle par un déverrouillage après vérification d'identité, en cherchant ce qui l'a provoqué. Un mot de passe expiré se change, l'utilisateur est invité à le faire. Un compte désactivé l'a été volontairement (départ, suspension, compromission) : on vérifie avant toute action. Supprimer et recréer un compte ferait perdre son identifiant interne, ses groupes et ses accès : ce n'est jamais une réponse N1.",
+    "difficulty": 1
+  },
+  {
+    "code": "ad-ou-vs-groupe",
+    "lesson": "n1-ad-notions",
+    "skill": "identity",
+    "prompt": "Pour donner à toute l'équipe comptable l'accès en écriture au dossier partagé de la comptabilité, que fait-on habituellement ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "On donne le droit à l'OU Comptabilite" },
+        { "id": "b", "text": "On donne le droit à un groupe de sécurité et on y ajoute les comptes de l'équipe" },
+        { "id": "c", "text": "On donne le droit à un groupe de distribution de l'équipe" },
+        { "id": "d", "text": "On donne le droit à chaque compte, un par un" }
+      ],
+      "answer": "b"
+    },
+    "explanation": "Les permissions se donnent à un groupe de sécurité : on gère ensuite les arrivées et départs en modifiant simplement l'appartenance au groupe. Une OU range les objets et porte les GPO, mais ne reçoit pas de permissions sur un partage ; un groupe de distribution n'est pas un groupe de sécurité et ne peut pas recevoir de droits ; donner les droits compte par compte devient vite ingérable et source d'oublis lors des départs.",
+    "difficulty": 1
+  },
+  {
+    "code": "ad-reset-ordre",
+    "lesson": "n1-ad-notions",
+    "skill": "security-hygiene",
+    "prompt": "Remettez dans l'ordre les étapes d'une réinitialisation de mot de passe sécurisée.",
+    "data": {
+      "type": "order",
+      "items": [
+        { "id": "temp", "text": "Définir un mot de passe temporaire unique" },
+        { "id": "identite", "text": "Vérifier l'identité selon la procédure (rappel sur le numéro de l'annuaire…)" },
+        { "id": "tracer", "text": "Tracer l'action et la méthode de vérification dans le ticket" },
+        { "id": "etat", "text": "Vérifier l'état du compte (verrouillé, expiré, désactivé)" },
+        { "id": "forcer", "text": "Forcer le changement à la prochaine ouverture de session" }
+      ],
+      "answer": ["identite", "etat", "temp", "forcer", "tracer"]
+    },
+    "explanation": "L'identité passe en premier : sans elle, rien d'autre n'a de valeur. On vérifie ensuite l'état du compte, car un simple déverrouillage suffit parfois et un compte désactivé ne doit pas être touché. Vient ensuite le mot de passe temporaire unique, avec changement forcé pour que le technicien ne connaisse pas le mot de passe définitif, puis la traçabilité. Commencer par le mot de passe temporaire reviendrait à agir avant de savoir à qui l'on parle.",
+    "difficulty": 2
+  },
+  {
+    "code": "ad-groupe-distribution",
+    "lesson": "n1-ad-notions",
+    "skill": "identity",
+    "prompt": "Vrai ou faux : un groupe de distribution peut recevoir des permissions sur un dossier partagé.",
+    "data": { "type": "truefalse", "answer": false },
+    "explanation": "Faux. Un groupe de distribution ne sert qu'à la messagerie, comme liste de diffusion ; il n'est pas « activé pour la sécurité » et ne peut donc pas figurer dans les permissions d'une ressource. Pour accorder un accès, il faut un groupe de sécurité, qui peut d'ailleurs aussi servir de liste de diffusion selon la configuration.",
+    "difficulty": 1
+  },
+  {
+    "code": "ad-session-groupes",
+    "lesson": "n1-ad-notions",
+    "skill": "identity",
+    "prompt": "Complétez la commande qui affiche, dans la session ouverte de l'utilisateur, les groupes dont Windows tient compte actuellement : whoami ___",
+    "data": { "type": "fill", "template": "whoami ___", "accepted": ["/groups", "-groups", "/all"] },
+    "explanation": "whoami /groups affiche les groupes contenus dans le jeton de la session en cours (whoami /all les affiche aussi, avec d'autres informations). Contrairement à net user /domain, qui lit l'annuaire, il montre ce que la session connaît réellement : un groupe ajouté après l'ouverture de session n'y apparaît pas tant que l'utilisateur ne s'est pas reconnecté. whoami seul n'afficherait que le nom de l'utilisateur.",
+    "difficulty": 2
+  },
+  {
+    "code": "ad-exam-1",
+    "lesson": "n1-ad-notions",
+    "skill": "security-hygiene",
+    "prompt": "Un appelant se présente comme le directeur général du Groupe Valmont, en déplacement. Il exige une réinitialisation immédiate de son mot de passe et demande que le nouveau lui soit envoyé par SMS au numéro qu'il vous dicte. Que faites-vous ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Vous réinitialisez et envoyez le mot de passe par SMS : c'est un dirigeant, l'urgence prime" },
+        { "id": "b", "text": "Vous appliquez la procédure de vérification d'identité, par exemple un rappel sur le numéro professionnel enregistré dans l'annuaire, et refusez poliment le canal proposé" },
+        { "id": "c", "text": "Vous lui demandez son ancien mot de passe pour vérifier son identité" },
+        { "id": "d", "text": "Vous lui envoyez le mot de passe par courriel sur son adresse personnelle" }
+      ],
+      "answer": "b"
+    },
+    "explanation": "Urgence, autorité et canal imposé par l'appelant sont les signes classiques de l'ingénierie sociale. La procédure s'applique à tout le monde, et le rappel doit se faire sur un numéro connu de l'entreprise, jamais sur celui fourni pendant l'appel. Céder à l'urgence ou utiliser une adresse personnelle livre potentiellement le compte d'un dirigeant à un attaquant ; demander un mot de passe à un utilisateur est contraire à toutes les règles d'hygiène, même pour « vérifier ».",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "code": "ad-exam-2",
+    "lesson": "n1-ad-notions",
+    "skill": "identity",
+    "prompt": "Mme Petit, ajoutée ce matin par le N2 au groupe GG_RH, n'accède toujours pas au partage RH. net user m.petit /domain montre GG_RH, mais whoami /groups dans sa session ne le montre pas. Elle a ouvert sa session à 8 h, l'ajout date de 10 h. Quelle est la bonne action ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Réinitialiser son mot de passe pour rafraîchir ses droits" },
+        { "id": "b", "text": "Lui faire fermer puis rouvrir sa session, puis vérifier à nouveau avec whoami /groups" },
+        { "id": "c", "text": "Demander au N2 de l'ajouter au groupe Admins du domaine" },
+        { "id": "d", "text": "Déplacer son compte dans l'OU RH" }
+      ],
+      "answer": "b"
+    },
+    "explanation": "L'annuaire est à jour (net user le montre), mais le jeton de la session date d'avant l'ajout : une fermeture et réouverture de session suffit. Réinitialiser le mot de passe ne change rien aux groupes et crée un risque inutile ; l'ajout aux Admins du domaine viole gravement le moindre privilège ; déplacer le compte d'OU modifie les GPO appliquées sans donner de droit sur le partage, qui dépend du groupe.",
+    "difficulty": 2,
+    "examOnly": true
+  }
+]

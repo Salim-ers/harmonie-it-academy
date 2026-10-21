@@ -1,0 +1,126 @@
+[
+  {
+    "code": "virt-type-hyperviseur",
+    "lesson": "n1-virtualisation",
+    "skill": "virtualization",
+    "prompt": "Qu'est-ce qui caractérise un hyperviseur de type 1 ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Il s'installe directement sur le matériel du serveur, sans système d'exploitation classique en dessous" },
+        { "id": "b", "text": "Il s'installe comme une application sur Windows ou macOS" },
+        { "id": "c", "text": "Il ne peut faire fonctionner qu'une seule machine virtuelle" },
+        { "id": "d", "text": "Il remplace les conteneurs" }
+      ],
+      "answer": "a"
+    },
+    "explanation": "Un hyperviseur de type 1 (bare metal) tourne directement sur le matériel, comme ESXi, Hyper-V ou Proxmox VE : c'est le modèle de la production. L'installation comme application sur un système existant décrit le type 2 (VirtualBox, VMware Workstation). Tous les hyperviseurs peuvent faire fonctionner plusieurs VM, et les conteneurs sont une autre technologie, souvent complémentaire, que les hyperviseurs ne remplacent pas.",
+    "difficulty": 1
+  },
+  {
+    "code": "virt-snapshot-sauvegarde",
+    "lesson": "n1-virtualisation",
+    "skill": "virtualization",
+    "prompt": "Vrai ou faux : un snapshot stocké sur le même hôte que la VM protège ses données en cas de panne du stockage de cet hôte.",
+    "data": { "type": "truefalse", "answer": false },
+    "explanation": "Faux. Un snapshot enregistre généralement les différences par rapport au disque d'origine, sur le même stockage : si celui-ci tombe en panne ou est chiffré par un rançongiciel, la VM et ses snapshots sont perdus ensemble. Seule une sauvegarde, copie indépendante stockée ailleurs, protège de ce scénario. Le snapshot sert à un retour arrière court après une opération risquée.",
+    "difficulty": 1
+  },
+  {
+    "code": "virt-exemples",
+    "lesson": "n1-virtualisation",
+    "skill": "virtualization",
+    "prompt": "Associez chaque logiciel au type d'hyperviseur auquel il correspond habituellement.",
+    "data": {
+      "type": "match",
+      "left": [
+        { "id": "esxi", "text": "VMware ESXi" },
+        { "id": "proxmox", "text": "Proxmox VE" },
+        { "id": "vbox", "text": "Oracle VirtualBox" },
+        { "id": "workstation", "text": "VMware Workstation" }
+      ],
+      "right": [
+        { "id": "type1", "text": "Type 1 (directement sur le matériel)" },
+        { "id": "type2", "text": "Type 2 (application sur un système existant)" }
+      ],
+      "answer": { "esxi": "type1", "proxmox": "type1", "vbox": "type2", "workstation": "type2" }
+    },
+    "explanation": "ESXi s'installe directement sur le serveur ; Proxmox VE est une distribution complète basée sur Debian et KVM installée sur le serveur, généralement classée en type 1. VirtualBox et VMware Workstation s'installent comme des applications sur Windows, macOS ou Linux : ce sont des hyperviseurs de type 2, adaptés au lab et aux tests. Confondre VMware Workstation et ESXi est courant parce qu'ils viennent du même éditeur, mais leur usage est très différent.",
+    "difficulty": 2
+  },
+  {
+    "code": "virt-ressources-partagees",
+    "lesson": "n1-virtualisation",
+    "skill": "virtualization",
+    "prompt": "Une VM est lente alors qu'aucun changement n'a été fait à l'intérieur. Quelles explications sont plausibles ? (plusieurs réponses)",
+    "data": {
+      "type": "multiple",
+      "choices": [
+        { "id": "voisine", "text": "Une autre VM du même hôte consomme beaucoup de processeur ou de disque" },
+        { "id": "stockage", "text": "Le stockage partagé de l'infrastructure est saturé" },
+        { "id": "snapshot", "text": "Un snapshot ancien et volumineux pèse sur les performances du disque" },
+        { "id": "licence", "text": "La licence Microsoft 365 de l'utilisateur a expiré" },
+        { "id": "clavier", "text": "Le clavier de l'utilisateur est défectueux" }
+      ],
+      "answer": ["voisine", "stockage", "snapshot"]
+    },
+    "explanation": "Les VM partagent processeur, mémoire, disques et réseau de l'hôte : une voisine gourmande, un stockage saturé ou un snapshot oublié qui grossit dégradent les performances sans que la VM elle-même ait changé. Une licence Microsoft 365 expirée bloquerait l'accès à des services cloud, sans ralentir un serveur ; un clavier défectueux affecterait la saisie sur un poste, pas les performances d'une VM.",
+    "difficulty": 2
+  },
+  {
+    "code": "virt-conteneur-vm",
+    "lesson": "n1-virtualisation",
+    "skill": "virtualization",
+    "prompt": "Quelle affirmation distingue correctement un conteneur d'une machine virtuelle ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Un conteneur embarque un système d'exploitation complet, une VM non" },
+        { "id": "b", "text": "Un conteneur partage le noyau du système hôte, alors qu'une VM a son propre système d'exploitation" },
+        { "id": "c", "text": "Un conteneur offre toujours une isolation plus forte qu'une VM" },
+        { "id": "d", "text": "Un conteneur ne peut pas fonctionner dans une VM" }
+      ],
+      "answer": "b"
+    },
+    "explanation": "Un conteneur emballe une application et ses dépendances mais partage le noyau de l'hôte, ce qui le rend léger et rapide à démarrer. C'est la VM qui embarque un système complet ; l'isolation d'un conteneur est en général plus légère que celle d'une VM, et non plus forte ; enfin, faire tourner des conteneurs dans des VM est une pratique très courante.",
+    "difficulty": 1
+  },
+  {
+    "code": "virt-exam-1",
+    "lesson": "n1-virtualisation",
+    "skill": "virtualization",
+    "prompt": "Chez Nordelis Logistique, l'application d'entrepôt (VM SRV-PREPA-01) est très lente pour tous les préparateurs. Vous avez un accès en lecture à la console de virtualisation, qui affiche 97 % de processeur pour cette VM et propose un bouton « Redémarrer ». Que faites-vous ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Vous redémarrez la VM : le processeur est saturé, c'est la solution la plus rapide" },
+        { "id": "b", "text": "Vous restaurez le dernier snapshot de la VM" },
+        { "id": "c", "text": "Vous qualifiez l'incident (impact, heure, autres services touchés sur la même infrastructure) et escaladez au N2 systèmes sans agir sur la VM" },
+        { "id": "d", "text": "Vous augmentez le nombre de processeurs virtuels de la VM" }
+      ],
+      "answer": "c"
+    },
+    "explanation": "Une VM de production ne se redémarre pas sans accord : cela couperait tous les préparateurs sans garantie, la cause pouvant être ailleurs (une voisine sur le même hôte, une sauvegarde). Restaurer un snapshot ferait en plus perdre des données ; modifier les ressources est une action d'administration, hors du périmètre N1 et souvent soumise à un changement. Un accès en lecture sert à constater, pas à agir.",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "code": "virt-exam-2",
+    "lesson": "n1-virtualisation",
+    "skill": "virtualization",
+    "prompt": "Un stagiaire veut installer VirtualBox sur son PC de lab pour créer un domaine de test, mais la VM refuse de démarrer avec un message sur la virtualisation matérielle. systeminfo affiche « Virtualisation activée dans le microprogramme : Non ». Que lui conseillez-vous ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Activer la virtualisation matérielle (VT-x / AMD-V) dans le BIOS/UEFI du PC, puis réessayer" },
+        { "id": "b", "text": "Installer la VM directement sur le réseau de production pour plus de performances" },
+        { "id": "c", "text": "Remplacer VirtualBox par un conteneur Docker pour héberger le contrôleur de domaine" },
+        { "id": "d", "text": "Ajouter de la mémoire vive au PC" }
+      ],
+      "answer": "a"
+    },
+    "explanation": "La ligne de systeminfo indique que la virtualisation matérielle est désactivée dans le microprogramme : c'est précisément la cause du refus, et on l'active dans le BIOS/UEFI (option VT-x, AMD-V ou SVM selon le processeur). Connecter un lab au réseau de production est un risque et ne règle rien ; un contrôleur de domaine Windows ne s'héberge pas dans un conteneur Docker ; ajouter de la mémoire ne change pas l'état d'une option du microprogramme.",
+    "difficulty": 2,
+    "examOnly": true
+  }
+]

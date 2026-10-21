@@ -1,0 +1,179 @@
+{
+  "meta": {
+    "slug": "n1-tcp-udp",
+    "title": "TCP, UDP et ports",
+    "summary": "Comprendre ce qui distingue TCP d'UDP, connaître les ports que tout technicien support doit reconnaître et tester en une commande si un service est réellement joignable.",
+    "level": "debutant",
+    "prerequisites": ["Connaître le modèle OSI et la place de la couche transport (leçon « Modèle OSI et TCP/IP »)", "Savoir lire une adresse IP"],
+    "objectives": [
+      "Expliquer la différence entre un protocole orienté connexion (TCP) et un protocole sans connexion (UDP)",
+      "Décrire la poignée de main en trois temps SYN, SYN-ACK, ACK",
+      "Associer de mémoire les ports courants du support à leur service",
+      "Lire la sortie de netstat -ano et de Get-NetTCPConnection pour trouver quel programme utilise un port",
+      "Tester l'ouverture d'un port avec Test-NetConnection et distinguer en notions port fermé et port filtré"
+    ],
+    "durationMin": 40,
+    "skills": [
+      { "code": "network-fundamentals", "weight": 3 },
+      { "code": "powershell", "weight": 2 }
+    ],
+    "next": "n1-arp-switch"
+  },
+  "blocks": [
+    { "id": "intro", "kind": "paragraph", "text": "Lundi, 7 h 50, entrepôt de Nordelis Logistique. Les étiquettes d'expédition ne sortent plus de l'imprimante thermique du quai 3. Le chef d'équipe a déjà redémarré l'imprimante deux fois ; elle répond au ping, son voyant est vert, « donc le réseau va bien ». Le technicien N1 lance une seule commande, `Test-NetConnection 10.30.12.50 -Port 9100`, et obtient `TcpTestSucceeded : False`. L'imprimante est bien là, mais la **porte** par laquelle on lui envoie les impressions est fermée. La nuit précédente, une mise à jour du micrologiciel avait remis l'imprimante en configuration d'usine et désactivé l'impression brute." },
+    { "id": "intro-enjeu", "kind": "paragraph", "text": "Cette histoire illustre la limite du ping : il prouve qu'une machine est joignable, pas que le **service** que vous voulez utiliser l'est. Entre l'adresse IP et l'application, il y a la couche transport, avec ses deux protocoles, TCP et UDP, et ses **ports**. Les connaître vous permet de tester précisément ce qui compte et de rédiger des escalades que l'équipe réseau peut exploiter immédiatement." },
+    { "id": "h-ports", "kind": "heading", "level": 2, "text": "Les ports : identifier le bon programme" },
+    { "id": "def", "kind": "callout", "tone": "definition", "title": "Définition simple", "text": "Un **port** est un numéro de 0 à 65 535 qui identifie, sur une machine, le programme destinataire d'une communication. L'adresse IP amène les données jusqu'à la bonne machine ; le port les remet au bon service sur cette machine. Le couple adresse IP + port s'appelle un **socket**, par exemple `10.20.30.5:445`." },
+    { "id": "analogie", "kind": "callout", "tone": "analogy", "title": "Analogie", "text": "L'adresse IP est l'adresse d'un immeuble de bureaux ; le port est le numéro du bureau à l'intérieur. Le facteur (la couche réseau) dépose le courrier à l'accueil de l'immeuble ; l'accueil (la couche transport) le distribue au bureau 443 (le serveur web) ou au bureau 445 (le partage de fichiers). Si le bureau est fermé ou si le vigile refuse l'accès à l'étage, le courrier n'arrive pas, même si l'immeuble est bien là." },
+    { "id": "p-plages", "kind": "paragraph", "text": "L'IANA, l'organisme qui gère ces numéros, distingue trois plages. Les **ports bien connus**, de 0 à 1023, sont attribués aux services standard (443 pour HTTPS, 53 pour DNS). Les **ports enregistrés**, de 1024 à 49151, sont réservés à des applications précises (3389 pour le Bureau à distance, 9100 pour l'impression brute). Les **ports dynamiques**, de 49152 à 65535, sont choisis au hasard par le client pour chaque connexion sortante : c'est la plage qu'utilise Windows par défaut. Une connexion relie donc un port aléatoire du poste à un port connu du serveur, par exemple `10.20.10.87:51234` vers `10.20.30.15:443`." },
+    { "id": "h-tcp-udp", "kind": "heading", "level": 2, "text": "TCP et UDP : deux façons de transporter" },
+    { "id": "p-tcp", "kind": "paragraph", "text": "**TCP** (Transmission Control Protocol) est **orienté connexion** : avant d'envoyer la moindre donnée, les deux machines établissent une connexion. Ensuite, chaque segment est numéroté, chaque réception est acquittée, les segments perdus sont renvoyés et remis dans l'ordre. C'est fiable mais un peu plus lent. On l'utilise quand chaque octet compte : pages web, fichiers, courriels, Bureau à distance." },
+    { "id": "p-udp", "kind": "paragraph", "text": "**UDP** (User Datagram Protocol) est **sans connexion** : il envoie des datagrammes sans prévenir, sans accusé de réception et sans renvoi. Si un datagramme se perd, c'est l'application qui décide quoi faire (redemander, ignorer). C'est léger et rapide. On l'utilise pour les échanges courts (une question DNS, une demande DHCP, la synchronisation de l'heure) et pour le temps réel (voix et vidéo sur IP), où une donnée arrivée en retard ne sert plus à rien." },
+    { "id": "tab-comparatif", "kind": "table", "caption": "TCP et UDP face à face", "headers": ["Critère", "TCP", "UDP"], "rows": [
+      ["Connexion préalable", "Oui, poignée de main en trois temps", "Non"],
+      ["Fiabilité", "Accusés de réception, renvoi des pertes", "Aucune garantie de livraison"],
+      ["Ordre des données", "Garanti", "Non garanti"],
+      ["Unité de données", "Segment", "Datagramme"],
+      ["Surcoût", "En-tête de 20 octets minimum, échanges de contrôle", "En-tête de 8 octets"],
+      ["Usages typiques", "HTTPS, SMB, RDP, SMTP, LDAP, SSH", "DNS, DHCP, NTP, voix et vidéo, une partie de RDP et de HTTPS récent (QUIC)"],
+      ["Test simple de joignabilité", "Oui : Test-NetConnection -Port", "Difficile : pas de réponse attendue, il faut un outil propre au service"]
+    ] },
+    { "id": "h-handshake", "kind": "heading", "level": 2, "text": "La poignée de main TCP" },
+    { "id": "diag", "kind": "diagram", "diagram": "tcp-handshake", "caption": "Établissement d'une connexion TCP entre le poste (port 51234) et le serveur web (port 443) : SYN, SYN-ACK puis ACK. Les données ne circulent qu'après ce troisième message." },
+    { "id": "list-handshake", "kind": "list", "ordered": true, "items": [
+      "**SYN** (synchroniser) : le poste envoie au serveur une demande de connexion vers le port 443, avec un numéro de séquence initial choisi au hasard.",
+      "**SYN-ACK** : si un service écoute sur ce port, le serveur accepte. Il acquitte le numéro du poste et envoie son propre numéro de séquence initial.",
+      "**ACK** (acquitter) : le poste acquitte le numéro du serveur. La connexion est **établie** (état ESTABLISHED) : les données peuvent circuler dans les deux sens."
+    ] },
+    { "id": "p-fin", "kind": "paragraph", "text": "La fermeture se fait proprement par un échange de segments **FIN** et **ACK** dans chaque sens. Le côté qui ferme le premier garde ensuite la connexion quelques instants dans l'état **TIME_WAIT**, pour absorber d'éventuels segments retardataires : voir de nombreuses lignes TIME_WAIT dans netstat est normal. Une connexion peut aussi être coupée brutalement par un segment **RST** (réinitialisation) : c'est ce qui se passe quand on contacte un port sur lequel aucun service n'écoute." },
+    { "id": "h-liste-ports", "kind": "heading", "level": 2, "text": "Les ports que le support doit connaître" },
+    { "id": "tab-ports", "kind": "table", "caption": "Ports courants en entreprise (à connaître par cœur pour un poste N1)", "headers": ["Port", "Protocole", "Service", "Situation de support typique"], "rows": [
+      ["22", "TCP", "SSH : administration à distance sécurisée", "Accès en ligne de commande à un équipement réseau ou un serveur Linux"],
+      ["25", "TCP", "SMTP : transfert de courriel entre serveurs", "Souvent bloqué en sortie pour les postes : c'est normal"],
+      ["587", "TCP", "SMTP Submission : envoi de courriel par un client authentifié", "Scanner ou application métier qui envoie des courriels"],
+      ["53", "UDP et TCP", "DNS : résolution de noms", "Rien ne marche par le nom, tout marche par l'adresse"],
+      ["67 / 68", "UDP", "DHCP : 67 côté serveur, 68 côté client", "Poste en 169.254.x.x"],
+      ["80", "TCP", "HTTP : web non chiffré", "Interface d'administration d'une imprimante, redirection vers HTTPS"],
+      ["443", "TCP (et UDP pour QUIC)", "HTTPS : web chiffré par TLS", "Accès aux applications web, Microsoft 365, intranet"],
+      ["445", "TCP", "SMB : partage de fichiers et d'imprimantes Windows", "Lecteur réseau inaccessible"],
+      ["3389", "TCP (et UDP)", "RDP : Bureau à distance", "Connexion à un serveur ou à un poste distant impossible"],
+      ["389", "TCP et UDP", "LDAP : interrogation de l'annuaire", "Application qui authentifie ses utilisateurs auprès d'Active Directory"],
+      ["636", "TCP", "LDAPS : LDAP chiffré par TLS", "Même usage, en version sécurisée"],
+      ["88", "TCP et UDP", "Kerberos : authentification Active Directory", "Ouverture de session, accès aux ressources du domaine"],
+      ["9100", "TCP", "Impression brute (RAW, aussi appelée JetDirect ou AppSocket)", "File d'impression vers une imprimante réseau ou thermique"]
+    ] },
+    { "id": "tip-ports", "kind": "callout", "tone": "tip", "title": "Retenir par familles", "text": "Web : 80 et 443. Fichiers Windows : 445. Prise en main : 3389 (Windows) et 22 (Linux et équipements). Annuaire : 88, 389 et 636. Messagerie : 25 entre serveurs, 587 pour les clients. Infrastructure : 53 (DNS) et 67/68 (DHCP). Impression : 9100. Une liste organisée par usage se retient bien mieux qu'une suite de nombres." },
+    { "id": "h-netstat", "kind": "heading", "level": 2, "text": "Voir les connexions du poste : netstat et Get-NetTCPConnection" },
+    { "id": "cmd-netstat", "kind": "command", "shell": "cmd", "command": "netstat -ano", "explanation": "netstat affiche les connexions et les ports en écoute. -a montre toutes les connexions et les ports en écoute, -n affiche les adresses et les ports en chiffres (plus rapide, pas de résolution de noms), -o ajoute le PID, le numéro du processus propriétaire. Aucun droit administrateur n'est nécessaire pour ces trois options.", "output": "Connexions actives\n\n  Proto  Adresse locale         Adresse distante       État           PID\n  TCP    0.0.0.0:135            0.0.0.0:0              LISTENING       1092\n  TCP    0.0.0.0:445            0.0.0.0:0              LISTENING       4\n  TCP    0.0.0.0:3389           0.0.0.0:0              LISTENING       1336\n  TCP    10.20.10.87:51234      10.20.30.15:443        ESTABLISHED     8812\n  TCP    10.20.10.87:51240      10.20.30.5:445         ESTABLISHED     4\n  TCP    10.20.10.87:51302      198.51.100.20:443      TIME_WAIT       0\n  TCP    10.20.10.87:51310      10.20.30.40:443        SYN_SENT        8812\n  UDP    0.0.0.0:5353           *:*                                    2468\n  UDP    10.20.10.87:137        *:*                                    4", "outputNotes": [
+      { "match": "0.0.0.0:445", "note": "LISTENING : le poste attend des connexions sur le port 445 (SMB). 0.0.0.0 signifie « sur toutes les adresses du poste ». Le PID 4 est le système Windows lui-même." },
+      { "match": "0.0.0.0:3389", "note": "Le Bureau à distance est activé sur ce poste : il écoute sur 3389." },
+      { "match": "10.20.30.15:443", "note": "Connexion établie du navigateur (PID 8812) vers l'intranet en HTTPS. Le port local 51234 est un port dynamique." },
+      { "match": "10.20.30.5:445", "note": "Lecteur réseau connecté au serveur de fichiers : connexion SMB établie." },
+      { "match": "TIME_WAIT", "note": "Connexion déjà fermée, conservée quelques instants : normal, aucune action à mener." },
+      { "match": "SYN_SENT", "note": "Le poste a envoyé un SYN vers 10.20.30.40:443 et attend toujours la réponse. Si cet état persiste, le serveur ne répond pas ou un pare-feu filtre le port." },
+      { "match": "UDP", "note": "UDP n'a pas de connexion : pas d'état ni d'adresse distante précise, seulement des ports en écoute." }
+    ] },
+    { "id": "cmd-tasklist", "kind": "command", "shell": "cmd", "command": "tasklist /FI \"PID eq 8812\"", "explanation": "Retrouve le programme correspondant à un PID relevé dans netstat. /FI applique un filtre ; ici on cherche le processus dont le PID vaut 8812. Le Gestionnaire des tâches, onglet Détails, donne la même information.", "output": "Nom de l'image                 PID Nom de la session Numéro de s Utilisation\n========================= ======== ================ =========== ============\nmsedge.exe                    8812 Console                    1   184 320 Ko", "outputNotes": [
+      { "match": "msedge.exe", "note": "Le PID 8812 est le navigateur Microsoft Edge : c'est lui qui tente de joindre 10.20.30.40 en HTTPS." }
+    ] },
+    { "id": "cmd-gettcp", "kind": "command", "shell": "powershell", "command": "Get-NetTCPConnection -State Established, Listen | Sort-Object LocalPort | Select-Object LocalAddress, LocalPort, RemoteAddress, RemotePort, State, OwningProcess", "explanation": "Équivalent PowerShell de netstat pour TCP. -State filtre sur les états voulus, Sort-Object trie par port local, Select-Object choisit les colonnes. OwningProcess est le PID : Get-Process -Id 8812 donne le nom du programme.", "output": "LocalAddress LocalPort RemoteAddress RemotePort       State OwningProcess\n------------ --------- ------------- ----------       ----- -------------\n0.0.0.0            135 0.0.0.0                0      Listen          1092\n0.0.0.0            445 0.0.0.0                0      Listen             4\n0.0.0.0           3389 0.0.0.0                0      Listen          1336\n10.20.10.87      51234 10.20.30.15          443 Established          8812\n10.20.10.87      51240 10.20.30.5           445 Established             4", "outputNotes": [
+      { "match": "Listen", "note": "Les ports sur lesquels le poste accepte des connexions entrantes." },
+      { "match": "Established", "note": "Les connexions actives : on retrouve l'intranet (443) et le serveur de fichiers (445)." },
+      { "match": "OwningProcess", "note": "Le PID propriétaire, à croiser avec Get-Process ou le Gestionnaire des tâches." }
+    ] },
+    { "id": "h-test", "kind": "heading", "level": 2, "text": "Tester un port : Test-NetConnection" },
+    { "id": "cmd-tnc-ok", "kind": "command", "shell": "powershell", "command": "Test-NetConnection srv-paie01.valmont.local -Port 443", "explanation": "Test-NetConnection résout le nom, puis tente d'établir une connexion TCP complète (poignée de main) vers le port indiqué. C'est le meilleur test de couche 4 dont dispose un technicien N1, sans aucun droit particulier. Son alias court est tnc.", "output": "ComputerName     : srv-paie01.valmont.local\nRemoteAddress    : 10.20.30.40\nRemotePort       : 443\nInterfaceAlias   : Ethernet\nSourceAddress    : 10.20.10.87\nTcpTestSucceeded : True", "outputNotes": [
+      { "match": "RemoteAddress", "note": "L'adresse obtenue par le DNS : vérifiez qu'elle est bien celle attendue." },
+      { "match": "SourceAddress", "note": "L'adresse du poste utilisée pour le test, utile sur un portable qui a plusieurs cartes ou un VPN." },
+      { "match": "TcpTestSucceeded : True", "note": "La poignée de main a abouti : le service écoute et rien ne bloque le port. Si l'application échoue encore, cherchez au-dessus (certificat, identifiants, droits)." }
+    ] },
+    { "id": "cmd-tnc-ko", "kind": "command", "shell": "powershell", "command": "Test-NetConnection 10.30.12.50 -Port 9100", "explanation": "Même test vers l'imprimante thermique du quai 3. En cas d'échec, la commande effectue aussi un ping pour aider à interpréter le résultat.", "output": "AVERTISSEMENT : TCP connect to (10.30.12.50 : 9100) failed\n\n\nComputerName           : 10.30.12.50\nRemoteAddress          : 10.30.12.50\nRemotePort             : 9100\nInterfaceAlias         : Ethernet\nSourceAddress          : 10.30.10.24\nPingSucceeded          : True\nPingReplyDetails (RTT) : 2 ms\nTcpTestSucceeded       : False", "outputNotes": [
+      { "match": "AVERTISSEMENT", "note": "La connexion TCP n'a pas pu être établie sur le port 9100." },
+      { "match": "PingSucceeded          : True", "note": "L'imprimante répond au ping : elle est allumée et joignable au niveau IP (couche 3)." },
+      { "match": "TcpTestSucceeded       : False", "note": "Couche 4 en échec : le service d'impression brute n'écoute pas ou un filtrage bloque le port. Le problème n'est ni le câble ni l'adresse." }
+    ] },
+    { "id": "h-ferme-filtre", "kind": "heading", "level": 3, "text": "Port fermé ou port filtré : la nuance qui oriente l'escalade" },
+    { "id": "tab-ferme-filtre", "kind": "table", "caption": "Trois résultats possibles d'une tentative de connexion TCP", "headers": ["État", "Ce qui se passe", "Ce que vous voyez", "Piste"], "rows": [
+      ["Ouvert", "Le service écoute, la poignée de main aboutit", "TcpTestSucceeded : True", "Le réseau fait son travail : chercher dans l'application"],
+      ["Fermé", "La machine répond par un RST : aucun service n'écoute sur ce port", "Échec rapide, « connexion refusée »", "Service arrêté, mauvais port, fonction désactivée sur l'équipement"],
+      ["Filtré", "Un pare-feu jette le SYN sans répondre (ou renvoie un message ICMP d'interdiction)", "Échec après un long délai d'attente", "Pare-feu du serveur, du réseau ou du poste : escalade au N2 avec la source, la destination et le port"]
+    ] },
+    { "id": "p-ferme-filtre", "kind": "paragraph", "text": "Test-NetConnection affiche `False` dans les deux derniers cas : c'est le **temps** avant la réponse qui vous oriente. Un refus quasi immédiat évoque un port fermé ; une attente de plusieurs secondes évoque un filtrage. Indiquez-le dans le ticket : « échec immédiat » ou « échec après délai » fait gagner du temps à l'équipe réseau." },
+    { "id": "field-parefeu", "kind": "callout", "tone": "field", "title": "Sur le terrain", "text": "Le pare-feu Windows Defender filtre les connexions **entrantes** sur chaque poste. C'est pourquoi on ne peut pas, par défaut, se connecter en Bureau à distance à n'importe quel poste du parc, ni le pinguer depuis un autre réseau : ce comportement est voulu. Quand un port est bloqué, votre rôle est de le **constater et de le prouver**, pas d'ouvrir le pare-feu vous-même." },
+    { "id": "h-demo", "kind": "heading", "level": 2, "text": "Démonstration : l'imprimante du quai 3" },
+    { "id": "steps-demo", "kind": "steps", "title": "Diagnostiquer une imprimante qui répond au ping mais n'imprime pas", "steps": [
+      { "title": "Vérifier la couche 3", "text": "Le ping répond : l'imprimante est allumée, câblée et adressée correctement. Notez le temps de réponse.", "command": "ping 10.30.12.50" },
+      { "title": "Tester le port d'impression", "text": "La file d'impression Windows envoie les travaux sur un port TCP/IP standard en mode RAW, port 9100 par défaut. Testez exactement ce port.", "command": "Test-NetConnection 10.30.12.50 -Port 9100" },
+      { "title": "Tester un autre service de l'imprimante", "text": "Si l'interface web répond sur 443 ou 80, l'imprimante fonctionne et accepte des connexions TCP : seul le service d'impression brute est en cause. Si plus aucun port ne répond, pensez à un filtrage réseau.", "command": "Test-NetConnection 10.30.12.50 -Port 443" },
+      { "title": "Consulter l'historique de l'équipement", "text": "Demandez s'il y a eu une intervention récente : mise à jour, réinitialisation, remplacement. Une remise en configuration d'usine désactive parfois l'impression brute ou change le port." },
+      { "title": "Escalader avec des preuves", "text": "Indiquez les trois tests et leurs résultats dans le ticket. La réactivation du port 9100 sur l'imprimante se fait par son interface d'administration, généralement réservée au N2 ou au prestataire." }
+    ] },
+    { "id": "mistakes", "kind": "mistakes", "items": [
+      { "mistake": "Conclure qu'un service fonctionne parce que le serveur répond au ping", "why": "Le ping teste la couche 3 ; le service peut être arrêté ou son port filtré.", "fix": "Tester le port exact avec Test-NetConnection -Port." },
+      { "mistake": "Désactiver le pare-feu Windows pour voir si « ça passe »", "why": "Le poste est exposé et le test ne prouve rien sur les pare-feu réseau.", "fix": "Prouver le blocage par un test de port et escalader." },
+      { "mistake": "Tester un service UDP (DNS, DHCP) avec Test-NetConnection -Port", "why": "Test-NetConnection -Port ne teste que TCP : son résultat ne dit rien d'un service UDP.", "fix": "Utiliser l'outil propre au service : nslookup pour le DNS, ipconfig /renew pour le DHCP." },
+      { "mistake": "S'inquiéter des nombreuses lignes TIME_WAIT dans netstat", "why": "C'est l'état normal d'une connexion récemment fermée.", "fix": "Se concentrer sur les états SYN_SENT persistants ou l'absence de LISTENING attendu." },
+      { "mistake": "Confondre 25 et 587 pour configurer l'envoi de courriels d'un scanner", "why": "Le port 25 sert entre serveurs et est souvent bloqué pour les clients ; 587 est prévu pour les clients authentifiés.", "fix": "Suivre la procédure interne, qui précise généralement 587 avec authentification." }
+    ] },
+    { "id": "risks", "kind": "risks", "items": [
+      "N'ouvrez jamais un port dans un pare-feu, ni sur un poste ni sur le réseau, sans demande de changement validée : chaque port ouvert est une porte d'entrée potentielle.",
+      "N'exposez jamais le port 3389 (Bureau à distance) ou le port 445 (SMB) vers Internet : ce sont des cibles privilégiées des attaques par rançongiciel.",
+      "Ne lancez pas d'outil de balayage de ports (scanner) sur le réseau de l'entreprise sans autorisation écrite : c'est perçu, à juste titre, comme une attaque.",
+      "Un port en écoute inattendu sur un poste (programme inconnu dans netstat) peut signaler un logiciel malveillant : notez le PID et le nom du programme, n'arrêtez rien, alertez selon la procédure de sécurité."
+    ] },
+    { "id": "quiz", "kind": "quiz", "title": "Vérifiez votre compréhension", "questions": ["tcp-handshake-ordre", "tcp-ports-services", "tcp-udp-usages", "tcp-netstat-lecture", "tcp-ping-port"] },
+    { "id": "exercise", "kind": "exercise", "title": "Le Bureau à distance qui refuse de se connecter", "context": "Mme Henry, comptable au Groupe Valmont, doit se connecter en Bureau à distance au serveur d'applications srv-app02.valmont.local (10.20.30.60) depuis son poste PC-CPT-009 (10.20.10.141). La connexion échoue avec « Le Bureau à distance ne peut pas se connecter à l'ordinateur distant ». Ses collègues du service comptabilité se connectent au même serveur sans problème. Vous obtenez : ping srv-app02.valmont.local répond depuis 10.20.30.60 ; Test-NetConnection srv-app02.valmont.local -Port 3389 renvoie TcpTestSucceeded : False après une longue attente ; le même test depuis le poste d'une collègue renvoie True.", "task": "Analysez la situation : quelles couches sont validées, quelle est la nature probable du blocage, que vérifiez-vous encore et que mettez-vous dans le ticket ?", "hints": [
+      "Le ping et la résolution du nom fonctionnent : quelles couches sont donc validées ?",
+      "Le test du port 3389 échoue après une longue attente, et réussit depuis le poste d'une collègue. Port fermé ou port filtré ? Côté serveur ou côté chemin du poste ?",
+      "Le service RDP fonctionne sur le serveur, puisque la collègue s'y connecte. Qu'est-ce qui peut ne concerner que l'adresse 10.20.10.141 : une règle de pare-feu, un logiciel de sécurité sur le poste, un droit d'accès ?"
+    ], "solution": [
+      "Le nom est résolu (DNS correct) et le serveur répond au ping depuis le poste : les couches 1 à 3 sont validées de bout en bout. Le problème se situe en couche 4, sur le port TCP 3389 du Bureau à distance.",
+      "Le test réussit depuis le poste d'une collègue : le service RDP est démarré et écoute sur le serveur. L'échec après une longue attente évoque un port filtré plutôt que fermé : un pare-feu laisse passer le ping mais jette les connexions vers 3389 provenant du poste de Mme Henry. Pistes : règle de pare-feu réseau ou du serveur qui n'autorise qu'une liste d'adresses (le poste a peut-être changé d'adresse ou de VLAN), ou logiciel de sécurité local qui bloque les connexions RDP sortantes.",
+      "Vérifications complémentaires sans rien modifier : comparer l'adresse du poste avec celle des collègues (même réseau ?), vérifier si le poste a été remplacé ou réinstallé récemment, regarder si le logiciel de sécurité signale un blocage. Laisser le pare-feu actif et ne modifier aucune règle : ce n'est pas du ressort du N1.",
+      "Note de ticket : « PC-CPT-009 (10.20.10.141), Mme Henry : RDP vers srv-app02 (10.20.30.60) impossible. DNS et ping OK. TCP 3389 en échec après délai depuis ce poste, OK depuis PC-CPT-010 (10.20.10.142). Suspicion de filtrage sur la source 10.20.10.141. Escalade N2 réseau / systèmes pour vérification des règles de pare-feu. »"
+    ], "rubric": {
+      "criteria": [
+        { "id": "couches", "label": "Valide les couches basses grâce au ping et au DNS", "points": 1, "patterns": ["ping", "couche 3", "couches 1 a 3", "dns"] },
+        { "id": "port3389", "label": "Identifie le port 3389 / la couche transport comme point de blocage", "points": 3, "patterns": ["3389", "couche 4", "transport"], "required": true },
+        { "id": "filtre", "label": "Évoque un filtrage par pare-feu", "points": 3, "patterns": ["pare-feu", "pare feu", "firewall", "filtr*", "regle"], "required": true },
+        { "id": "service-ok", "label": "Déduit que le service fonctionne puisque la collègue se connecte", "points": 2, "patterns": ["collegue", "service fonctionne", "service demarre", "autre poste", "serveur fonctionne"] },
+        { "id": "source", "label": "Relie le blocage à l'adresse ou au poste de l'utilisatrice", "points": 1, "patterns": ["10.20.10.141", "adresse source", "adresse du poste", "propre au poste", "son poste"] },
+        { "id": "escalade", "label": "Escalade avec les preuves", "points": 1, "patterns": ["escalad*", "n2", "ticket"] }
+      ],
+      "redFlags": [
+        { "id": "parefeu-off", "label": "Propose de désactiver un pare-feu", "patterns": ["je desactive le pare-feu", "je desactive le pare feu", "desactiver temporairement le pare-feu", "desactiver temporairement le pare feu", "on desactive le pare-feu", "couper temporairement le pare-feu", "desactive le firewall"], "penalty": 3 },
+        { "id": "ouvrir", "label": "Propose d'ouvrir le port soi-même", "patterns": ["j ouvre le port", "on ouvre le port", "j ajoute une regle", "ouvrir moi-meme le port"], "penalty": 2 }
+      ],
+      "passPercent": 60
+    } },
+    { "id": "interview", "kind": "interview", "questions": [
+      { "question": "Quelle différence faites-vous entre TCP et UDP ? Donnez un exemple d'usage de chacun.", "expectedPoints": ["TCP est orienté connexion avec poignée de main", "TCP garantit la livraison et l'ordre grâce aux acquittements", "UDP est sans connexion, plus léger, sans garantie", "Exemples : HTTPS, SMB, RDP pour TCP ; DNS, DHCP, voix sur IP pour UDP"], "modelAnswer": "TCP établit une connexion avant d'envoyer des données, grâce à la poignée de main SYN, SYN-ACK, ACK. Il numérote et acquitte chaque segment, renvoie ce qui est perdu et garantit l'ordre : on l'utilise pour le web en HTTPS, le partage de fichiers SMB ou le Bureau à distance. UDP envoie des datagrammes sans connexion ni accusé de réception : c'est plus léger et plus rapide, idéal pour une question DNS, une demande DHCP ou la voix sur IP, où une donnée en retard ne sert plus à rien." },
+      { "question": "Un serveur répond au ping mais l'application ne s'y connecte pas. Que faites-vous ?", "expectedPoints": ["Le ping ne valide que la couche 3", "Identifier le port utilisé par l'application", "Tester ce port avec Test-NetConnection -Port", "Distinguer échec immédiat (fermé) et échec après délai (filtré)", "Escalader avec la source, la destination, le port et le résultat"], "modelAnswer": "Le ping prouve seulement que le serveur est joignable au niveau IP. Je cherche le port utilisé par l'application, par exemple 443 pour une application web, puis je le teste avec Test-NetConnection et l'option -Port. Si le test échoue, je note s'il échoue immédiatement, ce qui évoque un service arrêté, ou après un délai, ce qui évoque un pare-feu. Je compare avec un autre poste, puis j'escalade avec la source, la destination, le port et les résultats, sans désactiver aucun pare-feu." },
+      { "question": "Citez les ports de SMB, RDP, HTTPS, DNS et Kerberos.", "expectedPoints": ["SMB : 445", "RDP : 3389", "HTTPS : 443", "DNS : 53", "Kerberos : 88"], "modelAnswer": "SMB, le partage de fichiers Windows, utilise le port TCP 445. Le Bureau à distance utilise le 3389. HTTPS le 443. Le DNS le 53, en UDP principalement et en TCP pour les grosses réponses. Kerberos, l'authentification Active Directory, le 88. J'ajouterais LDAP sur 389, LDAPS sur 636 et l'impression brute sur 9100, qu'on rencontre souvent au support." }
+    ] },
+    { "id": "glossary", "kind": "glossary", "terms": [
+      { "term": "Port", "en": "Port", "definition": "Numéro de 0 à 65 535 qui identifie un programme sur une machine." },
+      { "term": "Socket", "en": "Socket", "definition": "Couple adresse IP + port, extrémité d'une communication." },
+      { "term": "Poignée de main en trois temps", "en": "Three-way handshake", "definition": "Échange SYN, SYN-ACK, ACK qui établit une connexion TCP." },
+      { "term": "Acquittement", "en": "Acknowledgement (ACK)", "definition": "Confirmation de réception envoyée par TCP." },
+      { "term": "Réinitialisation", "en": "Reset (RST)", "definition": "Segment TCP qui coupe ou refuse brutalement une connexion." },
+      { "term": "Port en écoute", "en": "Listening port", "definition": "Port sur lequel un service attend des connexions entrantes." },
+      { "term": "Port dynamique", "en": "Ephemeral port", "definition": "Port choisi temporairement par le client pour une connexion sortante (49152 à 65535)." },
+      { "term": "Identifiant de processus", "en": "Process ID (PID)", "definition": "Numéro attribué par Windows à chaque programme en cours d'exécution." }
+    ] },
+    { "id": "summary", "kind": "summary", "points": [
+      "Le port désigne le programme sur la machine ; adresse IP + port = socket.",
+      "TCP : connexion préalable (SYN, SYN-ACK, ACK), fiabilité, ordre. UDP : sans connexion, léger, sans garantie.",
+      "Ports clés : 22, 25/587, 53, 67/68, 80, 443, 445, 3389, 389/636, 88, 9100.",
+      "netstat -ano et Get-NetTCPConnection montrent les connexions et le PID ; tasklist ou Get-Process donnent le programme.",
+      "Test-NetConnection -Port teste un port TCP : True = service joignable ; False rapide = fermé ; False après délai = filtré.",
+      "Constater et prouver un blocage, oui ; ouvrir ou désactiver un pare-feu, jamais."
+    ] },
+    { "id": "references", "kind": "references", "items": [
+      { "title": "RFC 9293 — Transmission Control Protocol (TCP)", "url": "https://www.rfc-editor.org/rfc/rfc9293", "publisher": "IETF", "verifiedAt": "2026-10-21" },
+      { "title": "RFC 768 — User Datagram Protocol", "url": "https://www.rfc-editor.org/rfc/rfc768", "publisher": "IETF", "verifiedAt": "2026-10-21" },
+      { "title": "Service Name and Transport Protocol Port Number Registry", "url": "https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml", "publisher": "IANA", "verifiedAt": "2026-10-21" },
+      { "title": "Test-NetConnection", "url": "https://learn.microsoft.com/powershell/module/nettcpip/test-netconnection", "publisher": "Microsoft Learn", "verifiedAt": "2026-10-21" }
+    ] }
+  ]
+}

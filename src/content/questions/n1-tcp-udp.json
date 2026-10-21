@@ -1,0 +1,121 @@
+[
+  {
+    "code": "tcp-handshake-ordre",
+    "lesson": "n1-tcp-udp",
+    "skill": "network-fundamentals",
+    "prompt": "Remettez dans l'ordre les messages qui établissent une connexion TCP entre un poste et un serveur.",
+    "data": {
+      "type": "order",
+      "items": [
+        { "id": "ack", "text": "ACK — le poste acquitte la réponse du serveur" },
+        { "id": "syn", "text": "SYN — le poste demande l'ouverture de la connexion" },
+        { "id": "synack", "text": "SYN-ACK — le serveur accepte et envoie son propre numéro de séquence" }
+      ],
+      "answer": ["syn", "synack", "ack"]
+    },
+    "explanation": "Le client envoie SYN, le serveur répond SYN-ACK s'il accepte, puis le client confirme par ACK : la connexion passe alors à l'état ESTABLISHED. Commencer par ACK n'a pas de sens, puisqu'il n'y a encore rien à acquitter ; et le serveur ne peut pas envoyer SYN-ACK avant d'avoir reçu le SYN du client.",
+    "difficulty": 1
+  },
+  {
+    "code": "tcp-ports-services",
+    "lesson": "n1-tcp-udp",
+    "skill": "network-fundamentals",
+    "prompt": "Associez chaque port à son service.",
+    "data": {
+      "type": "match",
+      "left": [
+        { "id": "p445", "text": "445" },
+        { "id": "p3389", "text": "3389" },
+        { "id": "p88", "text": "88" },
+        { "id": "p9100", "text": "9100" },
+        { "id": "p636", "text": "636" }
+      ],
+      "right": [
+        { "id": "smb", "text": "SMB (partage de fichiers Windows)" },
+        { "id": "rdp", "text": "RDP (Bureau à distance)" },
+        { "id": "kerberos", "text": "Kerberos" },
+        { "id": "raw", "text": "Impression brute (RAW)" },
+        { "id": "ldaps", "text": "LDAPS" },
+        { "id": "ssh", "text": "SSH" }
+      ],
+      "answer": { "p445": "smb", "p3389": "rdp", "p88": "kerberos", "p9100": "raw", "p636": "ldaps" }
+    },
+    "explanation": "445 = SMB, 3389 = Bureau à distance, 88 = Kerberos, 9100 = impression brute, 636 = LDAP chiffré (LDAPS ; LDAP non chiffré utilise 389). SSH, qui reste sans correspondance, utilise le port 22 : c'est le distracteur.",
+    "difficulty": 2
+  },
+  {
+    "code": "tcp-udp-usages",
+    "lesson": "n1-tcp-udp",
+    "skill": "network-fundamentals",
+    "prompt": "Quels services s'appuient principalement sur UDP ? (plusieurs réponses)",
+    "data": {
+      "type": "multiple",
+      "choices": [
+        { "id": "dhcp", "text": "DHCP (ports 67/68)" },
+        { "id": "dns", "text": "Requêtes DNS courantes (port 53)" },
+        { "id": "smb", "text": "Partage de fichiers SMB (port 445)" },
+        { "id": "ntp", "text": "Synchronisation de l'heure NTP (port 123)" },
+        { "id": "ssh", "text": "SSH (port 22)" }
+      ],
+      "answer": ["dhcp", "dns", "ntp"]
+    },
+    "explanation": "DHCP, les requêtes DNS courantes et NTP sont des échanges courts pour lesquels UDP suffit : une question, une réponse, et l'application redemande si besoin. Le DNS bascule sur TCP pour les réponses volumineuses. SMB et SSH ont besoin d'une connexion fiable qui garantit l'intégrité et l'ordre des données : ils utilisent TCP.",
+    "difficulty": 2
+  },
+  {
+    "code": "tcp-netstat-lecture",
+    "lesson": "n1-tcp-udp",
+    "skill": "powershell",
+    "prompt": "Dans la sortie de netstat -ano, vous lisez : « TCP 10.20.10.87:51310 10.20.30.40:443 SYN_SENT 8812 ». Que signifie cette ligne ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Le poste écoute sur le port 443 pour accepter des connexions" },
+        { "id": "b", "text": "Le processus 8812 a demandé une connexion HTTPS vers 10.20.30.40 et attend toujours la réponse du serveur" },
+        { "id": "c", "text": "La connexion vers 10.20.30.40 est établie et fonctionne normalement" },
+        { "id": "d", "text": "La connexion vient d'être fermée proprement" }
+      ],
+      "answer": "b"
+    },
+    "explanation": "SYN_SENT signifie que le SYN est parti et qu'aucun SYN-ACK n'est encore revenu : si l'état persiste, le serveur ne répond pas ou un pare-feu filtre le port. Un port en écoute apparaîtrait en LISTENING avec une adresse locale en :443 (a), une connexion active en ESTABLISHED (c) et une connexion récemment fermée en TIME_WAIT (d). Le PID 8812 désigne le programme à l'origine de la tentative.",
+    "difficulty": 2
+  },
+  {
+    "code": "tcp-ping-port",
+    "lesson": "n1-tcp-udp",
+    "skill": "powershell",
+    "prompt": "Complétez la commande PowerShell qui teste si le port 445 du serveur srv-fic01 est joignable.",
+    "data": { "type": "fill", "template": "Test-NetConnection srv-fic01 ___ 445", "accepted": ["-Port", "-port"] },
+    "explanation": "Test-NetConnection avec le paramètre -Port tente une connexion TCP complète vers le port indiqué et renvoie TcpTestSucceeded à True ou False. Sans -Port, la commande se contente d'un ping, qui ne teste que la couche 3. -ComputerName désigne la cible (ici passée en premier argument), pas le port.",
+    "difficulty": 1
+  },
+  {
+    "code": "tcp-exam-1",
+    "lesson": "n1-tcp-udp",
+    "skill": "network-fundamentals",
+    "prompt": "Un lecteur réseau \\\\srv-fic01\\commun est inaccessible depuis un poste. Le ping vers srv-fic01 répond. Test-NetConnection srv-fic01 -Port 445 renvoie TcpTestSucceeded : False après une longue attente. Les autres postes du même service accèdent au partage. Quelle conclusion est la plus juste ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Le serveur de fichiers est éteint" },
+        { "id": "b", "text": "Le port 445 est probablement filtré sur le chemin de ce poste (pare-feu local ou règle réseau)" },
+        { "id": "c", "text": "Le problème est un mauvais serveur DNS" },
+        { "id": "d", "text": "Il faut désactiver le pare-feu Windows du poste pour corriger le problème" }
+      ],
+      "answer": "b"
+    },
+    "explanation": "Le ping répond et les collègues accèdent au partage : le serveur fonctionne (a faux) et son service SMB aussi. Le nom est résolu puisque le ping par nom répond (c faux). L'échec après délai sur 445 depuis ce seul poste évoque un filtrage propre à ce poste ou à son adresse. Désactiver le pare-feu (d) est une mauvaise pratique : on prouve le blocage et on escalade.",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "code": "tcp-exam-2",
+    "lesson": "n1-tcp-udp",
+    "skill": "network-fundamentals",
+    "prompt": "Un multifonction doit envoyer les documents numérisés par courriel via le serveur de messagerie de l'entreprise, avec authentification. Le prestataire a configuré le port 25 et l'envoi échoue. Quel port est normalement prévu pour la soumission de courriels par un client authentifié ?",
+    "data": { "type": "fill", "template": "Port de soumission SMTP authentifiée : ___", "accepted": ["587", "587/tcp", "tcp 587"] },
+    "explanation": "Le port 587 (SMTP Submission) est prévu pour les clients qui envoient des courriels avec authentification. Le port 25 sert au transfert entre serveurs de messagerie et il est souvent bloqué pour les postes et périphériques. Le port 465 existe aussi pour la soumission en TLS implicite, mais la configuration exacte doit suivre la procédure interne.",
+    "difficulty": 2,
+    "examOnly": true
+  }
+]

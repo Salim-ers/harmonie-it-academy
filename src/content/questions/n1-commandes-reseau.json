@@ -1,0 +1,129 @@
+[
+  {
+    "code": "netcmd-ordre-tests",
+    "lesson": "n1-commandes-reseau",
+    "skill": "diagnostic",
+    "prompt": "Remettez dans l'ordre logique les tests à mener face à un utilisateur qui « n'a plus accès à l'application web interne ».",
+    "data": {
+      "type": "order",
+      "items": [
+        { "id": "dns", "text": "nslookup du nom de l'application" },
+        { "id": "ipconfig", "text": "ipconfig /all sur le poste" },
+        { "id": "port", "text": "Test-NetConnection sur le port 443 du serveur" },
+        { "id": "gw", "text": "ping de la passerelle" }
+      ],
+      "answer": ["ipconfig", "gw", "dns", "port"]
+    },
+    "explanation": "On va du plus proche au plus lointain : d'abord la configuration du poste (ipconfig), puis le réseau local (passerelle), puis la résolution du nom (nslookup), et enfin le service lui-même (port 443). Tester le port en premier ne permettrait pas de savoir, en cas d'échec, si la cause est le poste, le réseau local, le DNS ou le serveur ; tester le DNS avant la passerelle mélangerait un problème réseau local avec un problème de nom.",
+    "difficulty": 1
+  },
+  {
+    "code": "netcmd-ping-preuve",
+    "lesson": "n1-commandes-reseau",
+    "skill": "network-fundamentals",
+    "prompt": "Vrai ou faux : si un serveur ne répond pas au ping, on peut conclure qu'il est éteint ou en panne.",
+    "data": { "type": "truefalse", "answer": false },
+    "explanation": "Faux. Le ping repose sur l'ICMP, que de nombreux pare-feu (dont celui de Windows selon le profil) bloquent volontairement. Un serveur peut ignorer le ping tout en servant parfaitement ses utilisateurs sur ses ports applicatifs. Répondre « vrai » revient à confondre un indice avec une preuve : il faut tester le port réel du service (Test-NetConnection -Port) et vérifier si d'autres utilisateurs y accèdent.",
+    "difficulty": 1
+  },
+  {
+    "code": "netcmd-nxdomain",
+    "lesson": "n1-commandes-reseau",
+    "skill": "network-fundamentals",
+    "prompt": "nslookup affiche « Serveur : dc01.valmont.local » puis « ne parvient pas à trouver intranett.valmont.local : Non-existent domain ». Que pouvez-vous en déduire ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Le serveur DNS est en panne" },
+        { "id": "b", "text": "Le DNS a répondu, mais il ne connaît pas ce nom : vérifier l'orthographe" },
+        { "id": "c", "text": "La passerelle du poste est mal configurée" },
+        { "id": "d", "text": "Le câble réseau est débranché" }
+      ],
+      "answer": "b"
+    },
+    "explanation": "Le serveur DNS a bien été joint (son nom apparaît et il a renvoyé une réponse) : il fonctionne. « Non-existent domain » signifie que le nom demandé n'existe pas, ici à cause d'une faute de frappe (« intranett »). Un DNS en panne donnerait un message de délai dépassé ; une passerelle mal configurée ou un câble débranché empêcheraient de joindre le serveur DNS, donc aucune réponse ne serait affichée.",
+    "difficulty": 2
+  },
+  {
+    "code": "netcmd-tnc-port",
+    "lesson": "n1-commandes-reseau",
+    "skill": "powershell",
+    "prompt": "Test-NetConnection vers un serveur affiche PingSucceeded : True et TcpTestSucceeded : False sur le port 1433. Quelles hypothèses sont cohérentes ? (plusieurs réponses)",
+    "data": {
+      "type": "multiple",
+      "choices": [
+        { "id": "service", "text": "Le service qui doit écouter sur le port 1433 est arrêté" },
+        { "id": "fw", "text": "Un pare-feu bloque le port 1433 depuis le réseau du poste" },
+        { "id": "off", "text": "Le serveur est éteint" },
+        { "id": "dns", "text": "Le nom du serveur ne se résout pas" },
+        { "id": "cable", "text": "Le câble du poste est débranché" }
+      ],
+      "answer": ["service", "fw"]
+    },
+    "explanation": "Le ping réussit : le serveur est allumé et joignable en IP, ce qui écarte le serveur éteint et le câble débranché. Le nom a été résolu puisque le test a pu viser une adresse et obtenir une réponse ICMP. Reste un échec au niveau du port : soit aucun service n'écoute (service arrêté), soit un pare-feu filtre ce port depuis ce réseau. C'est précisément ce que le N2 doit vérifier.",
+    "difficulty": 2
+  },
+  {
+    "code": "netcmd-commande-cible",
+    "lesson": "n1-commandes-reseau",
+    "skill": "network-fundamentals",
+    "prompt": "Associez chaque question de diagnostic à la commande qui y répond.",
+    "data": {
+      "type": "match",
+      "left": [
+        { "id": "q-config", "text": "Mon poste a-t-il une adresse et une passerelle ?" },
+        { "id": "q-nom", "text": "Ce nom se traduit-il en adresse IP ?" },
+        { "id": "q-trajet", "text": "À quel routeur le trajet s'interrompt-il ?" },
+        { "id": "q-port", "text": "Le port 443 du serveur accepte-t-il une connexion ?" }
+      ],
+      "right": [
+        { "id": "ipconfig", "text": "ipconfig /all" },
+        { "id": "nslookup", "text": "nslookup" },
+        { "id": "tracert", "text": "tracert" },
+        { "id": "tnc", "text": "Test-NetConnection -Port" },
+        { "id": "route", "text": "route print" }
+      ],
+      "answer": { "q-config": "ipconfig", "q-nom": "nslookup", "q-trajet": "tracert", "q-port": "tnc" }
+    },
+    "explanation": "ipconfig /all montre la configuration de la carte ; nslookup interroge le DNS ; tracert liste les sauts et montre où le trajet s'arrête ; Test-NetConnection -Port tente une vraie connexion TCP. route print affiche la table de routage du poste : utile pour repérer la route par défaut, mais elle ne teste rien vers l'extérieur, c'est donc un leurre ici.",
+    "difficulty": 1
+  },
+  {
+    "code": "netcmd-exam-1",
+    "lesson": "n1-commandes-reseau",
+    "skill": "diagnostic",
+    "prompt": "Chez Nordelis Logistique, un poste de quai a l'adresse 10.40.2.31, sa passerelle 10.40.2.1 répond au ping, mais un ping vers le serveur applicatif 10.40.8.10 échoue. tracert -d 10.40.8.10 montre le saut 1 (10.40.2.1) puis uniquement des étoiles jusqu'au saut 30. Les postes des bureaux voisins accèdent à l'application. Quelle est la meilleure action ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Redémarrer le serveur applicatif pour rétablir le service" },
+        { "id": "b", "text": "Escalader au N2 réseau en précisant que le trajet s'arrête après la passerelle du réseau des quais, avec les tests et la comparaison avec les bureaux" },
+        { "id": "c", "text": "Attribuer une adresse IP fixe au poste dans le réseau des bureaux" },
+        { "id": "d", "text": "Réinstaller le client applicatif sur le poste" }
+      ],
+      "answer": "b"
+    },
+    "explanation": "Le poste et le réseau local fonctionnent (la passerelle répond), et le service fonctionne pour les bureaux : le blocage se situe donc après la passerelle du réseau des quais (routage ou filtrage entre ces réseaux). La bonne action est une escalade précise. Redémarrer un serveur de production qui sert d'autres utilisateurs serait inutile et risqué ; une IP fixe dans un autre réseau créerait un conflit et masquerait la panne ; réinstaller le client ne change rien à un problème de routage.",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "code": "netcmd-exam-2",
+    "lesson": "n1-commandes-reseau",
+    "skill": "diagnostic",
+    "prompt": "Une utilisatrice de Groupe Valmont n'arrive pas à ouvrir intranet.valmont.local. ipconfig est correct, la passerelle répond, et Test-NetConnection 10.20.5.20 -Port 443 renvoie TcpTestSucceeded : True. En revanche, nslookup intranet.valmont.local affiche « Serveur : UnKnown, Address: 192.168.1.1 » et un délai dépassé. Que concluez-vous ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Le serveur intranet est arrêté" },
+        { "id": "b", "text": "Le poste interroge un DNS inattendu (192.168.1.1) au lieu des contrôleurs de domaine : la piste est la configuration DNS du poste" },
+        { "id": "c", "text": "Le port 443 est bloqué par le pare-feu" },
+        { "id": "d", "text": "La carte réseau est défectueuse" }
+      ],
+      "answer": "b"
+    },
+    "explanation": "Le port 443 du serveur répond quand on vise directement son adresse : le serveur et le chemin réseau fonctionnent, ce qui écarte un serveur arrêté, un pare-feu bloquant ou une carte défectueuse. Le seul test en échec est la résolution de noms, et le serveur DNS interrogé (192.168.1.1) ne correspond pas aux DNS du domaine (10.20.1.10 et .11). Cela évoque un DNS saisi manuellement ou un VPN/une box qui impose le sien : c'est à vérifier dans ipconfig /all et à signaler.",
+    "difficulty": 3,
+    "examOnly": true
+  }
+]

@@ -1,0 +1,870 @@
+[
+  {
+    "code": "itw-n1-apipa",
+    "role": "support_n1",
+    "level": "debutant",
+    "kind": "technique",
+    "lang": "fr",
+    "prompt": "Un utilisateur vous appelle : son poste affiche une adresse en 169.254.x.x. Qu'est-ce que cela signifie et que faites-vous ?",
+    "rubric": {
+      "criteria": [
+        { "id": "apipa", "label": "Reconnaître une adresse APIPA", "points": 3, "required": true, "patterns": ["apipa", "autoconfiguration", "auto-configuration", "adresse de secours", "adresse automatique privee", "adresse locale de liaison"] },
+        { "id": "dhcp", "label": "Relier l'APIPA à l'absence de réponse DHCP", "points": 3, "required": true, "patterns": ["dhcp", "serveur d adresses", "pas recu d adresse", "n a pas obtenu d adresse", "aucun serveur n a repondu"] },
+        { "id": "physique", "label": "Vérifier la connexion physique", "points": 2, "patterns": ["cable", "prise", "port", "brassage", "carte reseau", "wi-fi", "wifi", "connexion physique", "voyant*"] },
+        { "id": "comparer", "label": "Comparer avec d'autres postes pour mesurer le périmètre", "points": 2, "patterns": ["voisin", "autre poste", "autres postes", "plusieurs postes", "collegue*", "d autres utilisateurs", "perimetre"] },
+        { "id": "commande", "label": "Utiliser les commandes adaptées", "points": 2, "patterns": ["ipconfig", "renew", "get-netipconfiguration", "desactiver puis reactiver", "redemarrer la carte"] },
+        { "id": "escalade", "label": "Escalader si plusieurs postes sont touchés", "points": 1, "patterns": ["escalad*", "n2", "niveau 2", "equipe reseau", "administrateur reseau"] }
+      ],
+      "redFlags": [
+        { "id": "ip-fixe", "label": "Contourner en saisissant une adresse fixe", "patterns": ["je mets une adresse fixe", "je configure une adresse fixe", "je saisis une adresse fixe", "je mets une ip fixe"], "penalty": 2 },
+        { "id": "reboot-serveur", "label": "Redémarrer soi-même le serveur DHCP", "patterns": ["je redemarre le serveur", "redemarrer le serveur dhcp"], "penalty": 3 }
+      ],
+      "passPercent": 60,
+      "expectStructure": false
+    },
+    "modelAnswer": "Une adresse en 169.254 est une adresse APIPA : la carte est configurée en DHCP, mais aucun serveur DHCP ne lui a répondu, alors Windows s'est attribué une adresse de secours qui ne permet pas de sortir du réseau local. Je vérifie d'abord avec ipconfig /all que le DHCP est bien activé, puis je regarde la connexion physique : câble, prise murale, voyant du port, ou le Wi-Fi si c'est un portable. Ensuite je compare avec un poste voisin : si le voisin obtient une adresse, le problème vient du chemin de ce poste ; si plusieurs postes sont en APIPA, c'est plutôt le serveur DHCP ou l'étendue. Je tente un ipconfig /renew. Si plusieurs postes sont touchés, j'escalade au N2 réseau avec la liste des postes, l'heure de début et mes tests.",
+    "explanation": "Le recruteur vérifie que vous savez lire un symptôme réseau très fréquent et en tirer une démarche ordonnée : comprendre ce qu'indique l'adresse, tester du plus simple au plus large, mesurer le périmètre avant de conclure, et escalader avec des éléments. Saisir une adresse fixe pour « dépanner » masque la cause et peut créer des conflits d'adresses.",
+    "skills": ["network-services", "diagnostic"],
+    "lessonSlugs": ["n1-dhcp", "n1-commandes-reseau"],
+    "estimatedMinutes": 3
+  },
+  {
+    "code": "itw-n1-dns",
+    "role": "support_n1",
+    "level": "debutant",
+    "kind": "technique",
+    "lang": "fr",
+    "prompt": "Expliquez le rôle du DNS, puis dites comment vous diagnostiquez un problème de résolution de noms sur un poste.",
+    "rubric": {
+      "criteria": [
+        { "id": "role", "label": "Rôle : traduire un nom en adresse IP", "points": 3, "required": true, "patterns": ["tradui*", "convertit", "associe un nom", "nom en adresse", "noms en adresses", "annuaire", "resolution de nom*", "resout"] },
+        { "id": "symptome", "label": "Test par l'adresse IP pour isoler le DNS", "points": 2, "patterns": ["par l adresse ip", "par l ip", "par son adresse", "par son nom", "fonctionne par ip", "ip repond", "ping de l adresse"] },
+        { "id": "nslookup", "label": "Outil de test de la résolution", "points": 3, "required": true, "patterns": ["nslookup", "resolve-dnsname"] },
+        { "id": "config", "label": "Vérifier les serveurs DNS configurés", "points": 2, "patterns": ["ipconfig /all", "serveurs dns", "serveur dns configure", "dns du poste", "dns internes", "dns interne", "dns manuel*", "dns public"] },
+        { "id": "cache", "label": "Vider le cache DNS", "points": 1, "patterns": ["flushdns", "cache dns", "vider le cache", "clear-dnsclientcache"] },
+        { "id": "escalade", "label": "Mesurer le périmètre et escalader", "points": 1, "patterns": ["escalad*", "n2", "niveau 2", "plusieurs postes", "tous les postes"] }
+      ],
+      "passPercent": 60,
+      "expectStructure": false
+    },
+    "modelAnswer": "Le DNS, c'est l'annuaire du réseau : il traduit un nom, comme srv-fichiers.valmont.local ou un site web, en adresse IP. Sans lui, il faudrait connaître toutes les adresses par cœur. Quand un utilisateur me dit qu'un site ou un partage ne s'ouvre pas, je teste d'abord par l'adresse IP : si ça fonctionne par l'IP mais pas par son nom, c'est très probablement la résolution de noms. Je vérifie avec ipconfig /all quels serveurs DNS sont configurés sur le poste, par exemple un DNS public saisi à la main à la place des DNS internes. Ensuite j'utilise nslookup sur le nom concerné pour voir quel serveur répond et ce qu'il renvoie, et je vide le cache avec ipconfig /flushdns. Si plusieurs postes sont touchés, j'escalade au N2 avec mes résultats.",
+    "explanation": "La question mesure deux choses : savoir expliquer une notion simplement, et disposer d'une méthode pour isoler le DNS des autres causes. Le test « par l'adresse IP puis par le nom » est la clé qui distingue un problème de connectivité d'un problème de résolution. Citer nslookup sans savoir l'interpréter ne suffit pas : le recruteur relancera souvent sur un cas concret.",
+    "skills": ["network-services", "diagnostic"],
+    "lessonSlugs": ["n1-dns", "n1-commandes-reseau"],
+    "estimatedMinutes": 3
+  },
+  {
+    "code": "itw-n1-ping-nslookup",
+    "role": "support_n1",
+    "level": "debutant",
+    "kind": "technique",
+    "lang": "fr",
+    "prompt": "Quelle différence faites-vous entre ping et nslookup ? Dans quel cas utilisez-vous l'un ou l'autre ?",
+    "rubric": {
+      "criteria": [
+        { "id": "ping", "label": "Ping teste la joignabilité", "points": 3, "required": true, "patterns": ["joignab*", "icmp", "connectivite", "aller-retour", "s il repond", "si elle repond", "si une machine repond", "teste la connexion", "accessible"] },
+        { "id": "nslookup", "label": "Nslookup teste la résolution DNS", "points": 3, "required": true, "patterns": ["resolution", "interroge le serveur dns", "interroge le dns", "nom en adresse", "quelle adresse ip correspond", "traduction du nom"] },
+        { "id": "limite", "label": "Limite du ping (pare-feu)", "points": 2, "patterns": ["pare-feu", "firewall", "bloque l icmp", "ne prouve pas", "peut etre bloque", "ne repond pas forcement"] },
+        { "id": "complementarite", "label": "Usage complémentaire et ordonné", "points": 2, "patterns": ["complementaire*", "d abord", "les deux", "par l adresse ip", "par le nom"] },
+        { "id": "exemple", "label": "Exemple concret", "points": 1, "patterns": ["par exemple", "exemple", "intranet", "partage", "srv-*"] },
+        { "id": "port", "label": "Tester le port du service", "points": 1, "patterns": ["test-netconnection", "port", "telnet"] }
+      ],
+      "passPercent": 60,
+      "expectStructure": false
+    },
+    "modelAnswer": "Ping vérifie si une machine est joignable : il envoie des paquets ICMP et regarde si elle répond et en combien de temps. Nslookup, lui, interroge le serveur DNS pour savoir quelle adresse IP correspond à un nom : il teste la résolution, pas la connexion. Je les utilise de façon complémentaire. Par exemple, si l'intranet ne s'ouvre pas, je fais d'abord un ping par l'adresse IP du serveur : s'il répond, le réseau fonctionne jusqu'à lui. Ensuite je fais un nslookup du nom : s'il échoue ou renvoie une mauvaise adresse, la piste est le DNS. Attention aussi : un ping sans réponse ne prouve pas que la machine est éteinte, car un pare-feu peut bloquer l'ICMP. Dans ce cas, je teste plutôt le port du service avec Test-NetConnection.",
+    "explanation": "Le recruteur cherche à savoir si vous comprenez ce que chaque outil prouve réellement, et pas seulement leur nom. Une réponse solide distingue connectivité et résolution, montre qu'on les combine pour isoler la cause et mentionne la limite du ping face à un pare-feu, source fréquente de fausses conclusions.",
+    "skills": ["network-fundamentals", "network-services", "powershell"],
+    "lessonSlugs": ["n1-commandes-reseau", "n1-dns"],
+    "estimatedMinutes": 2
+  },
+  {
+    "code": "itw-n1-verrouille-expire",
+    "role": "support_n1",
+    "level": "debutant",
+    "kind": "technique",
+    "lang": "fr",
+    "prompt": "Un utilisateur ne peut plus ouvrir sa session. Comment distinguez-vous un compte verrouillé d'un mot de passe expiré, et que faites-vous dans chaque cas ?",
+    "rubric": {
+      "criteria": [
+        { "id": "identite", "label": "Vérifier l'identité avant d'agir", "points": 3, "required": true, "patterns": ["identite", "verifier que c est bien", "verifie que c est bien", "question de securite", "rappel* sur son numero", "je le rappelle", "authentifi*", "validation du manager"] },
+        { "id": "verrouille", "label": "Verrouillage : trop de tentatives échouées", "points": 3, "required": true, "patterns": ["trop de tentatives", "tentatives", "echecs", "mauvais mot de passe", "seuil"] },
+        { "id": "expire", "label": "Expiration : fin de validité du mot de passe", "points": 2, "patterns": ["expir*", "duree de validite", "politique de mot de passe", "90 jours", "date d expiration"] },
+        { "id": "outil", "label": "Consulter le compte dans l'annuaire ou lire le message", "points": 2, "patterns": ["active directory", "utilisateurs et ordinateurs", "dsa.msc", "get-aduser", "lockedout", "message d erreur", "console", "annuaire"] },
+        { "id": "actions", "label": "Action adaptée : déverrouiller ou réinitialiser", "points": 2, "patterns": ["deverrouill*", "reinitialis*", "nouveau mot de passe", "mot de passe temporaire"] },
+        { "id": "cause", "label": "Chercher la source des échecs", "points": 2, "patterns": ["source", "ancien mot de passe", "telephone", "smartphone", "session ouverte", "4740", "appareil", "cause"] }
+      ],
+      "redFlags": [
+        { "id": "donne-mdp", "label": "Communiquer un mot de passe", "patterns": ["je lui donne son mot de passe", "je lui dicte", "je donne le mot de passe", "je lui communique son mot de passe"], "penalty": 3 }
+      ],
+      "passPercent": 60,
+      "expectStructure": false
+    },
+    "modelAnswer": "Je commence par vérifier l'identité de la personne selon la procédure, par exemple en la rappelant sur son numéro interne, avant toute action sur le compte. Ensuite je lis le message d'erreur et je consulte le compte dans la console Active Directory. Un compte verrouillé vient de trop de tentatives avec un mauvais mot de passe : le compte reste bloqué même si le mot de passe saisi est désormais correct. Je le déverrouille, puis je cherche la source des échecs, souvent un téléphone ou une session qui garde l'ancien mot de passe. Un mot de passe expiré est simplement arrivé au bout de sa durée de validité fixée par la politique de mot de passe : l'utilisateur doit en choisir un nouveau, ou je le réinitialise avec un mot de passe temporaire à changer à la connexion.",
+    "explanation": "Cette question évalue la précision du vocabulaire et le réflexe de sécurité. Un candidat qui déverrouille sans vérifier l'identité, ou qui confond les deux cas, risque d'agir à l'aveugle. Chercher la source d'un verrouillage montre qu'on traite la cause et pas seulement le symptôme, ce qui évite un nouvel appel le lendemain.",
+    "skills": ["identity", "security-hygiene", "windows"],
+    "lessonSlugs": ["n1-windows-comptes", "n1-ad-notions"],
+    "estimatedMinutes": 3
+  },
+  {
+    "code": "itw-n1-imprimante-reseau",
+    "role": "support_n1",
+    "level": "debutant",
+    "kind": "technique",
+    "lang": "fr",
+    "prompt": "Une imprimante réseau n'imprime plus pour tout un service. Quelle est votre démarche ?",
+    "rubric": {
+      "criteria": [
+        { "id": "perimetre", "label": "Mesurer le périmètre", "points": 2, "patterns": ["tout le service", "plusieurs postes", "tous les postes", "un seul poste", "perimetre", "qui est touche", "cause commune"] },
+        { "id": "etat", "label": "Vérifier l'état de l'imprimante", "points": 2, "patterns": ["papier", "toner", "bourrage", "ecran", "voyant*", "message d erreur", "allumee", "etat de l imprimante"] },
+        { "id": "reseau", "label": "Tester la connectivité de l'imprimante", "points": 3, "required": true, "patterns": ["ping", "adresse ip", "joignable", "page de configuration", "cable reseau"] },
+        { "id": "file", "label": "Contrôler la file et le serveur d'impression", "points": 3, "required": true, "patterns": ["file d attente", "file d impression", "spouleur", "spooler", "serveur d impression", "documents en attente", "documents bloques", "get-printjob"] },
+        { "id": "changement", "label": "Chercher un changement récent", "points": 1, "patterns": ["changement", "a change", "intervention", "maintenance", "recemment"] },
+        { "id": "suite", "label": "Contournement et escalade", "points": 2, "patterns": ["escalad*", "n2", "contournement", "autre imprimante", "previen*"] }
+      ],
+      "redFlags": [
+        { "id": "reboot-serveur", "label": "Redémarrer un serveur sans en avoir le rôle", "patterns": ["je redemarre le serveur"], "penalty": 2 },
+        { "id": "pilotes-partout", "label": "Réinstaller à l'aveugle sur tous les postes", "patterns": ["je reinstalle le pilote sur tous les postes", "je reinstalle les pilotes partout"], "penalty": 2 }
+      ],
+      "passPercent": 60,
+      "expectStructure": false
+    },
+    "modelAnswer": "Comme tout le service est touché, je pense d'abord à une cause commune : l'imprimante elle-même, son adresse réseau ou le serveur d'impression, plutôt qu'à un poste. Je vérifie le périmètre : qui est touché, depuis quand, et si quelque chose a changé récemment, une intervention de maintenance par exemple. Je regarde l'état de l'imprimante : écran, message d'erreur, papier, bourrage. Puis je teste le réseau : un ping de l'adresse IP de l'imprimante, et l'impression d'une page de configuration pour comparer son adresse avec celle déclarée sur le serveur. Je regarde ensuite la file d'attente sur le serveur d'impression : documents bloqués, port en erreur. En attendant, j'oriente le service vers une autre imprimante, et si le problème est côté serveur, j'escalade au N2 avec mes constats.",
+    "explanation": "Le recruteur observe si vous raisonnez à partir du périmètre : quand tout un service est touché, inutile de commencer par un poste. Il attend une progression logique (imprimante, réseau, file d'impression), la recherche d'un changement récent et le souci de limiter l'impact par un contournement.",
+    "skills": ["printing", "diagnostic", "network-ip"],
+    "lessonSlugs": ["n1-imprimantes", "n1-methode-diagnostic"],
+    "estimatedMinutes": 3
+  },
+  {
+    "code": "itw-n1-poste-lent",
+    "role": "support_n1",
+    "level": "debutant",
+    "kind": "technique",
+    "lang": "fr",
+    "prompt": "Un utilisateur se plaint que son poste est lent. Comment menez-vous le diagnostic ?",
+    "rubric": {
+      "criteria": [
+        { "id": "questions", "label": "Préciser le symptôme avec l'utilisateur", "points": 3, "required": true, "patterns": ["depuis quand", "tout le temps", "au demarrage", "quelle application", "quelles applications", "a change", "precise*", "je lui demande"] },
+        { "id": "ressources", "label": "Observer la consommation des ressources", "points": 3, "required": true, "patterns": ["gestionnaire des taches", "moniteur de ressources", "get-process", "processeur", "cpu", "memoire", "ram"] },
+        { "id": "disque", "label": "Vérifier l'espace disque", "points": 2, "patterns": ["disque", "espace libre", "espace disque", "stockage", "get-volume"] },
+        { "id": "causes", "label": "Causes fréquentes côté logiciel", "points": 2, "patterns": ["mises a jour", "windows update", "antivirus", "programmes au demarrage", "redemarre", "malware", "logiciel malveillant"] },
+        { "id": "autres", "label": "Envisager matériel ou réseau", "points": 1, "patterns": ["materiel", "ssd", "temperature", "surchauffe", "reseau", "vieillissant"] },
+        { "id": "validation", "label": "Valider avec l'utilisateur", "points": 1, "patterns": ["valider", "fais valider", "confirm*", "compare*", "mesur*"] }
+      ],
+      "passPercent": 60,
+      "expectStructure": false
+    },
+    "modelAnswer": "Lent, c'est un ressenti, donc je commence par le préciser avec l'utilisateur : depuis quand, tout le temps ou seulement au démarrage, dans une application précise ou partout, et si quelque chose a changé récemment. Ensuite j'ouvre le Gestionnaire des tâches pour voir ce qui consomme le processeur, la mémoire et le disque, et je vérifie l'espace libre sur le C:, car un disque plein ralentit tout. Je regarde aussi depuis combien de temps le poste n'a pas redémarré, s'il y a des mises à jour en cours ou un antivirus en pleine analyse, et les programmes lancés au démarrage. Si tout est normal localement, je pense au réseau ou au matériel, par exemple un disque vieillissant. Après correction, je fais valider le résultat par l'utilisateur et je compare avec la situation de départ.",
+    "explanation": "« Poste lent » est volontairement flou : le recruteur évalue votre capacité à transformer un ressenti en symptôme mesurable avant d'agir. Une bonne réponse questionne d'abord, observe ensuite avec les outils intégrés, élimine les causes fréquentes dans un ordre logique et se termine par une validation avec l'utilisateur.",
+    "skills": ["diagnostic", "windows"],
+    "lessonSlugs": ["n1-methode-diagnostic", "n1-windows-diagnostic", "n1-windows-disques"],
+    "estimatedMinutes": 3
+  },
+  {
+    "code": "itw-n1-outlook",
+    "role": "support_n1",
+    "level": "debutant",
+    "kind": "technique",
+    "lang": "fr",
+    "prompt": "L'Outlook d'un utilisateur ne reçoit plus d'e-mails. Quelles vérifications faites-vous ?",
+    "rubric": {
+      "criteria": [
+        { "id": "statut", "label": "Lire l'état de connexion d'Outlook", "points": 2, "patterns": ["deconnecte", "hors connexion", "barre d etat", "statut", "en ligne"] },
+        { "id": "webmail", "label": "Comparer avec le webmail ou un autre appareil", "points": 3, "required": true, "patterns": ["webmail", "outlook sur le web", "owa", "navigateur", "outlook web", "autre appareil", "smartphone"] },
+        { "id": "perimetre", "label": "Mesurer le périmètre", "points": 2, "patterns": ["collegues", "autres utilisateurs", "plusieurs", "tout le monde", "panne generale", "etat du service", "perimetre"] },
+        { "id": "boite", "label": "Vérifier la boîte et le compte", "points": 2, "patterns": ["boite pleine", "quota", "licence", "taille de la boite", "regle*", "courrier indesirable", "spam", "filtre*"] },
+        { "id": "poste", "label": "Actions côté poste", "points": 2, "patterns": ["profil", "redemarr*", "mode sans echec", "outlook.exe /safe", "complement*", "repar*"] },
+        { "id": "escalade", "label": "Escalader si nécessaire", "points": 1, "patterns": ["escalad*", "n2", "previen*", "administrateur"] }
+      ],
+      "passPercent": 60,
+      "expectStructure": false
+    },
+    "modelAnswer": "Je commence par vérifier ce que voit l'utilisateur : la barre d'état d'Outlook indique-t-elle « Déconnecté » ou « Travailler hors connexion » ? Ensuite je lui demande de se connecter à Outlook sur le web depuis son navigateur. Si les e-mails y arrivent, le problème est local au poste ; s'ils n'y arrivent pas non plus, il se situe côté boîte aux lettres ou service. Je vérifie aussi le périmètre : des collègues sont-ils touchés ? Si oui, je consulte l'état du service et je préviens mon N2. Côté boîte, je regarde si elle est pleine, si une licence a été retirée, ou si une règle déplace les messages vers un autre dossier ou le courrier indésirable. Côté poste, je redémarre Outlook, je teste le mode sans échec pour écarter un complément, puis je répare ou recrée le profil si nécessaire.",
+    "explanation": "Le recruteur attend surtout le test qui coupe le problème en deux : le webmail. Il permet en une minute de savoir si la cause est sur le poste ou côté messagerie. Une réponse qui liste des manipulations sans cet ordre (réparer, recréer le profil d'emblée) montre une démarche par essais plutôt qu'un diagnostic.",
+    "skills": ["m365", "diagnostic"],
+    "lessonSlugs": ["n1-m365", "n1-methode-diagnostic"],
+    "estimatedMinutes": 3
+  },
+  {
+    "code": "itw-n1-mfa",
+    "role": "support_n1",
+    "level": "debutant",
+    "kind": "technique",
+    "lang": "fr",
+    "prompt": "Un utilisateur a changé de téléphone et ne peut plus valider l'authentification multifacteur (MFA). Comment traitez-vous sa demande ?",
+    "rubric": {
+      "criteria": [
+        { "id": "identite", "label": "Vérifier l'identité de façon fiable", "points": 3, "required": true, "patterns": ["identite", "verifier que c est bien", "verifie que c est bien", "rappel*", "validation par son manager", "procedure de verification", "question de securite", "en personne", "presence physique"] },
+        { "id": "reinit", "label": "Remplacer la méthode d'authentification", "points": 3, "required": true, "patterns": ["reinitialis*", "reenregistr*", "supprime l ancienne", "supprimer l ancienne", "nouvelle methode", "nouveau telephone", "enrol*", "methode d authentification", "methodes d authentification"] },
+        { "id": "outil", "label": "Application ou méthode concernée", "points": 1, "patterns": ["authenticator", "application", "code", "sms"] },
+        { "id": "risque", "label": "Conscience du risque d'usurpation", "points": 2, "patterns": ["sensible", "usurpation", "ingenierie sociale", "pirate", "attaquant", "attaque", "phishing", "hameconnage"] },
+        { "id": "test", "label": "Tester la connexion", "points": 2, "patterns": ["teste*", "tester", "valider", "verifie*", "confirme*"] },
+        { "id": "trace", "label": "Tracer l'intervention", "points": 1, "patterns": ["ticket", "trace*", "document*", "consigne*"] }
+      ],
+      "redFlags": [
+        { "id": "desactive", "label": "Désactiver la MFA", "patterns": ["je desactive la mfa", "desactiver la mfa definitivement", "je supprime la mfa"], "penalty": 3 },
+        { "id": "mon-tel", "label": "Utiliser son propre téléphone", "patterns": ["mon propre telephone", "mon telephone a la place"], "penalty": 3 }
+      ],
+      "passPercent": 60,
+      "expectStructure": false
+    },
+    "modelAnswer": "C'est une demande sensible, parce qu'une réinitialisation de MFA est exactement ce que demanderait un attaquant par ingénierie sociale. Je commence donc par vérifier l'identité de la personne selon la procédure : rappel sur son numéro connu dans l'annuaire, validation par son manager ou présence physique. Une fois l'identité confirmée, je supprime l'ancienne méthode d'authentification liée à son ancien téléphone dans les paramètres de son compte, puis je l'accompagne pour enregistrer le nouveau téléphone dans l'application Authenticator. Je lui fais tester une connexion pour valider que tout fonctionne. Je trace tout dans le ticket : vérification d'identité effectuée, méthode supprimée, nouvelle méthode enregistrée. Si le moindre doute subsiste sur l'identité, je n'agis pas et j'escalade.",
+    "explanation": "Derrière une manipulation simple, le recruteur évalue votre réflexe de sécurité : une réinitialisation MFA accordée à un imposteur lui ouvre le compte. Il cherche une vérification d'identité fiable avant toute action, une procédure claire et la traçabilité. Désactiver la MFA « pour dépanner » est un signal d'alerte fort.",
+    "skills": ["m365", "security-hygiene", "identity"],
+    "lessonSlugs": ["n1-m365", "n1-windows-comptes"],
+    "estimatedMinutes": 3
+  },
+  {
+    "code": "itw-n1-priorisation",
+    "role": "support_n1",
+    "level": "debutant",
+    "kind": "technique",
+    "lang": "fr",
+    "prompt": "Plusieurs tickets arrivent en même temps. Comment les priorisez-vous ?",
+    "rubric": {
+      "criteria": [
+        { "id": "impact", "label": "Évaluer l'impact", "points": 3, "required": true, "patterns": ["impact", "nombre de personnes", "nombre d utilisateurs", "combien de personnes", "combien d utilisateurs", "tout un service"] },
+        { "id": "urgence", "label": "Évaluer l'urgence", "points": 3, "required": true, "patterns": ["urgence", "urgent", "echeance", "bloque*", "bloquant*"] },
+        { "id": "matrice", "label": "Croiser les deux critères", "points": 2, "patterns": ["matrice", "impact x urgence", "croise*", "combin*", "grille", "p1", "priorite 1"] },
+        { "id": "sla", "label": "Respecter les engagements de service", "points": 1, "patterns": ["sla", "contrat de service", "engagement* de service", "niveaux de service"] },
+        { "id": "communication", "label": "Informer les demandeurs", "points": 2, "patterns": ["informe*", "previen*", "delai realiste", "tenir au courant", "sans nouvelles", "communiqu*"] },
+        { "id": "equite", "label": "Ne pas céder à la pression", "points": 1, "patterns": ["vip", "insiste le plus", "crie le plus", "le plus fort", "fonction du demandeur", "regle du service"] },
+        { "id": "majeur", "label": "Reconnaître l'incident majeur", "points": 1, "patterns": ["incident majeur", "escalad*", "responsable", "n2"] }
+      ],
+      "passPercent": 60,
+      "expectStructure": false
+    },
+    "modelAnswer": "Je m'appuie sur la règle du service, en général une matrice qui croise l'impact et l'urgence. L'impact, c'est le nombre de personnes ou l'activité touchée : un utilisateur, un service, toute l'entreprise. L'urgence, c'est le délai avant que ce soit grave : une personne bloquée, une échéance de paie à 15 h, ou au contraire une gêne avec un contournement. Une panne qui touche tout le monde et bloque le travail passe devant tout, et je préviens immédiatement mon responsable ou le N2 si c'est un incident majeur. Je respecte aussi les SLA définis. Ce n'est pas celui qui insiste le plus qui passe en premier, même un VIP, sauf règle prévue par le service. Et je n'oublie pas les autres : j'informe chaque demandeur d'un délai réaliste pour qu'il ne reste pas sans nouvelles.",
+    "explanation": "La priorisation est le cœur du N1. Le recruteur vérifie que vous utilisez des critères objectifs et partagés (impact, urgence, SLA) plutôt que l'ordre d'arrivée ou la pression du demandeur, et que vous n'oubliez pas la communication avec les tickets mis en attente. Les règles exactes varient d'une entreprise à l'autre : montrer qu'on s'adapte à celle du service est un plus.",
+    "skills": ["itsm", "communication"],
+    "lessonSlugs": ["n1-ticket-cycle", "n1-itil"],
+    "estimatedMinutes": 3
+  },
+  {
+    "code": "itw-n1-incident-probleme",
+    "role": "support_n1",
+    "level": "debutant",
+    "kind": "technique",
+    "lang": "fr",
+    "prompt": "Quelle différence faites-vous entre un incident, un problème et une demande de service ?",
+    "rubric": {
+      "criteria": [
+        { "id": "incident", "label": "Incident : interruption à rétablir", "points": 3, "required": true, "patterns": ["interruption", "degradation", "ne fonctionne plus", "panne", "retablir", "remettre en service", "dysfonctionnement"] },
+        { "id": "probleme", "label": "Problème : cause d'incidents, souvent récurrents", "points": 3, "required": true, "patterns": ["cause racine", "cause profonde", "cause sous-jacente", "recurren*", "se repete", "plusieurs incidents", "incidents repetes", "tous les lundis"] },
+        { "id": "demande", "label": "Demande : un besoin, rien n'est cassé", "points": 2, "patterns": ["rien n est casse", "nouveau besoin", "nouvel acces", "installation", "catalogue", "requete", "ce n est pas une panne"] },
+        { "id": "exemple", "label": "Exemples concrets", "points": 2, "patterns": ["par exemple", "exemple", "comme l installation"] },
+        { "id": "role-n1", "label": "Rôle du N1 dans ces processus", "points": 1, "patterns": ["contournement", "lier", "liant", "rattach*", "repere*", "base de connaissance*", "erreur connue"] }
+      ],
+      "passPercent": 60,
+      "expectStructure": false
+    },
+    "modelAnswer": "Un incident, c'est une interruption ou une dégradation d'un service : par exemple, l'imprimante du service ne fonctionne plus. L'objectif est de rétablir le service le plus vite possible, quitte à passer par une solution de contournement. Un problème, c'est la cause racine d'un ou plusieurs incidents : si la même imprimante tombe en panne tous les lundis, on ouvre un problème pour comprendre pourquoi et éviter que ça se reproduise. L'analyse est souvent menée par le N2 ou le N3, mais le N1 joue un rôle clé en repérant les incidents récurrents et en les liant. Enfin, une demande, ce n'est pas une panne : rien n'est cassé, l'utilisateur a un nouveau besoin, comme l'installation d'un logiciel ou un nouvel accès à un dossier. Elle suit souvent un catalogue et une validation.",
+    "explanation": "Cette question vérifie que vous maîtrisez le vocabulaire ITIL que vous utiliserez chaque jour dans l'outil de tickets. Le recruteur apprécie des exemples concrets et la compréhension de l'intérêt de la distinction : rétablir vite pour un incident, supprimer la cause pour un problème, valider et planifier pour une demande.",
+    "skills": ["itsm"],
+    "lessonSlugs": ["n1-itil", "n1-ticket-cycle"],
+    "estimatedMinutes": 2
+  },
+
+  {
+    "code": "itw-n1-vip-presse",
+    "role": "support_n1",
+    "level": "debutant",
+    "kind": "situation",
+    "lang": "fr",
+    "prompt": "Un directeur vous interpelle dans le couloir : il exige que vous répariez son ordinateur tout de suite, alors que vous partez traiter un incident qui bloque un service entier. Que faites-vous ?",
+    "rubric": {
+      "criteria": [
+        { "id": "ecoute", "label": "Écouter et reconnaître sa gêne", "points": 2, "patterns": ["j ecoute", "je l ecoute", "ecoute*", "je comprends", "reconnai*", "calme*", "courtois*"] },
+        { "id": "qualifier", "label": "Qualifier rapidement sa demande", "points": 2, "patterns": ["est-il bloque", "bloque*", "peut travailler", "contournement", "qualifi*", "echeance", "deux questions"] },
+        { "id": "priorite", "label": "Maintenir la priorité selon l'impact", "points": 3, "required": true, "patterns": ["priorit*", "service entier", "tout un service", "incident en cours", "impact", "plusieurs personnes"] },
+        { "id": "engagement", "label": "Proposer un engagement concret", "points": 3, "required": true, "patterns": ["creneau", "je reviens", "je repasse", "dans l heure", "heure precise", "a 11 h", "delai"] },
+        { "id": "ticket", "label": "Tracer la demande", "points": 2, "patterns": ["ticket", "trace*", "enregistr*"] },
+        { "id": "arbitrage", "label": "Faire arbitrer en cas d'urgence réelle", "points": 1, "patterns": ["responsable", "collegue", "manager", "arbitr*"] }
+      ],
+      "redFlags": [
+        { "id": "abandon", "label": "Abandonner l'incident prioritaire", "patterns": ["je laisse tomber l incident", "j abandonne l incident", "je le depanne tout de suite"], "penalty": 3 },
+        { "id": "rejet", "label": "Rejeter la demande", "patterns": ["ce n est pas mon probleme", "pas mon probleme", "il attendra"], "penalty": 3 }
+      ],
+      "passPercent": 60,
+      "expectStructure": true
+    },
+    "modelAnswer": "Dans cette situation, je m'arrête quelques instants : je l'écoute, je reconnais sa gêne et je pose deux questions pour qualifier l'impact : est-il bloqué, a-t-il une échéance ? S'il peut travailler avec un contournement, je lui explique calmement qu'un incident en cours bloque tout un service et que je dois le traiter en priorité, puis je lui propose un créneau précis, par exemple : « je repasse à 11 h ». Je crée ou fais créer le ticket pour que sa demande soit tracée. S'il a une urgence réelle, comme une présentation dans l'heure, j'en parle immédiatement à mon responsable ou à un collègue pour arbitrer. En stage, j'ai vécu un cas proche : au final, le directeur a accepté le créneau parce que je l'avais tenu informé et que je suis revenu à l'heure annoncée.",
+    "explanation": "Le recruteur évalue votre capacité à tenir une priorisation sous pression hiérarchique sans froisser la personne. Il cherche un équilibre : ni céder immédiatement, ni opposer un refus sec, mais qualifier, expliquer, proposer un engagement concret et faire arbitrer quand l'urgence est réelle.",
+    "skills": ["communication", "itsm"],
+    "lessonSlugs": ["n1-communication", "n1-ticket-cycle"],
+    "estimatedMinutes": 3
+  },
+  {
+    "code": "itw-n1-panne-generale",
+    "role": "support_n1",
+    "level": "debutant",
+    "kind": "situation",
+    "lang": "fr",
+    "prompt": "Il est 9 h. En dix minutes, quinze utilisateurs appellent : plus rien ne fonctionne sur le réseau. Comment réagissez-vous ?",
+    "rubric": {
+      "criteria": [
+        { "id": "commun", "label": "Identifier une cause commune", "points": 3, "required": true, "patterns": ["point commun", "cause commune", "panne generale", "incident majeur", "meme symptome", "meme site", "meme etage", "correl*", "regroup*"] },
+        { "id": "alerte", "label": "Alerter immédiatement", "points": 3, "required": true, "patterns": ["alerte*", "previen*", "escalad*", "n2", "equipe reseau", "astreinte"] },
+        { "id": "ticket-maitre", "label": "Regrouper les appels sous un ticket principal", "points": 2, "patterns": ["ticket parent", "ticket maitre", "ticket principal", "un seul ticket", "je lie", "lier", "rattach*"] },
+        { "id": "communication", "label": "Informer les utilisateurs", "points": 3, "required": true, "patterns": ["message general", "message d information", "annonce", "repondeur", "informer les utilisateurs", "mail d information", "messagerie vocale", "bandeau"] },
+        { "id": "infos", "label": "Noter les informations clés", "points": 1, "patterns": ["l heure", "heure de debut", "depuis quand", "perimetre", "quels sites"] },
+        { "id": "prudence", "label": "Ne pas intervenir hors de son rôle", "points": 1, "patterns": ["je ne touche pas", "sans toucher", "je ne redemarre pas", "je n interviens pas", "ne modifie rien"] }
+      ],
+      "redFlags": [
+        { "id": "reboot", "label": "Redémarrer des équipements soi-même", "patterns": ["je redemarre le switch", "je redemarre le serveur", "je redemarre les equipements", "je redemarre le routeur"], "penalty": 3 }
+      ],
+      "passPercent": 60,
+      "expectStructure": true
+    },
+    "modelAnswer": "Dans cette situation, quinze appels au même moment avec le même symptôme, ce n'est pas quinze pannes : c'est très probablement une panne générale. Je cherche rapidement le point commun : même site, même étage, même application ? Je note l'heure de début et le périmètre, puis j'alerte immédiatement le N2 et mon responsable, parce qu'il s'agit sans doute d'un incident majeur. J'ouvre un ticket principal et je lie les appels suivants à ce ticket, pour ne pas perdre de temps à tout ressaisir. Ensuite je communique : un message d'information aux utilisateurs ou sur le répondeur, pour dire que le problème est connu et pris en charge. Je ne touche pas aux équipements réseau moi-même. Lors de mon stage, j'ai vécu une coupure de ce type : le message d'information a réduit fortement les appels, ce qui a permis à l'équipe réseau de travailler plus sereinement.",
+    "explanation": "Le recruteur veut voir si vous passez du traitement ticket par ticket à une vision d'ensemble : reconnaître un incident majeur, alerter vite, regrouper les appels et communiquer pour faire baisser la pression. Se lancer seul dans des redémarrages d'équipements est le principal signal d'alerte.",
+    "skills": ["itsm", "communication", "diagnostic"],
+    "lessonSlugs": ["n1-itil", "n1-ticket-cycle", "n1-communication"],
+    "estimatedMinutes": 3
+  },
+  {
+    "code": "itw-n1-faux-directeur",
+    "role": "support_n1",
+    "level": "debutant",
+    "kind": "situation",
+    "lang": "fr",
+    "prompt": "Un homme appelle, se présente comme le directeur financier, dit être en rendez-vous à l'extérieur et exige que vous lui donniez son mot de passe ou que vous le réinitialisiez immédiatement par téléphone. Que faites-vous ?",
+    "rubric": {
+      "criteria": [
+        { "id": "refus", "label": "Ne jamais communiquer de mot de passe", "points": 3, "required": true, "patterns": ["jamais", "ne communique pas", "ne donne pas", "personne ne connait", "ne connait les mots de passe", "je refuse", "refus*"] },
+        { "id": "identite", "label": "Vérifier l'identité par un canal fiable", "points": 3, "required": true, "patterns": ["identite", "rappel*", "numero connu", "numero de l annuaire", "procedure", "verification"] },
+        { "id": "ingenierie", "label": "Reconnaître l'ingénierie sociale", "points": 2, "patterns": ["ingenierie sociale", "usurpation", "arnaque", "fraude", "pirate", "attaque", "hameconnage", "phishing"] },
+        { "id": "calme", "label": "Rester courtois", "points": 1, "patterns": ["courtois*", "poli*", "calme*", "j explique"] },
+        { "id": "signalement", "label": "Tracer et signaler", "points": 2, "patterns": ["signal*", "securite", "rssi", "ticket", "trace*"] },
+        { "id": "pression", "label": "Ne pas céder à la pression ou au statut", "points": 1, "patterns": ["pression", "urgence", "insiste", "meme s il", "s applique a tout le monde", "quel que soit"] }
+      ],
+      "redFlags": [
+        { "id": "donne", "label": "Donner ou réinitialiser sans vérification", "patterns": ["je donne le mot de passe", "je lui donne son mot de passe", "je lui communique son mot de passe", "je le reinitialise tout de suite", "je reinitialise tout de suite"], "penalty": 4 }
+      ],
+      "passPercent": 60,
+      "expectStructure": true
+    },
+    "modelAnswer": "Dans cette situation, je reste courtois, mais je ne communique jamais un mot de passe par téléphone : d'ailleurs, personne au support ne connaît les mots de passe des utilisateurs. La pression et l'urgence sont des signaux classiques d'ingénierie sociale, même si l'appelant se présente comme directeur. J'explique calmement que la procédure s'applique à tout le monde et je vérifie son identité : je le rappelle sur son numéro connu dans l'annuaire, ou je passe par son assistante ou son manager selon la procédure. Si l'identité est confirmée, je réinitialise avec un mot de passe temporaire transmis par le canal prévu. Si le doute persiste, je refuse, je trace l'appel dans un ticket et je le signale à la sécurité. En stage, j'ai appliqué cette procédure avec un vrai responsable : au final, il a remercié le service pour sa rigueur.",
+    "explanation": "C'est un test de sécurité déguisé en question de relation client. Le recruteur vérifie que l'urgence et le statut hiérarchique ne vous font pas contourner la procédure, que vous savez vérifier une identité par un canal indépendant de l'appel et que vous signalez la tentative. La courtoisie reste attendue : un vrai directeur peut aussi appeler.",
+    "skills": ["security-hygiene", "identity", "communication"],
+    "lessonSlugs": ["n1-windows-comptes", "n1-communication"],
+    "estimatedMinutes": 3
+  },
+  {
+    "code": "itw-n1-erreur-commise",
+    "role": "support_n1",
+    "level": "debutant",
+    "kind": "situation",
+    "lang": "fr",
+    "prompt": "Racontez une erreur que vous avez commise en stage, en formation ou dans un emploi précédent, et ce que vous en avez fait.",
+    "rubric": {
+      "criteria": [
+        { "id": "reconnaissance", "label": "Reconnaître clairement l'erreur", "points": 3, "required": true, "patterns": ["j ai fait une erreur", "mon erreur", "je me suis trompe", "je me suis trompee", "j ai commis", "j ai oublie", "par erreur", "j ai cloture", "j ai supprime"] },
+        { "id": "signalement", "label": "La signaler rapidement", "points": 3, "required": true, "patterns": ["j ai prevenu", "previen*", "signale*", "j en ai parle", "transparen*", "averti*", "informe*"] },
+        { "id": "correction", "label": "La corriger", "points": 2, "patterns": ["corrig*", "repar*", "restaur*", "rattrap*", "rouvert", "remis en place"] },
+        { "id": "lecon", "label": "En tirer une leçon durable", "points": 2, "patterns": ["appris", "lecon", "retenu", "desormais", "checklist", "depuis"] },
+        { "id": "impact", "label": "Mesurer ou limiter l'impact", "points": 1, "patterns": ["impact", "consequence*", "limite*", "rappeler le lendemain"] }
+      ],
+      "redFlags": [
+        { "id": "jamais", "label": "Nier toute erreur", "patterns": ["je n ai jamais fait d erreur", "jamais commis d erreur", "je ne fais pas d erreur"], "penalty": 3 },
+        { "id": "rejet", "label": "Rejeter la faute", "patterns": ["pas de ma faute", "c etait la faute", "la faute de mon collegue"], "penalty": 3 }
+      ],
+      "passPercent": 60,
+      "expectStructure": true
+    },
+    "modelAnswer": "Lors de mon stage dans un centre de services, j'ai clôturé un ticket de remplacement de clavier sans avoir vérifié avec l'utilisatrice que le nouveau fonctionnait : il manquait un réglage pour le pavé numérique, et elle a dû rappeler le lendemain. J'ai reconnu mon erreur tout de suite : j'ai prévenu mon tuteur, j'ai rouvert le ticket, je me suis excusé auprès de l'utilisatrice et j'ai corrigé le problème dans la matinée. L'impact est resté limité, mais j'en ai retenu une règle simple : je ne clôture plus un ticket sans confirmation de l'utilisateur. Depuis, j'applique une petite checklist de clôture, et mon tuteur l'a même proposée au reste de l'équipe. Pour moi, une erreur signalée vite coûte beaucoup moins cher qu'une erreur cachée.",
+    "explanation": "Le recruteur ne cherche pas un candidat sans erreur, mais quelqu'un qui les signale vite, les corrige et en tire une règle. Au support, une erreur cachée (une suppression, un mauvais droit accordé) peut avoir des conséquences bien plus graves qu'une erreur avouée. Choisissez un exemple réel, de portée modérée, et terminez par ce qui a changé dans votre pratique.",
+    "skills": ["communication", "itsm"],
+    "lessonSlugs": ["n1-ticket-cycle", "n1-communication"],
+    "estimatedMinutes": 3
+  },
+  {
+    "code": "itw-n1-ticket-inconnu",
+    "role": "support_n1",
+    "level": "debutant",
+    "kind": "situation",
+    "lang": "fr",
+    "prompt": "Vous recevez un ticket que vous ne savez pas résoudre. Comment procédez-vous ?",
+    "rubric": {
+      "criteria": [
+        { "id": "recherche", "label": "Chercher dans les ressources existantes", "points": 3, "required": true, "patterns": ["base de connaissance*", "documentation", "procedure*", "tickets similaires", "historique", "wiki", "notice"] },
+        { "id": "infos", "label": "Collecter les informations", "points": 2, "patterns": ["message d erreur", "capture*", "symptome*", "reproduire", "collecte*", "questions", "informations"] },
+        { "id": "temps", "label": "Se fixer une limite de temps", "points": 1, "patterns": ["limite de temps", "delai", "sla", "trop longtemps", "ne pas bloquer"] },
+        { "id": "aide", "label": "Demander de l'aide ou escalader", "points": 3, "required": true, "patterns": ["collegue*", "escalad*", "n2", "niveau 2", "referent", "tuteur", "demander de l aide"] },
+        { "id": "escalade-propre", "label": "Transmettre un ticket complet", "points": 2, "patterns": ["ce que j ai teste", "ce que j ai deja teste", "tests effectues", "ticket complet", "mes notes", "resultats"] },
+        { "id": "utilisateur", "label": "Informer l'utilisateur", "points": 1, "patterns": ["j informe l utilisateur", "informe*", "previen*", "tenir au courant"] },
+        { "id": "apprendre", "label": "Capitaliser la solution", "points": 1, "patterns": ["article", "appris", "apprendre", "comprendre la solution", "prochaine fois"] }
+      ],
+      "redFlags": [
+        { "id": "hasard", "label": "Tester au hasard ou se désengager", "patterns": ["je tente au hasard", "j essaie au hasard", "ce n est pas mon probleme", "j invente"], "penalty": 2 }
+      ],
+      "passPercent": 60,
+      "expectStructure": true
+    },
+    "modelAnswer": "Dans cette situation, je commence par bien collecter les informations : le symptôme exact, le message d'erreur, une capture d'écran, depuis quand, et si je peux reproduire le problème. Ensuite je cherche dans la base de connaissances, la documentation et l'historique des tickets similaires : souvent, quelqu'un a déjà rencontré le cas. Je me fixe une limite de temps pour ne pas bloquer l'utilisateur ni dépasser le SLA. Si je n'ai pas trouvé, je demande à un collègue ou j'escalade au N2, avec un ticket complet : ce que j'ai déjà testé, les résultats et l'impact. J'informe l'utilisateur de la suite. En stage, j'ai procédé ainsi pour un problème de certificat : au final, le N2 l'a résolu rapidement grâce à mes notes, et j'ai rédigé l'article de base de connaissances pour la prochaine fois.",
+    "explanation": "Personne ne connaît tout : le recruteur évalue votre autonomie (chercher avant de demander), votre lucidité (ne pas bloquer un utilisateur des heures par fierté) et la qualité de votre escalade. Un ticket escaladé avec les tests déjà faits fait gagner du temps à tout le monde, et rédiger ensuite la solution montre que vous apprenez de chaque cas.",
+    "skills": ["itsm", "itsm-tools", "documentation"],
+    "lessonSlugs": ["n1-metier-niveaux", "n1-glpi", "n1-ticket-cycle"],
+    "estimatedMinutes": 3
+  },
+  {
+    "code": "itw-n1-conflit-priorites",
+    "role": "support_n1",
+    "level": "intermediaire",
+    "kind": "situation",
+    "lang": "fr",
+    "prompt": "Votre responsable vous a confié la préparation de dix postes pour des arrivées lundi. Dans la même matinée, deux managers vous sollicitent chacun pour une « urgence ». Comment gérez-vous ces priorités ?",
+    "rubric": {
+      "criteria": [
+        { "id": "evaluer", "label": "Qualifier les urgences", "points": 3, "required": true, "patterns": ["impact", "urgence", "bloque*", "qualifi*", "echeance", "evalu*"] },
+        { "id": "arbitrage", "label": "Faire arbitrer par le responsable", "points": 3, "required": true, "patterns": ["responsable", "arbitr*", "mon chef", "superieur", "manager du support"] },
+        { "id": "communication", "label": "Informer chaque demandeur", "points": 2, "patterns": ["informe*", "previen*", "delai", "transparen*", "tenir au courant", "explique*"] },
+        { "id": "ticket", "label": "Tracer les demandes", "points": 1, "patterns": ["ticket*", "trace*"] },
+        { "id": "planifier", "label": "Planifier son temps", "points": 2, "patterns": ["planifi*", "organis*", "par etapes", "creneau*", "en parallele", "reste du temps"] },
+        { "id": "engagement", "label": "Tenir l'engagement initial", "points": 1, "patterns": ["lundi", "preparation des postes", "echeance du lundi", "arrivees"] }
+      ],
+      "redFlags": [
+        { "id": "premier-arrive", "label": "Traiter selon l'ordre d'arrivée ou la pression", "patterns": ["celui qui crie le plus", "le premier arrive", "je fais tout en meme temps"], "penalty": 2 }
+      ],
+      "passPercent": 60,
+      "expectStructure": true
+    },
+    "modelAnswer": "Dans cette situation, je commence par qualifier les deux urgences : combien de personnes sont touchées, sont-elles bloquées, y a-t-il une échéance ? Une vraie urgence avec un impact fort passe devant la préparation des postes, qui reste importante mais dont l'échéance est lundi. Si les deux urgences se valent ou si elles menacent la préparation, je ne décide pas seul : j'en parle à mon responsable pour qu'il arbitre, puisque c'est lui qui m'a confié les postes. Je m'assure que chaque demande a son ticket, j'informe chaque manager du délai prévu, puis je planifie : je traite l'urgence la plus impactante et j'organise la préparation des postes par étapes sur le reste du temps. En stage, j'ai vécu un cas proche : j'ai prévenu mon responsable, il a décalé une demande, ce qui a permis de tenir l'échéance du lundi.",
+    "explanation": "Le recruteur évalue votre capacité à gérer des demandes concurrentes sans vous épuiser ni décevoir tout le monde : qualifier objectivement, faire arbitrer quand ce n'est pas à vous de trancher, communiquer les délais et organiser votre travail. Dire « je fais tout » n'est pas crédible ; savoir remonter un conflit de priorités est une compétence professionnelle.",
+    "skills": ["itsm", "communication"],
+    "lessonSlugs": ["n1-ticket-cycle", "n1-metier-niveaux"],
+    "estimatedMinutes": 3
+  },
+  {
+    "code": "itw-n1-utilisateur-agressif",
+    "role": "support_n1",
+    "level": "debutant",
+    "kind": "situation",
+    "lang": "fr",
+    "prompt": "Un utilisateur vous insulte au téléphone parce que son problème n'est toujours pas réglé. Comment réagissez-vous ?",
+    "rubric": {
+      "criteria": [
+        { "id": "calme", "label": "Garder son calme", "points": 3, "required": true, "patterns": ["calme*", "pas sur le meme ton", "pas personnellement", "sang-froid", "serein*", "je ne m emporte pas"] },
+        { "id": "ecoute", "label": "Écouter et reconnaître l'émotion", "points": 3, "required": true, "patterns": ["j ecoute", "ecoute*", "je comprends", "frustration", "colere", "agacement", "s exprimer"] },
+        { "id": "reformulation", "label": "Reformuler", "points": 2, "patterns": ["reformul*", "si je comprends bien", "resum*"] },
+        { "id": "limite", "label": "Poser une limite respectueuse", "points": 2, "patterns": ["limite*", "insultes", "respect", "ce ton", "sur ce ton", "fermement", "recadr*"] },
+        { "id": "solution", "label": "Proposer une action concrète", "points": 2, "patterns": ["action concrete", "solution", "engag*", "prochaine etape", "delai"] },
+        { "id": "suivi", "label": "Tracer et informer le responsable", "points": 1, "patterns": ["responsable", "manager", "ticket", "trace*", "je le note"] }
+      ],
+      "redFlags": [
+        { "id": "escalade-ton", "label": "Répondre sur le même registre", "patterns": ["je hausse le ton", "je l insulte", "je crie", "je lui raccroche au nez", "je raccroche directement"], "penalty": 3 }
+      ],
+      "passPercent": 60,
+      "expectStructure": true
+    },
+    "modelAnswer": "Dans cette situation, je garde mon calme et je ne le prends pas personnellement : c'est le problème qui l'énerve, pas moi. Je le laisse s'exprimer quelques instants, j'écoute, puis je reconnais sa frustration : « Je comprends que ce soit très pénible, c'est la deuxième fois que vous appelez. » Je reformule son problème pour lui montrer que je l'ai compris et je propose une action concrète avec un délai. Si les insultes continuent, je pose une limite fermement mais poliment : je suis là pour l'aider, mais je ne peux pas poursuivre l'échange sur ce ton. Si cela ne suffit pas, je mets fin à l'appel en proposant de le rappeler, je le note dans le ticket et j'en informe mon responsable. En stage, j'ai appliqué cette méthode : au final, l'utilisateur s'est calmé et s'est même excusé à la fin de l'appel.",
+    "explanation": "Le recruteur vérifie votre stabilité émotionnelle et votre méthode de désescalade : écoute, reconnaissance, reformulation, action concrète. Il attend aussi que vous sachiez poser une limite respectueuse : accepter les insultes sans réagir n'est pas exigé, et votre responsable doit être informé d'un comportement inacceptable.",
+    "skills": ["communication"],
+    "lessonSlugs": ["n1-communication"],
+    "estimatedMinutes": 3
+  },
+  {
+    "code": "itw-n1-hors-perimetre",
+    "role": "support_n1",
+    "level": "debutant",
+    "kind": "situation",
+    "lang": "fr",
+    "prompt": "Un utilisateur vous demande d'installer sur son poste professionnel un logiciel personnel non validé, et en profite pour vous demander de regarder son ordinateur personnel. Que répondez-vous ?",
+    "rubric": {
+      "criteria": [
+        { "id": "refus", "label": "Refuser clairement", "points": 3, "required": true, "patterns": ["je ne peux pas", "pas autorise*", "hors perimetre", "hors du perimetre", "hors de mon perimetre", "ne fait pas partie", "je refuse", "refuse*"] },
+        { "id": "raison", "label": "Expliquer la raison", "points": 2, "patterns": ["securite", "licence*", "politique", "charte", "regles", "risque*"] },
+        { "id": "alternative", "label": "Orienter vers la bonne voie", "points": 3, "required": true, "patterns": ["alternative", "demande de logiciel", "catalogue", "validation", "faire une demande", "equivalent", "solution validee", "oriente*"] },
+        { "id": "courtoisie", "label": "Rester courtois et sans jugement", "points": 2, "patterns": ["courtois*", "poli*", "sans le juger", "comprends", "pedagog*", "bienveillan*"] },
+        { "id": "trace", "label": "Tracer la demande", "points": 1, "patterns": ["ticket", "trace*"] }
+      ],
+      "redFlags": [
+        { "id": "cede", "label": "Céder ou contourner la sécurité", "patterns": ["je l installe quand meme", "pour cette fois", "je desactive l antivirus", "je lui donne les droits administrateur", "je lui donne les droits d administrateur"], "penalty": 3 }
+      ],
+      "passPercent": 60,
+      "expectStructure": true
+    },
+    "modelAnswer": "Dans cette situation, je reste courtois et j'explique clairement que je ne peux pas le faire, sans le juger. Pour le logiciel, l'installation d'un programme non validé sur un poste professionnel n'est pas autorisée par la charte : il y a des risques de sécurité et de licence. Je l'oriente donc vers la bonne voie : faire une demande de logiciel via le catalogue de services, validée par son manager, ou utiliser un équivalent déjà validé s'il existe. Pour son ordinateur personnel, c'est hors du périmètre du support : je ne peux pas intervenir dessus, mais je peux lui conseiller de s'adresser à un professionnel. Je trace la demande dans un ticket. En stage, un utilisateur m'a fait cette demande : j'ai proposé un logiciel équivalent déjà validé, ce qui a permis de répondre à son besoin le jour même.",
+    "explanation": "Le recruteur évalue votre capacité à dire non sans dégrader la relation : refus clair, raison compréhensible, solution alternative. Céder « pour cette fois » crée un précédent et un risque de sécurité ; refuser sèchement sans proposer de voie officielle laisse l'utilisateur sans solution et l'incite à contourner les règles.",
+    "skills": ["communication", "security-hygiene", "itsm"],
+    "lessonSlugs": ["n1-communication", "n1-metier-niveaux"],
+    "estimatedMinutes": 2
+  },
+
+  {
+    "code": "itw-n1-presentation",
+    "role": "support_n1",
+    "level": "debutant",
+    "kind": "rh",
+    "lang": "fr",
+    "prompt": "Présentez-vous en deux minutes.",
+    "rubric": {
+      "criteria": [
+        { "id": "parcours", "label": "Parcours en quelques étapes", "points": 3, "required": true, "patterns": ["formation", "parcours", "experience", "j ai travaille", "diplome", "stage", "titre professionnel"] },
+        { "id": "competences", "label": "Compétences techniques en lien avec le poste", "points": 2, "patterns": ["active directory", "microsoft 365", "windows", "reseau", "diagnostic", "tickets", "glpi", "niveau 1"] },
+        { "id": "qualites", "label": "Qualités relationnelles ou de méthode", "points": 2, "patterns": ["ecoute*", "patien*", "rigueur", "rigoureux", "rigoureuse", "pedagog*", "curiosite", "curieux", "curieuse", "calme", "organise*"] },
+        { "id": "exemple", "label": "Un exemple concret", "points": 2, "patterns": ["par exemple", "j ai resolu", "j ai mis en place", "j ai gere", "j ai traite", "j ai accompagne"] },
+        { "id": "lien", "label": "Lien avec le poste et l'entreprise", "points": 3, "required": true, "patterns": ["votre entreprise", "chez vous", "ce poste", "votre equipe", "votre offre", "votre centre de services", "rejoindre", "votre service"] }
+      ],
+      "passPercent": 60,
+      "expectStructure": false
+    },
+    "modelAnswer": "Je m'appelle Camille, j'ai 27 ans. J'ai d'abord travaillé quatre ans dans la vente, où j'ai appris à écouter les clients et à garder mon calme dans les moments de rush. Il y a un an, j'ai décidé de me reconvertir dans l'informatique et j'ai suivi une formation de technicienne support, avec un stage de deux mois dans le centre de services d'une PME. J'y ai traité des tickets de niveau 1 : comptes Active Directory, Microsoft 365, imprimantes et diagnostic réseau de base. Par exemple, j'ai résolu une panne récurrente d'imprimante en identifiant un conflit d'adresse IP. On me décrit comme rigoureuse et pédagogue. Aujourd'hui, je souhaite rejoindre votre équipe parce que votre offre met en avant la relation utilisateur et la montée en compétences, deux choses qui me motivent vraiment dans ce poste.",
+    "explanation": "La présentation donne le ton de l'entretien. Le recruteur écoute la cohérence du parcours, la capacité à synthétiser, la présence d'un exemple concret et le lien avec le poste visé. Il n'attend pas une récitation du CV : quelques étapes clés, des compétences illustrées et une raison claire de candidater suffisent.",
+    "skills": ["communication"],
+    "lessonSlugs": ["n1-metier-niveaux"],
+    "estimatedMinutes": 3
+  },
+  {
+    "code": "itw-n1-motivation",
+    "role": "support_n1",
+    "level": "debutant",
+    "kind": "rh",
+    "lang": "fr",
+    "prompt": "Pourquoi voulez-vous travailler dans le support informatique ?",
+    "rubric": {
+      "criteria": [
+        { "id": "aider", "label": "Envie d'aider et d'être utile", "points": 3, "required": true, "patterns": ["aider", "rendre service", "utile", "debloquer", "accompagner", "satisfaction"] },
+        { "id": "resoudre", "label": "Goût du diagnostic", "points": 2, "patterns": ["resoudre", "resolution", "enquete", "diagnostic", "comprendre pourquoi", "chercher la cause"] },
+        { "id": "apprendre", "label": "Envie d'apprendre et d'évoluer", "points": 2, "patterns": ["apprendre", "on apprend", "progresser", "monter en competence*", "evoluer", "evolution", "curiosite"] },
+        { "id": "concret", "label": "Un exemple vécu", "points": 2, "patterns": ["par exemple", "en stage", "lors de", "quand j ai"] },
+        { "id": "lien", "label": "Lien avec l'entreprise", "points": 2, "patterns": ["votre entreprise", "chez vous", "votre equipe", "votre centre de services", "ce poste", "vos utilisateurs"] },
+        { "id": "realisme", "label": "Vision réaliste du métier", "points": 1, "patterns": ["exigeant", "pression", "rythme", "repetitif", "pas toujours facile", "parfois difficile"] }
+      ],
+      "redFlags": [
+        { "id": "defaut", "label": "Motivation par défaut", "patterns": ["en attendant mieux", "faute de mieux", "juste pour le salaire", "n importe quel poste"], "penalty": 2 }
+      ],
+      "passPercent": 60,
+      "expectStructure": false
+    },
+    "modelAnswer": "Ce qui me motive d'abord, c'est d'être utile concrètement : débloquer quelqu'un qui ne peut plus travailler, c'est un résultat immédiat. J'aime aussi le côté enquête du diagnostic : comprendre pourquoi un poste n'obtient pas d'adresse IP ou pourquoi un compte se verrouille, en avançant étape par étape. Par exemple, en stage, j'ai aidé une comptable dont le poste ralentissait depuis des semaines : c'était un disque saturé, et sa satisfaction à la fin m'a confirmé que j'étais à ma place. Je sais que le support est exigeant, avec du rythme et parfois des utilisateurs sous pression, mais c'est aussi un métier où l'on apprend en permanence et qui permet d'évoluer vers le N2 ou l'administration. Votre centre de services, avec des utilisateurs sur plusieurs sites, me permettrait de progresser vite.",
+    "explanation": "Le recruteur cherche une motivation authentique et durable : le service rendu, le plaisir de comprendre une panne, l'envie d'apprendre. Un exemple vécu rend la réponse crédible, et montrer que vous connaissez aussi les contraintes du métier rassure sur votre stabilité dans le poste.",
+    "skills": ["communication"],
+    "lessonSlugs": ["n1-metier-niveaux"],
+    "estimatedMinutes": 2
+  },
+  {
+    "code": "itw-n1-reconversion",
+    "role": "support_n1",
+    "level": "debutant",
+    "kind": "rh",
+    "lang": "fr",
+    "prompt": "Vous venez d'un autre métier. Pourquoi cette reconversion, et qu'apportez-vous de votre expérience précédente ?",
+    "rubric": {
+      "criteria": [
+        { "id": "raison", "label": "Raison claire de la reconversion", "points": 3, "required": true, "patterns": ["j ai decide", "decid*", "envie", "attir*", "motiv*", "declic", "ce que je preferais"] },
+        { "id": "transferable", "label": "Compétences transférables", "points": 3, "required": true, "patterns": ["relation client", "relationnel", "ecoute", "gestion du stress", "calme", "organisation", "rigueur", "pedagogie", "sens du service", "service client"] },
+        { "id": "formation", "label": "Démarche de formation concrète", "points": 2, "patterns": ["formation", "certification", "titre professionnel", "stage", "labs", "lab", "autodidacte"] },
+        { "id": "concret", "label": "Illustration concrète", "points": 2, "patterns": ["par exemple", "chaque jour", "au quotidien", "dans mon ancien", "dans mon precedent"] },
+        { "id": "projet", "label": "Projet réfléchi et durable", "points": 2, "patterns": ["projet", "long terme", "evoluer", "progresser", "reflechi*", "durable"] }
+      ],
+      "redFlags": [
+        { "id": "defaut", "label": "Reconversion subie ou sans projet", "patterns": ["je n avais pas d autre choix", "n importe quel poste", "juste pour le salaire"], "penalty": 2 }
+      ],
+      "passPercent": 60,
+      "expectStructure": true
+    },
+    "modelAnswer": "Pendant six ans, j'ai été conseiller en agence bancaire. À l'époque, je me suis rendu compte que ce que je préférais, c'était aider les clients avec les outils numériques, et souvent mes collègues avec leurs postes. Le déclic a été de voir le travail du technicien qui venait sur site : j'ai décidé d'en faire mon métier et j'ai suivi une formation de technicien support, avec un stage et des labs à la maison. De mon ancien métier, j'apporte le sens du service, l'écoute et la gestion du stress : par exemple, j'ai géré chaque jour des clients mécontents en gardant mon calme et en cherchant une solution concrète. Ce n'est pas un changement improvisé, c'est un projet réfléchi, et j'ai appris que ces compétences relationnelles comptent autant que la technique au support. À long terme, je veux évoluer vers le N2.",
+    "explanation": "Le recruteur veut s'assurer que la reconversion est choisie et préparée, et comprendre ce que votre premier métier apporte réellement au support. La relation client, la gestion du stress ou l'organisation sont des atouts précieux pour un N1 : à vous de les relier à des situations concrètes plutôt que de vous excuser de votre parcours.",
+    "skills": ["communication"],
+    "lessonSlugs": ["n1-metier-niveaux", "n1-communication"],
+    "estimatedMinutes": 3
+  },
+  {
+    "code": "itw-n1-equipe",
+    "role": "support_n1",
+    "level": "debutant",
+    "kind": "rh",
+    "lang": "fr",
+    "prompt": "Parlez-moi d'une expérience de travail en équipe dont vous êtes satisfait.",
+    "rubric": {
+      "criteria": [
+        { "id": "contexte", "label": "Contexte et objectif de l'équipe", "points": 2, "patterns": ["en equipe", "equipe de", "collegues", "groupe", "binome", "projet"] },
+        { "id": "role", "label": "Son rôle précis", "points": 3, "required": true, "patterns": ["mon role", "j etais charge", "je m occupais", "j ai pris en charge", "ma mission", "je me suis charge", "je me suis chargee"] },
+        { "id": "cooperation", "label": "Communication et entraide", "points": 3, "required": true, "patterns": ["entraide", "j ai aide", "aide*", "partag*", "communication", "point de", "reunion", "echang*", "coordin*"] },
+        { "id": "difficulte", "label": "Difficulté rencontrée", "points": 2, "patterns": ["difficulte", "desaccord", "conflit", "tension", "retard", "obstacle"] },
+        { "id": "resultat", "label": "Résultat obtenu", "points": 2, "patterns": ["resultat", "au final", "finalement", "ce qui a permis", "reussi", "livre*", "a temps"] },
+        { "id": "lecon", "label": "Ce qu'il en retient", "points": 1, "patterns": ["appris", "retenu", "lecon", "depuis"] }
+      ],
+      "redFlags": [
+        { "id": "seul", "label": "S'attribuer tout le mérite ou dénigrer", "patterns": ["j ai tout fait seul", "j ai tout fait seule", "les autres ne faisaient rien", "mes collegues etaient nuls"], "penalty": 2 }
+      ],
+      "passPercent": 60,
+      "expectStructure": true
+    },
+    "modelAnswer": "Lors de ma formation, nous devions, en équipe de quatre, migrer les vingt postes d'une salle vers Windows 11 en deux jours. Mon rôle était de préparer l'image et de tenir la checklist de validation de chaque poste. Le premier jour, nous avons pris du retard parce que deux d'entre nous faisaient les mêmes tests sans le savoir. J'ai proposé un point de dix minutes toutes les deux heures et un tableau partagé pour savoir qui faisait quoi. J'ai aussi aidé un collègue bloqué sur un problème de pilote réseau. Au final, les vingt postes ont été livrés à temps et validés. J'en ai retenu qu'au support, la communication dans l'équipe compte autant que la technique : depuis, je note systématiquement ce que je fais pour que les autres puissent reprendre.",
+    "explanation": "Un centre de services fonctionne en équipe : tickets repris par un collègue, relais entre N1 et N2, astreintes partagées. Le recruteur cherche un rôle personnel clair, une contribution concrète à la coordination, une difficulté surmontée et un résultat. La structure situation, action, résultat aide à rester factuel et bref.",
+    "skills": ["communication", "documentation"],
+    "lessonSlugs": ["n1-metier-niveaux", "n1-communication"],
+    "estimatedMinutes": 3
+  },
+  {
+    "code": "itw-n1-apprendre-techno",
+    "role": "support_n1",
+    "level": "debutant",
+    "kind": "rh",
+    "lang": "fr",
+    "prompt": "Comment apprenez-vous une nouvelle technologie ? Donnez un exemple récent.",
+    "rubric": {
+      "criteria": [
+        { "id": "theorie", "label": "Sources d'apprentissage", "points": 3, "required": true, "patterns": ["documentation", "tutoriel*", "cours", "video*", "microsoft learn", "learn", "formation", "lecture"] },
+        { "id": "pratique", "label": "Mise en pratique", "points": 3, "required": true, "patterns": ["pratique", "lab", "labs", "machine virtuelle", "vm", "environnement de test", "maquette", "manipule*", "tester"] },
+        { "id": "exemple", "label": "Exemple concret", "points": 2, "patterns": ["par exemple", "lors de", "recemment", "quand j ai"] },
+        { "id": "notes", "label": "Prise de notes et partage", "points": 2, "patterns": ["notes", "fiche*", "document*", "partag*", "base de connaissance*"] },
+        { "id": "aide", "label": "Sollicite les autres", "points": 1, "patterns": ["collegue*", "forum*", "communaute", "formateur", "mentor", "tuteur", "je demandais"] },
+        { "id": "resultat", "label": "Résultat de l'apprentissage", "points": 1, "patterns": ["au final", "resultat", "ce qui m a permis", "aujourd hui", "j ai reussi", "j ai ecrit"] }
+      ],
+      "passPercent": 60,
+      "expectStructure": true
+    },
+    "modelAnswer": "Je combine la théorie et la pratique. Je commence par la documentation officielle ou un cours en ligne pour comprendre les notions, puis je manipule le plus vite possible dans un environnement de test. Par exemple, lors de ma formation, je devais découvrir PowerShell, que je n'avais jamais utilisé. J'ai suivi des modules de Microsoft Learn, puis j'ai créé une machine virtuelle pour tester les commandes sans risque : Get-Service, Get-Process, Test-NetConnection. Je prenais des notes sous forme de fiches avec les commandes utiles et les erreurs rencontrées, et quand je bloquais, je demandais à mon formateur ou je cherchais sur les forums. Au final, j'ai écrit un petit script qui vérifie l'espace disque et l'état des services d'un poste, et j'ai partagé mes fiches avec le groupe.",
+    "explanation": "Les outils du support changent sans cesse : le recruteur évalue votre autonomie d'apprentissage et votre méthode. Il apprécie un équilibre entre documentation et pratique sans risque (labo, machine virtuelle), la trace écrite de ce que vous apprenez et un exemple qui prouve que la méthode a donné un résultat.",
+    "skills": ["powershell", "virtualization", "documentation"],
+    "lessonSlugs": ["n1-powershell", "n1-virtualisation"],
+    "estimatedMinutes": 3
+  },
+  {
+    "code": "itw-n1-stress",
+    "role": "support_n1",
+    "level": "debutant",
+    "kind": "rh",
+    "lang": "fr",
+    "prompt": "Comment gérez-vous le stress, par exemple un jour où les appels s'enchaînent sans interruption ?",
+    "rubric": {
+      "criteria": [
+        { "id": "methode", "label": "Une méthode pour reprendre le contrôle", "points": 3, "required": true, "patterns": ["priorise*", "priorit*", "une chose a la fois", "un par un", "methode", "etape par etape", "organise*"] },
+        { "id": "calme", "label": "Techniques pour rester calme", "points": 2, "patterns": ["calme", "respir*", "recul", "pause", "serein*", "sang-froid"] },
+        { "id": "outil", "label": "S'appuyer sur l'outil de tickets", "points": 2, "patterns": ["ticket*", "je note", "note*", "trace*"] },
+        { "id": "aide", "label": "Savoir alerter ou demander de l'aide", "points": 2, "patterns": ["collegue*", "equipe", "responsable", "tuteur", "demander de l aide", "signal*", "previen*"] },
+        { "id": "exemple", "label": "Exemple vécu", "points": 2, "patterns": ["par exemple", "en stage", "lors de", "un lundi", "un jour"] },
+        { "id": "resultat", "label": "Résultat", "points": 1, "patterns": ["au final", "resultat", "finalement", "ce qui a permis", "j ai pu"] }
+      ],
+      "redFlags": [
+        { "id": "deni", "label": "Nier le stress", "patterns": ["je ne stresse jamais", "jamais stresse", "le stress ne me touche pas"], "penalty": 2 }
+      ],
+      "passPercent": 60,
+      "expectStructure": true
+    },
+    "modelAnswer": "Le stress fait partie du métier, je ne le nie pas : ce qui m'aide, c'est d'avoir une méthode. Quand les appels s'enchaînent, je traite une chose à la fois : je crée systématiquement un ticket pour chaque demande, même brièvement, pour ne rien oublier, puis je priorise selon l'impact et l'urgence. Je prends une respiration entre deux appels pour repartir au calme. Si la charge devient trop forte ou si je repère plusieurs appels sur le même sujet, je le signale à mon responsable ou à mes collègues. Par exemple, en stage, un lundi matin, une panne de messagerie a provoqué une vingtaine d'appels en une heure. J'ai noté chaque appel, repéré le point commun et prévenu mon tuteur, qui a diffusé un message général. Au final, le flux d'appels a baissé et j'ai pu traiter les autres tickets sans en perdre un seul.",
+    "explanation": "Le recruteur ne cherche pas quelqu'un qui « ne stresse jamais », réponse peu crédible, mais quelqu'un qui a des moyens concrets de rester efficace : prioriser, tracer, respirer, alerter. Un exemple vécu avec un résultat montre que la méthode a déjà fonctionné.",
+    "skills": ["communication", "itsm"],
+    "lessonSlugs": ["n1-ticket-cycle", "n1-communication"],
+    "estimatedMinutes": 3
+  },
+  {
+    "code": "itw-n1-disponibilite",
+    "role": "support_n1",
+    "level": "debutant",
+    "kind": "rh",
+    "lang": "fr",
+    "prompt": "Quelles sont vos disponibilités ? Seriez-vous d'accord pour des astreintes ou des horaires décalés ?",
+    "rubric": {
+      "criteria": [
+        { "id": "date", "label": "Date de disponibilité précise", "points": 3, "required": true, "patterns": ["disponible", "disponibilite", "a partir du", "des le", "preavis", "immediatement"] },
+        { "id": "horaires", "label": "Position sur les horaires et astreintes", "points": 2, "patterns": ["horaires", "decale*", "planning", "roulement", "rotation", "astreinte*", "week-end"] },
+        { "id": "clarte", "label": "Réponse claire, contraintes éventuelles exprimées", "points": 2, "patterns": ["envisageable", "je peux", "possible", "ouvert", "ouverte", "contrainte*", "pas possible"] },
+        { "id": "questions", "label": "Se renseigner sur l'organisation", "points": 3, "required": true, "patterns": ["frequence", "comment sont organisees", "organisation", "compensation", "recuperation", "modalites", "comment fonctionne*", "j aimerais savoir"] },
+        { "id": "franchise", "label": "Franchise", "points": 1, "patterns": ["je prefere etre clair", "je prefere etre claire", "honnete*", "transparen*", "franchement"] }
+      ],
+      "redFlags": [
+        { "id": "surpromesse", "label": "Promesse de disponibilité illimitée", "patterns": ["disponible tout le temps", "24 h sur 24", "24h/24", "sans aucune limite"], "penalty": 1 }
+      ],
+      "passPercent": 60,
+      "expectStructure": false
+    },
+    "modelAnswer": "Je suis disponible à partir du 3 novembre, avec un préavis d'une semaine dans mon poste actuel. Pour les horaires, je suis ouverte aux horaires décalés et à un planning en roulement, c'est courant dans un centre de services. Pour les astreintes, c'est envisageable pour moi, mais je préfère être claire : j'ai une contrainte le mercredi soir, que je dois organiser à l'avance. Pour bien me projeter, j'aimerais savoir comment sont organisées les astreintes chez vous : à quelle fréquence, sur quelles plages horaires, et quelles sont les modalités de récupération ou de compensation ? Si l'organisation est connue suffisamment tôt, je peux m'adapter sans difficulté.",
+    "explanation": "Il n'y a pas de bonne réponse unique : vos contraintes personnelles sont légitimes. Le recruteur évalue surtout la clarté (une date précise, une position nette) et votre capacité à vous renseigner sur l'organisation réelle avant de vous engager. Promettre une disponibilité illimitée pour plaire crée des malentendus qui reviennent après l'embauche.",
+    "skills": ["communication"],
+    "lessonSlugs": ["n1-metier-niveaux"],
+    "estimatedMinutes": 2
+  },
+  {
+    "code": "itw-n1-questions-recruteur",
+    "role": "support_n1",
+    "level": "debutant",
+    "kind": "rh",
+    "lang": "fr",
+    "prompt": "Avez-vous des questions à me poser ?",
+    "rubric": {
+      "criteria": [
+        { "id": "equipe", "label": "Organisation de l'équipe", "points": 2, "patterns": ["organisee l equipe", "organisation de l equipe", "combien de techniciens", "taille de l equipe", "repartissent"] },
+        { "id": "outils", "label": "Outils et périmètre technique", "points": 2, "patterns": ["quels outils", "outils", "ticketing", "glpi", "perimetre", "combien d utilisateurs", "nombre d utilisateurs", "parc"] },
+        { "id": "integration", "label": "Intégration et formation", "points": 3, "required": true, "patterns": ["integration", "formation", "binome", "tuteur", "parrain*", "premieres semaines", "accompagnement", "onboarding"] },
+        { "id": "evolution", "label": "Perspectives d'évolution", "points": 2, "patterns": ["evolution", "evoluer", "perspectives", "certification*", "n2"] },
+        { "id": "reussite", "label": "Attentes et critères de réussite", "points": 2, "patterns": ["attentes", "indicateurs", "objectifs", "journee type", "reussit", "reussir", "reussite"] },
+        { "id": "suite", "label": "Suite du processus", "points": 1, "patterns": ["prochaines etapes", "suite du processus", "suite du recrutement", "delai de reponse"] }
+      ],
+      "redFlags": [
+        { "id": "aucune", "label": "Aucune question", "patterns": ["je n ai pas de question", "je n ai pas de questions", "non pas de questions", "non, pas de question"], "penalty": 3 }
+      ],
+      "passPercent": 60,
+      "expectStructure": false
+    },
+    "modelAnswer": "Oui, j'en ai plusieurs. D'abord, comment est organisée l'équipe du centre de services : combien de techniciens, et comment se répartissent le N1 et le N2 ? Quels outils utilisez-vous au quotidien, par exemple pour le ticketing et la prise en main à distance, et sur quel périmètre : combien d'utilisateurs et de sites ? Comment se passe l'intégration d'un nouveau technicien les premières semaines : y a-t-il une formation, un binôme ou un tuteur ? À quoi ressemble une journée type, et quels sont vos attentes ou vos indicateurs pour dire qu'un technicien réussit dans ce poste ? Quelles perspectives d'évolution existent vers le N2 ou vers des certifications ? Et enfin, quelles sont les prochaines étapes du processus de recrutement ?",
+    "explanation": "Vos questions montrent votre intérêt pour le poste et vous aident à décider si l'environnement vous convient. Le recruteur apprécie des questions sur l'équipe, les outils, l'intégration, les attentes et l'évolution. Deux ou trois questions bien choisies suffisent à l'oral ; ne pas en avoir du tout donne une impression de désintérêt.",
+    "skills": ["communication"],
+    "lessonSlugs": ["n1-metier-niveaux", "n1-glpi"],
+    "estimatedMinutes": 2
+  },
+
+  {
+    "code": "itw-n1-en-introduce",
+    "role": "support_n1",
+    "level": "debutant",
+    "kind": "rh",
+    "lang": "en",
+    "prompt": "Could you briefly introduce yourself in English?",
+    "rubric": {
+      "criteria": [
+        { "id": "background", "label": "Background and training", "points": 3, "required": true, "patterns": ["training", "course", "degree", "background", "i worked", "i have worked", "internship", "studied", "experience"] },
+        { "id": "skills", "label": "Technical skills related to the job", "points": 2, "patterns": ["active directory", "microsoft 365", "windows", "network*", "troubleshoot*", "tickets", "level 1"] },
+        { "id": "qualities", "label": "Soft skills", "points": 2, "patterns": ["patient", "calm", "rigorous", "organized", "organised", "curious", "listen*", "customer service"] },
+        { "id": "example", "label": "A concrete example", "points": 2, "patterns": ["for example", "for instance", "i solved", "i handled", "i fixed", "i helped"] },
+        { "id": "motivation", "label": "Link with the position", "points": 3, "required": true, "patterns": ["your team", "your company", "this position", "this role", "join", "applying", "apply"] }
+      ],
+      "passPercent": 60,
+      "expectStructure": false
+    },
+    "modelAnswer": "Hello, my name is Camille. I worked for four years in retail sales, where I learned to listen to customers and to stay calm when things get busy. Last year I decided to move into IT, so I completed a training course as an IT support technician, including a two-month internship in a service desk. There, I handled level 1 tickets: Active Directory accounts, Microsoft 365, printers and basic network troubleshooting. For example, I solved a recurring printer issue caused by an IP address conflict. I would describe myself as patient and organized. I am applying for this position because your team supports users in several countries, and I would like to use my English every day while I keep learning.",
+    "explanation": "In bilingual support roles, the recruiter checks that you can speak continuously in English about familiar topics, with a clear structure: background, skills, one example and motivation. Perfect grammar is not expected; being understandable, calm and specific matters more than a memorised speech.",
+    "skills": ["communication"],
+    "lessonSlugs": ["n1-metier-niveaux", "n1-communication"],
+    "estimatedMinutes": 3
+  },
+  {
+    "code": "itw-n1-en-dns",
+    "role": "support_n1",
+    "level": "debutant",
+    "kind": "technique",
+    "lang": "en",
+    "prompt": "How would you explain what DNS is to a non-technical user?",
+    "rubric": {
+      "criteria": [
+        { "id": "analogy", "label": "A simple analogy", "points": 3, "required": true, "patterns": ["phone book", "phonebook", "contacts list", "contact list", "address book", "directory", "works like", "it is like"] },
+        { "id": "role", "label": "Names translated into IP addresses", "points": 3, "required": true, "patterns": ["ip address*", "translates", "translate", "converts", "finds the number", "finds the address", "names into"] },
+        { "id": "simple", "label": "Plain words, user's perspective", "points": 2, "patterns": ["in other words", "simply", "when you type", "you type", "you use names"] },
+        { "id": "consequence", "label": "What happens when DNS fails", "points": 2, "patterns": ["if dns does not work", "if dns doesn t work", "if dns fails", "cannot find", "can t find", "looks like the internet is down"] },
+        { "id": "check", "label": "Check understanding", "points": 1, "patterns": ["does that make sense", "is that clear", "any questions", "check that"] }
+      ],
+      "redFlags": [
+        { "id": "jargon", "label": "Technical jargon for a non-technical user", "patterns": ["recursive resolver", "authoritative server", "udp port 53", "ttl", "root servers"], "penalty": 2 }
+      ],
+      "passPercent": 60,
+      "expectStructure": false
+    },
+    "modelAnswer": "I would say that DNS works like the contacts list on your phone. You remember your friend's name, not their phone number, and your phone finds the number for you. On a network, computers only talk to each other with numbers called IP addresses. When you type the name of a website or a shared folder, DNS translates that name into the right address, so your computer knows where to go. In other words, you use names, and DNS finds the numbers. If DNS does not work, the website still exists, but your computer cannot find its address, so it looks like the internet is down. Then I would check that my explanation was clear and ask: does that make sense?",
+    "explanation": "This question tests two skills at once: understanding DNS and adapting your language to the listener. The recruiter looks for a relatable analogy, the key idea (names are translated into addresses) and the practical consequence for the user. Technical vocabulary such as resolvers or ports shows knowledge but misses the point of the exercise.",
+    "skills": ["network-services", "communication"],
+    "lessonSlugs": ["n1-dns", "n1-communication"],
+    "estimatedMinutes": 2
+  },
+  {
+    "code": "itw-n1-en-call",
+    "role": "support_n1",
+    "level": "intermediaire",
+    "kind": "situation",
+    "lang": "en",
+    "prompt": "A user calls the service desk and only speaks English. Her laptop cannot connect to the office Wi-Fi. Walk me through the call.",
+    "rubric": {
+      "criteria": [
+        { "id": "greet", "label": "Professional greeting", "points": 2, "patterns": ["good morning", "hello", "thank you for calling", "my name is", "how can i help"] },
+        { "id": "identify", "label": "Identify the user", "points": 2, "patterns": ["her name", "username", "employee", "location", "which office", "identity"] },
+        { "id": "questions", "label": "Targeted questions", "points": 3, "required": true, "patterns": ["error message", "since when", "when did", "colleagues", "other devices", "which network", "what do you see", "can you see"] },
+        { "id": "steps", "label": "Simple troubleshooting steps", "points": 3, "required": true, "patterns": ["airplane mode", "forget the network", "reconnect", "restart", "turned on", "turn wi-fi", "credentials", "password"] },
+        { "id": "clarity", "label": "Check understanding, speak clearly", "points": 2, "patterns": ["to make sure", "in my own words", "repeat", "slowly", "if i understand", "spell"] },
+        { "id": "close", "label": "Ticket, escalation and follow-up", "points": 1, "patterns": ["ticket", "escalate", "network team", "level 2", "call her back", "call you back"] }
+      ],
+      "redFlags": [
+        { "id": "refuse", "label": "Refusing to handle the call in English", "patterns": ["i don t speak english", "call back later", "find someone else"], "penalty": 2 }
+      ],
+      "passPercent": 60,
+      "expectStructure": false
+    },
+    "modelAnswer": "First, I would greet her: Good morning, service desk, my name is Alex, how can I help you? I would take her name, her location and her username to find her in the ticketing tool. Then I would ask simple questions: what error message do you see, since when does it happen, and can your colleagues connect to the Wi-Fi? To make sure I understand, I would repeat the problem in my own words and speak slowly. Next, we would try simple steps together: check that Wi-Fi is turned on, turn airplane mode off, forget the network and reconnect with her usual credentials, then restart the laptop. If it still fails, I would log everything in the ticket, escalate to the network team and tell her when we will call her back.",
+    "explanation": "The recruiter evaluates whether you can run a full support call in English, not just answer one question: greeting, identification, diagnosis questions, guided steps, confirmation and closing. Short sentences and checking understanding are signs of a professional who adapts to a foreign-language call.",
+    "skills": ["communication", "wifi", "diagnostic"],
+    "lessonSlugs": ["n1-wifi", "n1-communication"],
+    "estimatedMinutes": 4
+  },
+  {
+    "code": "itw-n1-en-escalation",
+    "role": "support_n1",
+    "level": "debutant",
+    "kind": "technique",
+    "lang": "en",
+    "prompt": "When do you escalate a ticket, and what information do you give to the next level?",
+    "rubric": {
+      "criteria": [
+        { "id": "when", "label": "Clear escalation criteria", "points": 3, "required": true, "patterns": ["outside my scope", "beyond my", "do not have the rights", "don t have the rights", "permissions", "time limit", "sla", "cannot solve", "can t solve", "several users", "many users", "major incident"] },
+        { "id": "tests", "label": "Steps already taken", "points": 3, "required": true, "patterns": ["what i tried", "what i tested", "what i have tested", "steps i took", "already tried", "troubleshooting steps"] },
+        { "id": "info", "label": "Key technical information", "points": 2, "patterns": ["error message", "screenshot*", "impact", "number of users", "when it started", "device name", "logs"] },
+        { "id": "user", "label": "Keep the user informed", "points": 2, "patterns": ["tell the user", "inform the user", "update the user", "let the user know", "keep the user"] },
+        { "id": "follow", "label": "Follow up and learn", "points": 1, "patterns": ["follow up", "learn the solution", "knowledge base", "next time"] }
+      ],
+      "redFlags": [
+        { "id": "dump", "label": "Escalating without any work", "patterns": ["escalate everything", "without testing", "not my problem"], "penalty": 2 }
+      ],
+      "passPercent": 60,
+      "expectStructure": false
+    },
+    "modelAnswer": "I escalate when the issue is outside my scope, when I do not have the rights to fix it, for example on a server or a firewall, when I reach the time limit set by the SLA, or immediately when several users are affected, because it may be a major incident. When I escalate, I want the next level to start where I stopped, so the ticket must be complete: a clear description, the error message and screenshots, when it started, the impact and the number of users, the device name, and above all what I tried and the results. That way, nobody asks the user the same questions again. I also tell the user who now handles the ticket and when to expect news, and I follow up to learn the solution for next time.",
+    "explanation": "Escalation is a daily task for level 1. The recruiter checks that you escalate for the right reasons (scope, rights, time, impact) and that your ticket lets the next level work immediately. Mentioning the user's experience and learning from the solution shows a mature view of the role.",
+    "skills": ["itsm", "documentation", "communication"],
+    "lessonSlugs": ["n1-metier-niveaux", "n1-ticket-cycle"],
+    "estimatedMinutes": 3
+  },
+  {
+    "code": "itw-n1-en-angry",
+    "role": "support_n1",
+    "level": "intermediaire",
+    "kind": "situation",
+    "lang": "en",
+    "prompt": "A manager sends you an angry e-mail in English: his issue has been open for a week. How do you reply?",
+    "rubric": {
+      "criteria": [
+        { "id": "empathy", "label": "Apology and empathy", "points": 3, "required": true, "patterns": ["sorry", "apolog*", "i understand", "frustration", "frustrating"] },
+        { "id": "ownership", "label": "Take ownership", "points": 3, "required": true, "patterns": ["taking ownership", "take ownership", "personally", "i will handle", "i will take care", "i am in charge"] },
+        { "id": "timeline", "label": "Precise next step and time", "points": 2, "patterns": ["today", "tomorrow", "this afternoon", "this morning", "within", "p.m.", "a.m.", "o clock", "remote session"] },
+        { "id": "workaround", "label": "Workaround in the meantime", "points": 2, "patterns": ["in the meantime", "meanwhile", "workaround", "temporary"] },
+        { "id": "tone", "label": "Professional tone", "points": 1, "patterns": ["kind regards", "best regards", "thank you for your patience", "dear"] },
+        { "id": "update", "label": "Commitment to follow up", "points": 1, "patterns": ["keep you updated", "keep you informed", "your confirmation", "let you know", "update you"] }
+      ],
+      "redFlags": [
+        { "id": "blame", "label": "Blaming or lecturing", "patterns": ["not my fault", "your fault", "calm down", "you should have"], "penalty": 2 },
+        { "id": "jargon", "label": "Technical jargon", "patterns": ["autodiscover", "mapi", "ost file", "registry"], "penalty": 1 }
+      ],
+      "passPercent": 60,
+      "expectStructure": false
+    },
+    "modelAnswer": "I would answer quickly and professionally, for example: Dear Mr. Laurent, I am sorry that your issue has been open for a week, and I understand your frustration. I have reviewed your ticket and I am taking ownership of it personally. I have already contacted our level 2 team, and I suggest a remote session today at 3 p.m. to test the fix with you. In the meantime, you can use the web version of Outlook as a temporary workaround. I will keep you updated at each step, and I will not close the ticket without your confirmation. Thank you for your patience. Kind regards. The idea is to apologize, show that someone is really in charge, give a precise time and avoid technical jargon.",
+    "explanation": "The recruiter evaluates written communication under pressure in English: a sincere apology, clear ownership, a concrete next step with a time, a workaround and a follow-up commitment. Defensive answers or technical explanations usually make an angry user even angrier.",
+    "skills": ["communication", "documentation"],
+    "lessonSlugs": ["n1-communication", "n1-ticket-cycle"],
+    "estimatedMinutes": 3
+  },
+  {
+    "code": "itw-n1-en-problem-solved",
+    "role": "support_n1",
+    "level": "debutant",
+    "kind": "situation",
+    "lang": "en",
+    "prompt": "Tell me about a technical problem you solved. What did you do?",
+    "rubric": {
+      "criteria": [
+        { "id": "context", "label": "Context", "points": 2, "patterns": ["during my internship", "during my training", "in my previous job", "at my previous job", "a user", "one day", "last year"] },
+        { "id": "problem", "label": "Clear problem", "points": 2, "patterns": ["could not", "couldn t", "was not working", "wasn t working", "issue", "error", "failed"] },
+        { "id": "method", "label": "Step-by-step method", "points": 3, "required": true, "patterns": ["first, i", "first i", "i checked", "i tested", "i asked", "step by step", "i compared", "i ran", "then i"] },
+        { "id": "cause", "label": "Root cause identified", "points": 2, "patterns": ["it turned out", "the cause", "root cause", "i found that", "caused by", "i saw that"] },
+        { "id": "result", "label": "Result and validation", "points": 3, "required": true, "patterns": ["in the end", "finally", "solved", "fixed", "resolved", "confirmed", "worked again"] },
+        { "id": "learning", "label": "What was learned or documented", "points": 1, "patterns": ["i learned", "i learnt", "lesson", "since then", "knowledge base", "documented"] }
+      ],
+      "passPercent": 60,
+      "expectStructure": false
+    },
+    "modelAnswer": "During my internship, a user in the accounting team could not open the shared folder of her department, while her colleagues could. First, I asked her when it started and if anything had changed. Then I checked her network settings with ipconfig /all, and I saw that her DNS server was set manually to a public address instead of the internal servers. It turned out that she had changed it herself while trying to fix her home Wi-Fi. I set the DNS back to automatic, cleared the DNS cache and tested access to the folder with her. In the end, everything worked again and she confirmed it. I documented the case in the knowledge base, and I learned to always check the DNS settings when internal names fail but the internet works.",
+    "explanation": "The recruiter wants a real story told in a clear order: context, problem, method, cause, result and lesson. In English, this structure helps you stay concise. A modest but well-explained example is more convincing than a complex one you cannot describe precisely.",
+    "skills": ["diagnostic", "network-services", "communication"],
+    "lessonSlugs": ["n1-methode-diagnostic", "n1-dns"],
+    "estimatedMinutes": 3
+  }
+]

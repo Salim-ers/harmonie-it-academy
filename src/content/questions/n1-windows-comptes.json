@@ -1,0 +1,119 @@
+[
+  {
+    "code": "comptes-whoami-type",
+    "lesson": "n1-windows-comptes",
+    "skill": "windows",
+    "prompt": "Sur le poste PC-MKT-031, la commande whoami renvoie « pc-mkt-031\\stagiaire ». De quel type de compte s'agit-il ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Un compte de domaine Active Directory" },
+        { "id": "b", "text": "Un compte local au poste" },
+        { "id": "c", "text": "Un compte Microsoft Entra ID" },
+        { "id": "d", "text": "Un compte Microsoft personnel" }
+      ],
+      "answer": "b"
+    },
+    "explanation": "Le préfixe avant la barre oblique inverse indique où vit le compte. Ici, c'est le nom du poste lui-même : le compte est local et n'existe que sur cette machine. Un compte de domaine afficherait le nom du domaine (valmont\\...), un compte Entra ID afficherait AzureAD\\..., et un compte Microsoft personnel se reconnaît à son adresse grand public dans les paramètres.",
+    "difficulty": 1
+  },
+  {
+    "code": "comptes-moindre-privilege",
+    "lesson": "n1-windows-comptes",
+    "skill": "security-hygiene",
+    "prompt": "Un utilisateur standard doit installer un logiciel métier validé par l'entreprise mais absent du catalogue. Quelle est la bonne pratique ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "L'ajouter définitivement au groupe Administrateurs du poste" },
+        { "id": "b", "text": "Lui communiquer le mot de passe d'un compte d'administration" },
+        { "id": "c", "text": "Installer le logiciel en saisissant soi-même ses identifiants d'administration dans la fenêtre UAC" },
+        { "id": "d", "text": "Désactiver le Contrôle de compte d'utilisateur" }
+      ],
+      "answer": "c"
+    },
+    "explanation": "Le moindre privilège veut que l'utilisateur reste standard : le technicien fait l'élévation ponctuelle avec son propre compte d'administration. Ajouter l'utilisateur aux administrateurs lui laisse des droits durables et inutiles. Communiquer un mot de passe d'administration le rend public. Désactiver l'UAC affaiblit la sécurité du poste pour tous.",
+    "difficulty": 1
+  },
+  {
+    "code": "comptes-temp-vf",
+    "lesson": "n1-windows-comptes",
+    "skill": "windows",
+    "prompt": "Vrai ou faux : les fichiers enregistrés sur le bureau d'un profil temporaire sont conservés et réapparaîtront dans le profil habituel une fois réparé.",
+    "data": { "type": "truefalse", "answer": false },
+    "explanation": "Faux. Le profil temporaire est supprimé à la déconnexion, avec tout ce qui y a été enregistré. Ce qui a été créé pendant la session doit être copié sur OneDrive ou un partage avant de se déconnecter. Le profil habituel, lui, n'est pas touché : il contient toujours les anciens fichiers, mais pas ceux créés dans le profil temporaire.",
+    "difficulty": 1
+  },
+  {
+    "code": "comptes-commandes-match",
+    "lesson": "n1-windows-comptes",
+    "skill": "windows",
+    "prompt": "Associez chaque commande à l'information qu'elle fournit.",
+    "data": {
+      "type": "match",
+      "left": [
+        { "id": "whoami", "text": "whoami" },
+        { "id": "groups", "text": "whoami /groups" },
+        { "id": "netuser", "text": "net user c.moreau /domain" },
+        { "id": "localuser", "text": "Get-LocalUser" }
+      ],
+      "right": [
+        { "id": "identite", "text": "Le compte de la session en cours, au format DOMAINE\\utilisateur" },
+        { "id": "jeton", "text": "Les groupes présents dans le jeton de la session" },
+        { "id": "etat", "text": "L'état d'un compte de domaine : actif, expiration du mot de passe, groupes" },
+        { "id": "locaux", "text": "La liste des comptes locaux du poste" },
+        { "id": "mdp", "text": "Le mot de passe de l'utilisateur" }
+      ],
+      "answer": { "whoami": "identite", "groups": "jeton", "netuser": "etat", "localuser": "locaux" }
+    },
+    "explanation": "whoami donne l'identité de la session ; /groups liste les groupes réellement actifs dans le jeton ; net user /domain interroge le contrôleur de domaine sur un compte ; Get-LocalUser liste les comptes locaux. Aucune commande n'affiche un mot de passe : Windows ne les stocke pas sous une forme lisible, et le support n'en a jamais besoin.",
+    "difficulty": 2
+  },
+  {
+    "code": "comptes-profil-fill",
+    "lesson": "n1-windows-comptes",
+    "skill": "windows",
+    "prompt": "Complétez : le profil de l'utilisateur c.moreau se trouve par défaut dans le dossier C:\\___\\c.moreau.",
+    "data": { "type": "fill", "template": "C:\\___\\c.moreau", "accepted": ["Users", "Utilisateurs"] },
+    "explanation": "Les profils sont stockés dans C:\\Users ; l'Explorateur affiche ce dossier sous le nom « Utilisateurs » sur un Windows en français, mais le chemin réel reste C:\\Users. Program Files contient les applications et Windows le système : ce ne sont pas des emplacements de profil.",
+    "difficulty": 1
+  },
+  {
+    "code": "comptes-exam-1",
+    "lesson": "n1-windows-comptes",
+    "skill": "security-hygiene",
+    "prompt": "Un appelant se présente comme directeur commercial, en déplacement. Il dit avoir oublié son mot de passe et vous demande de lui « lire celui qui est dans le système » pour se connecter tout de suite. Quelle réponse est correcte ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Lire son mot de passe actuel dans net user /domain" },
+        { "id": "b", "text": "Expliquer que personne ne peut lire un mot de passe, vérifier son identité selon la procédure puis lancer une réinitialisation" },
+        { "id": "c", "text": "Lui donner le mot de passe d'un compte d'administration pour qu'il dépanne seul" },
+        { "id": "d", "text": "Réinitialiser son mot de passe immédiatement et le lui envoyer par SMS au numéro qu'il indique" }
+      ],
+      "answer": "b"
+    },
+    "explanation": "Un mot de passe n'est pas lisible par le support : on le réinitialise, et seulement après avoir vérifié l'identité selon la procédure, car l'appel peut être une tentative d'usurpation. net user n'affiche aucun mot de passe. Donner un mot de passe d'administration est une faute grave. Réinitialiser sans vérification et envoyer le nouveau mot de passe à un numéro non vérifié reviendrait à offrir le compte à un éventuel escroc.",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "code": "comptes-exam-2",
+    "lesson": "n1-windows-comptes",
+    "skill": "windows",
+    "prompt": "Un utilisateur a été ajouté ce matin au groupe VALMONT\\GG-Partage-Finance, mais il n'accède toujours pas au partage Finance. whoami /groups n'affiche pas ce groupe. Quelle est l'explication la plus probable et l'action adaptée ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Le groupe n'existe pas ; il faut le recréer" },
+        { "id": "b", "text": "Le jeton de la session a été créé avant l'ajout ; l'utilisateur doit fermer sa session et se reconnecter" },
+        { "id": "c", "text": "Le profil est corrompu ; il faut le supprimer" },
+        { "id": "d", "text": "Il faut l'ajouter au groupe Administrateurs local" }
+      ],
+      "answer": "b"
+    },
+    "explanation": "whoami /groups montre le jeton de la session, construit à l'ouverture de session. Une appartenance ajoutée après n'y figure pas tant que l'utilisateur ne s'est pas reconnecté. Le groupe existe bien puisqu'on l'y a ajouté ; le profil n'a aucun rôle dans les droits d'accès ; et le rendre administrateur local ne donne aucun accès au partage, tout en violant le moindre privilège.",
+    "difficulty": 3,
+    "examOnly": true
+  }
+]

@@ -1,0 +1,118 @@
+[
+  {
+    "code": "ip-plages-privees",
+    "lesson": "n1-adressage-ip",
+    "skill": "network-ip",
+    "prompt": "Parmi ces adresses, lesquelles appartiennent à une plage privée définie par la RFC 1918 ? (plusieurs réponses)",
+    "data": {
+      "type": "multiple",
+      "choices": [
+        { "id": "a", "text": "10.30.4.17" },
+        { "id": "b", "text": "172.20.8.1" },
+        { "id": "c", "text": "192.168.1.34" },
+        { "id": "d", "text": "172.32.0.5" },
+        { "id": "e", "text": "169.254.58.201" },
+        { "id": "f", "text": "203.0.113.10" }
+      ],
+      "answer": ["a", "b", "c"]
+    },
+    "explanation": "Les trois plages privées de la RFC 1918 sont 10.0.0.0/8, 172.16.0.0/12 (de 172.16 à 172.31) et 192.168.0.0/16 : 10.30.4.17, 172.20.8.1 et 192.168.1.34 en font partie. 172.32.0.5 est juste au-delà de la plage du milieu, donc publique. 169.254.58.201 est une adresse de liaison locale (APIPA), pas une adresse RFC 1918. 203.0.113.10 appartient à une plage réservée à la documentation et sert ici d'exemple d'adresse publique.",
+    "difficulty": 2
+  },
+  {
+    "code": "ip-sans-passerelle",
+    "lesson": "n1-adressage-ip",
+    "skill": "network-ip",
+    "prompt": "Un poste a l'adresse 10.20.10.150/24 mais aucune passerelle. Quelle situation observez-vous ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Il ne peut joindre aucun appareil, même dans son propre réseau" },
+        { "id": "b", "text": "Il joint les appareils en 10.20.10.x, mais aucune adresse en dehors de ce réseau" },
+        { "id": "c", "text": "Il joint Internet, mais pas les serveurs internes" },
+        { "id": "d", "text": "Il fonctionne normalement : la passerelle est facultative en entreprise" }
+      ],
+      "answer": "b"
+    },
+    "explanation": "Le poste compare la partie réseau de la destination avec la sienne : pour un voisin en 10.20.10.x, il envoie directement, sans passerelle. Pour toute autre destination, il a besoin d'une passerelle ; sans elle, il n'a aucune sortie. Il n'est donc pas totalement isolé (réponse a fausse), il n'atteint pas non plus Internet, qui est hors de son réseau (réponse c fausse), et la passerelle est indispensable dès qu'il faut sortir du réseau local (réponse d fausse).",
+    "difficulty": 1
+  },
+  {
+    "code": "ip-bouclage",
+    "lesson": "n1-adressage-ip",
+    "skill": "network-fundamentals",
+    "prompt": "Complétez : l'adresse IPv4 de bouclage, qui désigne le poste lui-même, est ___.",
+    "data": { "type": "fill", "template": "L'adresse IPv4 de bouclage est ___", "accepted": ["127.0.0.1", "127.0.0.1.", "localhost"] },
+    "explanation": "127.0.0.1 (nom localhost) est l'adresse de bouclage : un paquet qui lui est destiné ne quitte jamais la machine. Toute la plage 127.0.0.0/8 est réservée à cet usage, mais 127.0.0.1 est l'adresse utilisée en pratique. Il ne faut pas la confondre avec 169.254.x.x (liaison locale, absence de DHCP) ni avec ::1, qui est son équivalent en IPv6.",
+    "difficulty": 1
+  },
+  {
+    "code": "ip-mac-ou-ip",
+    "lesson": "n1-adressage-ip",
+    "skill": "network-fundamentals",
+    "prompt": "Associez chaque caractéristique au type d'adresse qui lui correspond.",
+    "data": {
+      "type": "match",
+      "left": [
+        { "id": "fabricant", "text": "Inscrite dans la carte réseau par le fabricant" },
+        { "id": "change", "text": "Change quand le portable est branché sur un autre réseau" },
+        { "id": "routeurs", "text": "Permet d'acheminer un paquet à travers les routeurs" },
+        { "id": "format", "text": "S'écrit sous la forme 3C-52-82-4A-21-9D" }
+      ],
+      "right": [
+        { "id": "mac", "text": "Adresse MAC" },
+        { "id": "ip", "text": "Adresse IP" }
+      ],
+      "answer": { "fabricant": "mac", "change": "ip", "routeurs": "ip", "format": "mac" }
+    },
+    "explanation": "L'adresse MAC est physique : gravée par le fabricant, écrite en six paires hexadécimales, elle ne sert qu'à l'intérieur du réseau local. L'adresse IP est logique : elle dépend du réseau où l'on se branche (elle change donc en changeant de site) et c'est elle que les routeurs utilisent pour acheminer les paquets de réseau en réseau. Inverser les deux mène à de mauvais diagnostics, par exemple chercher l'adresse MAC d'un serveur situé dans un autre réseau.",
+    "difficulty": 1
+  },
+  {
+    "code": "ip-ipv6-fe80",
+    "lesson": "n1-adressage-ip",
+    "skill": "network-ip",
+    "prompt": "Vrai ou faux : la présence d'une adresse fe80::9a1c:4e2f:b03d:71c8%12 dans ipconfig prouve que l'entreprise a déployé IPv6 et que le poste peut joindre Internet en IPv6.",
+    "data": { "type": "truefalse", "answer": false },
+    "explanation": "Faux. Une adresse commençant par fe80:: est une adresse IPv6 de liaison locale : Windows la génère automatiquement sur chaque carte, même dans un réseau sans IPv6. Elle ne sert qu'à parler aux voisins immédiats et ne traverse aucun routeur. Une adresse IPv6 globale, routable sur Internet, commencerait généralement par 2 ou 3. Le suffixe %12 est le numéro de l'interface dans Windows, pas une partie de l'adresse.",
+    "difficulty": 2
+  },
+  {
+    "code": "ip-exam-1",
+    "lesson": "n1-adressage-ip",
+    "skill": "network-ip",
+    "prompt": "Une utilisatrice du VLAN Bureaux du Groupe Valmont (10.20.10.0/24, passerelle 10.20.10.1) peut imprimer sur l'imprimante 10.20.10.21 mais n'accède ni au serveur de fichiers 10.20.30.5 ni à Internet. Son ipconfig indique : adresse 10.20.10.160, masque 255.255.255.0, passerelle 10.20.11.1, DHCP activé : Non. Quelle est la cause la plus probable ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Le masque est trop petit pour joindre le serveur de fichiers" },
+        { "id": "b", "text": "La passerelle saisie n'appartient pas au réseau du poste, qui ne peut donc pas la joindre" },
+        { "id": "c", "text": "L'adresse 10.20.10.160 est déjà utilisée par l'imprimante" },
+        { "id": "d", "text": "Le serveur de fichiers est en panne" }
+      ],
+      "answer": "b"
+    },
+    "explanation": "Avec un masque /24, le poste ne joint directement que les adresses en 10.20.10.x. La passerelle 10.20.11.1 est dans un autre réseau : le poste ne peut pas lui remettre ses paquets, donc rien ne sort du réseau local, ce qui explique que l'imprimante voisine fonctionne et le reste non. Le masque 255.255.255.0 est celui du plan d'adressage (a faux), l'imprimante a une autre adresse et un conflit ne laisserait pas l'impression fonctionner aussi normalement (c peu probable), et la panne simultanée du serveur et d'Internet n'expliquerait pas la passerelle erronée (d). La correction est de repasser la carte en DHCP.",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "code": "ip-exam-2",
+    "lesson": "n1-adressage-ip",
+    "skill": "network-fundamentals",
+    "prompt": "Sur un poste qui n'accède à rien, vous lancez ping 127.0.0.1 : il répond normalement. Que pouvez-vous en conclure ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Le câble et le switch fonctionnent" },
+        { "id": "b", "text": "La pile TCP/IP du poste fonctionne, mais cela ne dit rien du réseau" },
+        { "id": "c", "text": "La passerelle répond, le problème est sur Internet" },
+        { "id": "d", "text": "Le serveur DHCP a bien attribué une adresse au poste" }
+      ],
+      "answer": "b"
+    },
+    "explanation": "127.0.0.1 est l'adresse de bouclage : le paquet ne quitte jamais la machine. Une réponse prouve seulement que la pile TCP/IP locale fonctionne. Elle ne teste ni le câble ni le switch (a faux), ni la passerelle (c faux), et un poste en APIPA ou sans adresse répond aussi au bouclage (d faux). L'étape suivante est de tester la passerelle puis une adresse hors du réseau.",
+    "difficulty": 2,
+    "examOnly": true
+  }
+]

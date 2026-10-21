@@ -1,0 +1,290 @@
+{
+  "slug": "zebra-quai-3",
+  "title": "Les étiquettes du quai 3 ne sortent plus",
+  "summary": "Une imprimante thermique d'entrepôt n'imprime plus les étiquettes transporteurs. Les camions partent à 11 h : trouvez la cause sans aggraver la situation.",
+  "sector": "logistique",
+  "difficulty": 1,
+  "requiredTier": 0,
+  "estimatedMinutes": 15,
+  "skills": ["printing", "network-ip", "diagnostic", "documentation"],
+  "company": {
+    "name": "Nordelis Logistique (entreprise fictive)",
+    "description": "Entrepôt de 18 000 m², 6 quais d'expédition, WMS qui envoie les étiquettes directement aux imprimantes thermiques et un serveur d'impression Windows pour les postes bureautiques."
+  },
+  "ticket": {
+    "reference": "INC-2026-04817",
+    "reporter": { "name": "Karim Benali", "role": "Chef d'équipe expédition", "site": "Quai 3" },
+    "channel": "telephone",
+    "title": "Imprimante Zebra quai 3 : plus aucune étiquette",
+    "description": "Depuis ce matin, l'imprimante d'étiquettes du quai 3 n'imprime plus rien, ni depuis le WMS ni depuis le poste du quai. L'écran affiche PRÊT. Environ 50 colis sont en attente, enlèvement transporteur prévu à 11 h.",
+    "impact": "service",
+    "urgency": "haute",
+    "slaMinutes": 30
+  },
+  "startFlags": [],
+  "clues": [
+    { "id": "c-maintenance", "label": "La maintenance a remplacé la tête d'impression hier après-midi" },
+    { "id": "c-ecran-pret", "label": "L'imprimante affiche PRÊT, aucun voyant d'erreur" },
+    { "id": "c-consommables-ok", "label": "Ruban et rouleau d'étiquettes correctement installés" },
+    { "id": "c-test-local-ok", "label": "L'imprimante imprime son étiquette de configuration : le matériel fonctionne" },
+    { "id": "c-ip-dhcp", "label": "L'imprimante est en DHCP avec l'adresse 10.30.20.143" },
+    { "id": "c-doc-ip", "label": "La documentation prévoit l'adresse fixe 10.30.20.21 pour cette imprimante" },
+    { "id": "c-ping-old-ko", "label": "L'ancienne adresse 10.30.20.21 ne répond plus" },
+    { "id": "c-ping-new-ok", "label": "La nouvelle adresse 10.30.20.143 répond au ping" },
+    { "id": "c-queue-error", "label": "47 documents en erreur dans la file ZEB-QUAI3, port 10.30.20.21" },
+    { "id": "c-log-port", "label": "Journal du serveur : le port 10.30.20.21 ne répond pas" },
+    { "id": "c-autres-ok", "label": "L'imprimante du quai 2, sur le même switch, fonctionne" }
+  ],
+  "actions": [
+    {
+      "id": "interroger-operateur",
+      "label": "Interroger le chef d'équipe sur ce qui a changé",
+      "category": "interroger",
+      "minutes": 3,
+      "relevance": "useful",
+      "outcomes": [
+        { "text": "« Rien de spécial… ah si, le technicien de maintenance est passé hier vers 16 h pour remplacer la tête d'impression. Après, on n'a plus rien imprimé jusqu'à ce matin, mais on pensait que c'était normal en fin de poste. »", "reveals": ["c-maintenance"] }
+      ]
+    },
+    {
+      "id": "observer-ecran",
+      "label": "Observer l'écran et les voyants de l'imprimante",
+      "category": "observer",
+      "minutes": 1,
+      "relevance": "useful",
+      "outcomes": [
+        { "text": "L'écran affiche PRÊT. Le voyant d'état est vert fixe, aucun voyant d'erreur (tête ouverte, ruban, papier).", "reveals": ["c-ecran-pret"] }
+      ]
+    },
+    {
+      "id": "verifier-consommables",
+      "label": "Vérifier le ruban et le rouleau d'étiquettes",
+      "category": "observer",
+      "minutes": 2,
+      "relevance": "useful",
+      "outcomes": [
+        { "text": "Le ruban est correctement engagé, encore aux trois quarts. Le rouleau d'étiquettes est bien calé et le capteur aligné.", "reveals": ["c-consommables-ok"] }
+      ]
+    },
+    {
+      "id": "etiquette-configuration",
+      "label": "Imprimer l'étiquette de configuration depuis le panneau",
+      "category": "tester",
+      "minutes": 3,
+      "relevance": "key",
+      "outcomes": [
+        {
+          "when": { "all": ["fixed"] },
+          "text": "L'étiquette de configuration sort. Section réseau : protocole IP PERMANENT, adresse 10.30.20.21.",
+          "terminal": { "shell": "text", "lines": ["NETWORK CONFIGURATION", "IP PROTOCOL ......... PERMANENT", "IP ADDRESS .......... 10.30.20.21", "SUBNET MASK ......... 255.255.255.0", "DEFAULT GATEWAY ..... 10.30.20.1"] }
+        },
+        {
+          "text": "L'étiquette de configuration sort parfaitement : la tête, le ruban et les étiquettes fonctionnent. Section réseau :",
+          "terminal": { "shell": "text", "lines": ["NETWORK CONFIGURATION", "IP PROTOCOL ......... DHCP", "IP ADDRESS .......... 10.30.20.143", "SUBNET MASK ......... 255.255.255.0", "DEFAULT GATEWAY ..... 10.30.20.1", "WIRED PRINT SERVER .. CONNECTED"] },
+          "reveals": ["c-test-local-ok", "c-ip-dhcp"],
+          "setFlags": ["saw-config"]
+        }
+      ]
+    },
+    {
+      "id": "consulter-documentation",
+      "label": "Consulter la fiche de l'équipement dans la CMDB",
+      "category": "consulter",
+      "minutes": 3,
+      "relevance": "useful",
+      "outcomes": [
+        { "text": "Fiche IMP-ZEB-Q3 : Zebra ZT411, quai 3. Adresse IP fixe 10.30.20.21 (configurée sur l'imprimante). Utilisée par le WMS (envoi direct port 9100) et par la file Windows ZEB-QUAI3.", "reveals": ["c-doc-ip"] }
+      ]
+    },
+    {
+      "id": "ping-ancienne",
+      "label": "Tester la connectivité vers l'adresse documentée (ping 10.30.20.21)",
+      "category": "tester",
+      "minutes": 2,
+      "relevance": "key",
+      "outcomes": [
+        {
+          "when": { "all": ["fixed"] },
+          "text": "L'adresse documentée répond de nouveau.",
+          "terminal": { "shell": "cmd", "lines": ["C:\\> ping 10.30.20.21", "Réponse de 10.30.20.21 : octets=32 temps=2 ms TTL=255", "Réponse de 10.30.20.21 : octets=32 temps=1 ms TTL=255", "Paquets : envoyés = 4, reçus = 4, perdus = 0 (perte 0%)"] }
+        },
+        {
+          "text": "Aucune réponse depuis le poste du quai.",
+          "terminal": { "shell": "cmd", "lines": ["C:\\> ping 10.30.20.21", "Envoi d'une requête 'Ping'  10.30.20.21 avec 32 octets de données :", "Délai d'attente de la demande dépassé.", "Délai d'attente de la demande dépassé.", "Paquets : envoyés = 4, reçus = 0, perdus = 4 (perte 100%)"] },
+          "reveals": ["c-ping-old-ko"]
+        }
+      ]
+    },
+    {
+      "id": "ping-nouvelle",
+      "label": "Tester la connectivité vers l'adresse affichée (ping 10.30.20.143)",
+      "category": "tester",
+      "minutes": 2,
+      "relevance": "useful",
+      "availableWhen": { "all": ["saw-config"] },
+      "outcomes": [
+        {
+          "when": { "all": ["fixed"] },
+          "text": "Plus de réponse : l'imprimante n'utilise plus cette adresse provisoire.",
+          "terminal": { "shell": "cmd", "lines": ["C:\\> ping 10.30.20.143", "Délai d'attente de la demande dépassé.", "Paquets : envoyés = 4, reçus = 0, perdus = 4 (perte 100%)"] }
+        },
+        {
+          "text": "L'imprimante répond : elle est bien joignable sur le réseau, mais à une autre adresse.",
+          "terminal": { "shell": "cmd", "lines": ["C:\\> ping 10.30.20.143", "Réponse de 10.30.20.143 : octets=32 temps=1 ms TTL=255", "Réponse de 10.30.20.143 : octets=32 temps=1 ms TTL=255", "Paquets : envoyés = 4, reçus = 4, perdus = 0 (perte 0%)"] },
+          "reveals": ["c-ping-new-ok"]
+        }
+      ]
+    },
+    {
+      "id": "file-attente",
+      "label": "Consulter la file d'impression ZEB-QUAI3 sur le serveur",
+      "category": "consulter",
+      "minutes": 4,
+      "relevance": "key",
+      "outcomes": [
+        { "when": { "all": ["fixed"] }, "text": "La file se vide : les documents en attente sont imprimés un à un." },
+        {
+          "text": "La file contient 47 documents à l'état « Erreur – Impression ». Propriétés de l'imprimante : port standard TCP/IP IP_10.30.20.21.",
+          "terminal": { "shell": "powershell", "lines": ["PS> Get-PrintJob -PrinterName ZEB-QUAI3 | Group-Object JobStatus", "Count Name", "----- ----", "   47 Error, Printing", "PS> (Get-Printer ZEB-QUAI3).PortName", "IP_10.30.20.21"] },
+          "reveals": ["c-queue-error"]
+        }
+      ]
+    },
+    {
+      "id": "journaux-serveur",
+      "label": "Lire le journal PrintService du serveur d'impression",
+      "category": "consulter",
+      "minutes": 5,
+      "relevance": "useful",
+      "outcomes": [
+        { "text": "Avertissements répétés depuis hier 16 h 22 : « Le port IP_10.30.20.21 ne répond pas. Le travail d'impression a été suspendu. »", "reveals": ["c-log-port"] }
+      ]
+    },
+    {
+      "id": "autres-imprimantes",
+      "label": "Vérifier l'imprimante du quai 2, sur le même switch",
+      "category": "observer",
+      "minutes": 3,
+      "relevance": "useful",
+      "outcomes": [
+        { "text": "Le quai 2 imprime normalement depuis le WMS. Le réseau du quai et le serveur d'impression fonctionnent.", "reveals": ["c-autres-ok"] }
+      ]
+    },
+    {
+      "id": "redemarrer-imprimante",
+      "label": "Éteindre et rallumer l'imprimante",
+      "category": "corriger",
+      "minutes": 4,
+      "relevance": "neutral",
+      "outcomes": [
+        { "when": { "all": ["fixed"] }, "text": "L'imprimante redémarre et conserve sa configuration réseau." },
+        { "text": "L'imprimante redémarre et affiche PRÊT. Elle obtient de nouveau son adresse par DHCP. Les documents restent bloqués dans la file." }
+      ]
+    },
+    {
+      "id": "reinstaller-pilote",
+      "label": "Réinstaller le pilote Zebra sur le poste du quai",
+      "category": "corriger",
+      "minutes": 15,
+      "relevance": "irrelevant",
+      "outcomes": [
+        { "text": "Quinze minutes plus tard, le pilote est réinstallé. Rien n'a changé : les étiquettes du WMS ne passent pas par ce pilote, et la file serveur est toujours en erreur." }
+      ]
+    },
+    {
+      "id": "redemarrer-serveur",
+      "label": "Redémarrer le serveur d'impression PRN-LOG-01",
+      "category": "corriger",
+      "minutes": 10,
+      "relevance": "irrelevant",
+      "risk": { "level": "dangerous", "explanation": "Le serveur d'impression porte 38 files, dont celles des quais 1 à 6 et de la préparation. Un redémarrage non planifié interrompt toutes les expéditions en pleine matinée. Il exige une demande de changement et l'accord du responsable d'exploitation." },
+      "outcomes": [
+        { "text": "Le serveur redémarre. Pendant 8 minutes, aucun quai ne peut imprimer : le chef d'équipe du quai 2 appelle à son tour. Au redémarrage, la file ZEB-QUAI3 est toujours en erreur." }
+      ]
+    },
+    {
+      "id": "vider-file",
+      "label": "Supprimer les documents en erreur de la file",
+      "category": "corriger",
+      "minutes": 2,
+      "relevance": "neutral",
+      "risk": { "level": "caution", "explanation": "Ces 47 documents sont des étiquettes de colis à expédier. Les supprimer oblige à les réimprimer depuis le WMS : obtenez l'accord du chef d'équipe et notez-le dans le ticket." },
+      "outcomes": [
+        { "text": "La file est vidée. Les nouveaux documents envoyés passent immédiatement en erreur à leur tour." }
+      ]
+    },
+    {
+      "id": "impression-test",
+      "label": "Lancer une impression de test depuis le WMS",
+      "category": "tester",
+      "minutes": 2,
+      "relevance": "useful",
+      "outcomes": [
+        { "when": { "all": ["fixed"] }, "text": "L'étiquette de test sort en quelques secondes, code-barres lisible au scanner. Les étiquettes en attente commencent à sortir." },
+        { "when": { "all": ["port-changed"] }, "text": "Le test depuis le poste bureautique passe, mais l'étiquette envoyée par le WMS ne sort pas : le WMS envoie toujours vers 10.30.20.21:9100." },
+        { "text": "Le WMS indique « Étiquette envoyée », mais rien ne sort." }
+      ]
+    }
+  ],
+  "diagnoses": [
+    { "id": "d-adresse", "label": "L'imprimante a perdu son adresse fixe lors de la maintenance : elle a reçu une autre adresse par DHCP et les systèmes envoient toujours vers l'ancienne", "correct": true, "requiresClues": ["c-ip-dhcp", "c-queue-error"], "feedback": "Exact. La réinitialisation pendant la maintenance a remis le protocole IP en DHCP. L'imprimante fonctionne et est joignable, mais à une adresse que ni le WMS ni la file Windows ne connaissent." },
+    { "id": "d-consommables", "label": "Le ruban ou les étiquettes sont mal installés", "correct": false, "feedback": "L'étiquette de configuration sort correctement et aucun voyant n'est allumé : les consommables ne sont pas en cause." },
+    { "id": "d-tete", "label": "La nouvelle tête d'impression est défectueuse", "correct": false, "feedback": "Une tête défectueuse empêcherait aussi l'impression locale de l'étiquette de configuration, qui sort parfaitement." },
+    { "id": "d-reseau", "label": "Le réseau du quai est en panne", "correct": false, "feedback": "L'imprimante du quai 2 sur le même switch fonctionne, et la Zebra répond au ping sur sa nouvelle adresse : le réseau fonctionne." },
+    { "id": "d-pilote", "label": "Le pilote d'impression est corrompu", "correct": false, "feedback": "Le WMS n'utilise pas de pilote Windows : il envoie le langage ZPL directement à l'imprimante. Les deux canaux échouent, la cause est donc commune et en aval." }
+  ],
+  "resolutions": [
+    { "id": "r-adresse-documentee", "label": "Remettre l'imprimante sur son adresse documentée 10.30.20.21 (fixe ou réservation DHCP) puis vérifier", "correct": true, "setFlags": ["fixed"], "feedback": "Bonne résolution : vous rétablissez la configuration de référence attendue par tous les systèmes, sans rien modifier côté serveur." },
+    { "id": "r-changer-port", "label": "Modifier le port de la file Windows vers 10.30.20.143", "correct": false, "setFlags": ["port-changed"], "feedback": "La file Windows refonctionnerait, mais le WMS envoie aussi directement vers 10.30.20.21, et l'adresse 143 peut changer au prochain bail. Vous déplaceriez la panne au lieu de la corriger." },
+    { "id": "r-pilote", "label": "Réinstaller le pilote sur tous les postes du quai", "correct": false, "feedback": "Le pilote n'est pas en cause : l'imprimante fonctionne et le WMS n'utilise pas de pilote." },
+    { "id": "r-remplacer", "label": "Demander le remplacement de l'imprimante", "correct": false, "feedback": "Le matériel fonctionne (étiquette de configuration correcte) : un remplacement coûterait du temps et de l'argent pour rien." }
+  ],
+  "fixedFlag": "fixed",
+  "verificationActionId": "impression-test",
+  "closureRubric": {
+    "criteria": [
+      { "id": "cause", "label": "Cause expliquée (adresse IP perdue / passage en DHCP après maintenance)", "points": 3, "patterns": ["dhcp", "adresse ip", "adresse", "ip", "10.30.20.21", "maintenance"], "required": true },
+      { "id": "action", "label": "Action réalisée (adresse documentée restaurée)", "points": 3, "patterns": ["remis", "restaur*", "reconfigur*", "10.30.20.21", "adresse fixe", "reservation"] },
+      { "id": "validation", "label": "Validation (impression test réussie)", "points": 2, "patterns": ["test", "imprime", "impression ok", "etiquette sort", "valide*"] },
+      { "id": "prevention", "label": "Prévention (réservation DHCP, procédure de maintenance, documentation)", "points": 2, "patterns": ["reservation", "procedure", "maintenance", "prevenir", "eviter", "checklist", "documentation"] }
+    ],
+    "passPercent": 60
+  },
+  "hints": [
+    "L'imprimante elle-même semble prête. Le problème est-il dans l'imprimante, ou sur le chemin entre les systèmes et l'imprimante ?",
+    "Comparez l'adresse à laquelle les systèmes envoient les étiquettes et l'adresse que l'imprimante utilise réellement.",
+    "L'étiquette de configuration indique IP PROTOCOL : DHCP, alors que la fiche CMDB prévoit une adresse fixe : la maintenance a réinitialisé la configuration réseau."
+  ],
+  "debrief": {
+    "cause": "Après le remplacement de la tête d'impression, la configuration réseau de la Zebra a été réinitialisée : l'imprimante est repassée en DHCP et a obtenu 10.30.20.143. Le WMS et la file Windows envoient toujours vers l'adresse documentée 10.30.20.21, qui ne répond plus.",
+    "clues": [
+      "La maintenance de la veille, juste avant le début de la panne",
+      "L'étiquette de configuration imprimée correctement : le matériel fonctionne",
+      "IP PROTOCOL : DHCP et une adresse différente de la fiche CMDB",
+      "La file Windows et le journal pointent vers une adresse qui ne répond plus"
+    ],
+    "relevantTests": [
+      "Étiquette de configuration (sépare le matériel du réseau en une action)",
+      "Ping de l'adresse documentée, puis de l'adresse affichée",
+      "Lecture du port de la file d'impression"
+    ],
+    "wrongHypotheses": [
+      { "hypothesis": "Consommables ou tête d'impression", "why": "L'impression locale de la configuration fonctionne et aucun voyant n'est allumé." },
+      { "hypothesis": "Pilote Windows", "why": "Le WMS, qui n'utilise pas de pilote, échoue aussi : la cause est commune aux deux canaux." },
+      { "hypothesis": "Panne réseau générale", "why": "Le quai 2 imprime et la Zebra répond à sa nouvelle adresse." }
+    ],
+    "procedure": [
+      "Imprimer l'étiquette de configuration et relever le protocole et l'adresse IP",
+      "Comparer avec la fiche de l'équipement",
+      "Reconfigurer l'adresse documentée depuis le panneau ou l'interface web de l'imprimante (ou demander une réservation DHCP au N2)",
+      "Vérifier par un ping de l'adresse documentée",
+      "Lancer une impression de test depuis le WMS, puis contrôler que la file se vide",
+      "Informer le chef d'équipe et documenter le ticket"
+    ],
+    "prevention": [
+      "Créer une réservation DHCP pour chaque imprimante d'entrepôt, en plus de la configuration fixe : une réinitialisation ne change plus l'adresse",
+      "Ajouter « vérifier l'adresse IP et imprimer un test WMS » à la procédure de fin d'intervention de la maintenance"
+    ],
+    "exampleClosingNote": "Cause : après le remplacement de la tête d'impression (maintenance du 20/10, 16 h), la Zebra IMP-ZEB-Q3 est repassée en DHCP (10.30.20.143) au lieu de son adresse fixe 10.30.20.21 utilisée par le WMS et la file ZEB-QUAI3. Action : adresse 10.30.20.21 reconfigurée depuis le panneau. Validation : ping OK, étiquette de test WMS imprimée, les 47 étiquettes en attente sont sorties. Prévention : demande de réservation DHCP transmise au N2 réseau et ajout d'un contrôle IP à la procédure de maintenance."
+  }
+}

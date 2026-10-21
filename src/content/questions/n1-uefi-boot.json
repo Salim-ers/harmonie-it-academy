@@ -1,0 +1,116 @@
+[
+  {
+    "code": "boot-ordre-etapes",
+    "lesson": "n1-uefi-boot",
+    "skill": "hardware",
+    "prompt": "Remettez dans l'ordre les étapes du démarrage d'un poste Windows UEFI.",
+    "data": {
+      "type": "order",
+      "items": [
+        { "id": "windows", "text": "Chargement du noyau, des pilotes et des services Windows" },
+        { "id": "post", "text": "POST : le firmware teste le matériel" },
+        { "id": "session", "text": "Écran de connexion et chargement du profil" },
+        { "id": "bootmgr", "text": "Lancement du gestionnaire de démarrage depuis la partition EFI" },
+        { "id": "ordre", "text": "Lecture de l'ordre de démarrage et choix du périphérique" }
+      ],
+      "answer": ["post", "ordre", "bootmgr", "windows", "session"]
+    },
+    "explanation": "Le firmware teste d'abord le matériel (POST), puis choisit le périphérique selon l'ordre de démarrage, lance le gestionnaire de démarrage stocké sur la partition EFI, qui charge Windows ; la session vient en dernier. Savoir où le démarrage s'arrête oriente le diagnostic : des bips avant le logo pointent le matériel, une boucle de réparation pointe Windows.",
+    "difficulty": 1
+  },
+  {
+    "code": "boot-gpt-uefi",
+    "lesson": "n1-uefi-boot",
+    "skill": "hardware",
+    "prompt": "Get-Disk indique que le disque système d'un poste est en style MBR. Que pouvez-vous en déduire ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Le poste démarre très probablement en mode BIOS hérité et n'est pas éligible à Windows 11 en l'état" },
+        { "id": "b", "text": "Le disque est en panne" },
+        { "id": "c", "text": "BitLocker est désactivé" },
+        { "id": "d", "text": "Secure Boot est forcément actif" }
+      ],
+      "answer": "a"
+    },
+    "explanation": "Le couple classique est UEFI avec GPT, BIOS hérité avec MBR. Un disque système MBR indique un démarrage en mode hérité, incompatible avec Secure Boot et donc avec les exigences de Windows 11. Le style de partitionnement ne dit rien de la santé du disque ni de l'état de BitLocker, et Secure Boot ne peut justement pas fonctionner en mode hérité.",
+    "difficulty": 2
+  },
+  {
+    "code": "boot-w11-exigences",
+    "lesson": "n1-uefi-boot",
+    "skill": "windows",
+    "prompt": "Parmi ces éléments, lesquels font partie de la configuration minimale exigée par Windows 11 ? (plusieurs réponses)",
+    "data": {
+      "type": "multiple",
+      "choices": [
+        { "id": "tpm", "text": "TPM version 2.0" },
+        { "id": "uefi", "text": "Firmware UEFI compatible Secure Boot" },
+        { "id": "ram", "text": "4 Go de mémoire vive" },
+        { "id": "nvme", "text": "Un SSD NVMe" },
+        { "id": "gpu", "text": "Une carte graphique dédiée" },
+        { "id": "legacy", "text": "Le mode de compatibilité BIOS (CSM) activé" }
+      ],
+      "answer": ["tpm", "uefi", "ram"]
+    },
+    "explanation": "Windows 11 exige notamment un TPM 2.0, un firmware UEFI compatible Secure Boot, 4 Go de RAM, 64 Go de stockage et un processeur compatible. Il n'exige ni SSD NVMe (64 Go de stockage suffisent, quel que soit le type), ni carte graphique dédiée (une puce compatible DirectX 12 intégrée au processeur convient). Le mode CSM est au contraire incompatible avec Secure Boot.",
+    "difficulty": 1
+  },
+  {
+    "code": "boot-bitlocker-vf",
+    "lesson": "n1-uefi-boot",
+    "skill": "hardware",
+    "prompt": "Vrai ou faux : si l'appelant donne correctement le nom de son poste et l'identificateur affiché à l'écran, on peut lui communiquer la clé de récupération BitLocker sans autre vérification.",
+    "data": { "type": "truefalse", "answer": false },
+    "explanation": "Faux. Le nom du poste et l'identificateur sont visibles par quiconque a le portable devant lui, y compris un voleur. L'identificateur sert seulement à vérifier qu'on a la bonne clé. Avant de la communiquer, il faut vérifier l'identité de la personne selon la procédure de l'entreprise (rappel sur le numéro connu, validation du responsable…), puis tracer la communication.",
+    "difficulty": 2
+  },
+  {
+    "code": "boot-winre-fill",
+    "lesson": "n1-uefi-boot",
+    "skill": "windows",
+    "prompt": "Complétez la commande qui redémarre le poste directement vers les options de démarrage avancées (WinRE).",
+    "data": { "type": "fill", "template": "shutdown /r ___", "accepted": ["/o", "-o"] },
+    "explanation": "shutdown /r /o redémarre le poste et ouvre le menu des options de démarrage avancées de WinRE. Le même résultat s'obtient en maintenant Maj enfoncée tout en cliquant sur Redémarrer. L'option /s éteindrait le poste au lieu de le redémarrer, et /a annulerait un arrêt programmé.",
+    "difficulty": 2
+  },
+  {
+    "code": "boot-exam-1",
+    "lesson": "n1-uefi-boot",
+    "skill": "hardware",
+    "prompt": "Lundi matin, le poste fixe d'un commercial affiche « Aucun périphérique de démarrage trouvé ». Il fonctionnait vendredi. Une clé USB contenant des présentations est branchée à l'avant. Quelle est la meilleure première action ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Retirer la clé USB et tout support amovible, puis redémarrer" },
+        { "id": "b", "text": "Passer le firmware en mode Legacy" },
+        { "id": "c", "text": "Déclarer le disque mort et commander un remplacement" },
+        { "id": "d", "text": "Lancer une réinitialisation du PC depuis WinRE" }
+      ],
+      "answer": "a"
+    },
+    "explanation": "Un support amovible branché peut être tenté avant le disque interne et faire échouer le démarrage : c'est le test le plus simple et le plus fréquent. Basculer en Legacy rendrait un disque GPT non démarrable et pourrait déclencher BitLocker. Conclure à un disque mort est prématuré sans avoir éliminé la cause simple. La réinitialisation détruit des données et ne règle pas un problème d'ordre de démarrage.",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "code": "boot-exam-2",
+    "lesson": "n1-uefi-boot",
+    "skill": "hardware",
+    "prompt": "Après une mise à jour du firmware déployée la nuit, dix portables de la comptabilité affichent l'écran de récupération BitLocker. Quelles actions sont appropriées ? (plusieurs réponses)",
+    "data": {
+      "type": "multiple",
+      "choices": [
+        { "id": "verif", "text": "Vérifier l'identité de chaque utilisateur avant de lui communiquer sa clé" },
+        { "id": "id", "text": "Contrôler que l'identificateur de clé affiché correspond à la clé trouvée dans l'annuaire" },
+        { "id": "n2", "text": "Signaler au N2 que plusieurs postes sont touchés après le même déploiement" },
+        { "id": "mail", "text": "Envoyer toutes les clés par courriel au responsable comptable pour gagner du temps" },
+        { "id": "tpm", "text": "Effacer le TPM de chaque poste pour éviter que cela se reproduise" }
+      ],
+      "answer": ["verif", "id", "n2"]
+    },
+    "explanation": "Chaque clé se communique après vérification d'identité et contrôle de l'identificateur, puis se trace. Dix postes touchés après un même changement constituent un incident à signaler : le déploiement aurait dû suspendre BitLocker. Envoyer les clés par courriel les expose à toute personne qui accède à cette boîte. Effacer le TPM ne prévient rien et peut rendre les données inaccessibles : c'est une action réservée au N2.",
+    "difficulty": 3,
+    "examOnly": true
+  }
+]

@@ -1,0 +1,303 @@
+{
+  "slug": "outlook-licence-retiree",
+  "title": "Une boîte aux lettres introuvable après une mutation",
+  "summary": "Depuis son changement de service, une collaboratrice voit Outlook redemander son mot de passe puis annoncer que sa boîte n'est pas disponible ; OWA échoue aussi. Trouvez la cause côté identité avant de toucher au poste.",
+  "sector": "bureau",
+  "difficulty": 2,
+  "requiredTier": 1,
+  "estimatedMinutes": 20,
+  "skills": ["m365", "identity", "diagnostic", "itsm", "documentation"],
+  "company": {
+    "name": "Caravelle Assurances Conseil (entreprise fictive)",
+    "description": "Cabinet de courtage de 380 collaborateurs, entièrement sur Microsoft 365 (Exchange Online, Teams, OneDrive). Les licences sont attribuées par groupe dans Entra ID : chaque service a un groupe de sécurité LIC-M365-E3-<service>. Le support N1 a un rôle délégué limité : il peut gérer les membres des groupes LIC-* selon la procédure PRC-LIC-02, mais pas attribuer une licence directement à un utilisateur."
+  },
+  "ticket": {
+    "reference": "INC-2026-05244",
+    "reporter": { "name": "Nadia Belkacem", "role": "Chargée de clientèle, service Sinistres (depuis lundi)", "site": "Siège – Nantes, 3e étage" },
+    "channel": "portail",
+    "title": "Outlook demande sans arrêt le mot de passe, boîte indisponible",
+    "description": "« Depuis ce matin, Outlook me redemande mon mot de passe en boucle, puis affiche que ma boîte aux lettres n'est pas disponible. J'ai essayé la messagerie dans le navigateur : ça ne marche pas non plus. Teams fonctionne pour les messages. Je viens d'arriver au service Sinistres lundi et j'ai des déclarations clients à traiter. »",
+    "impact": "individuel",
+    "urgency": "moyenne",
+    "slaMinutes": 60
+  },
+  "startFlags": [],
+  "clues": [
+    { "id": "c-mutation", "label": "Mutation du service Production vers le service Sinistres lundi, accès mis à jour par les RH et le N2" },
+    { "id": "c-owa-ko", "label": "OWA (navigateur) affiche une erreur de boîte aux lettres : le problème n'est pas propre au poste" },
+    { "id": "c-connexion-ok", "label": "Connexion au portail Microsoft 365 réussie avec MFA : le compte et le mot de passe fonctionnent" },
+    { "id": "c-collegue-ok", "label": "Les collègues du service Sinistres n'ont aucun problème de messagerie" },
+    { "id": "c-sans-licence", "label": "Fiche Entra ID : aucune licence Microsoft 365 E3 attribuée au compte" },
+    { "id": "c-groupes", "label": "Membre de GRP-SINISTRES mais plus de LIC-M365-E3-PRODUCTION et pas de LIC-M365-E3-SINISTRES" },
+    { "id": "c-audit-retrait", "label": "Journal d'audit : retrait de LIC-M365-E3-PRODUCTION lundi 08 h 47 lors de la mutation" },
+    { "id": "c-procedure", "label": "Procédure PRC-LIC-02 : en cas de mutation, ajout au groupe LIC-M365-E3 du nouveau service par le N1, avec visa du ticket RH" },
+    { "id": "c-boite-grace", "label": "Boîte aux lettres présente mais désactivée faute de licence (période de grâce, données conservées)" }
+  ],
+  "actions": [
+    {
+      "id": "interroger-changements",
+      "label": "Demander ce qui a changé récemment (poste, service, mot de passe)",
+      "category": "interroger",
+      "minutes": 3,
+      "relevance": "useful",
+      "outcomes": [
+        { "text": "« Rien sur le poste. Par contre, j'ai changé de service lundi : je suis passée de la Production aux Sinistres. Le N2 m'a donné accès aux dossiers Sinistres le matin même. Outlook est resté ouvert depuis, je n'ai pas fait attention, mais je crois que je ne reçois plus rien depuis lundi midi. Ce matin, au redémarrage du poste, il s'est mis à redemander le mot de passe. Je ne l'ai pas changé. »", "reveals": ["c-mutation"] }
+      ]
+    },
+    {
+      "id": "tester-owa",
+      "label": "Faire tester la messagerie Outlook sur le Web (OWA) dans le navigateur",
+      "category": "tester",
+      "minutes": 3,
+      "relevance": "useful",
+      "outcomes": [
+        { "when": { "all": ["licence-retablie"] }, "text": "OWA s'ouvre : la boîte de réception s'affiche avec tous les messages des derniers jours." },
+        {
+          "text": "Après connexion, OWA n'affiche pas la boîte de réception mais un message d'erreur. Le problème suit le compte, pas le poste.",
+          "terminal": { "shell": "text", "lines": ["outlook.office.com", "", "Un problème est survenu.", "Nous n'avons pas pu trouver de boîte aux lettres pour cet utilisateur.", "Si vous pensez qu'il s'agit d'une erreur, contactez votre administrateur.", "", "X-OWA-Error : MailboxNotFound (Licence requise)"] },
+          "reveals": ["c-owa-ko"]
+        }
+      ]
+    },
+    {
+      "id": "tester-connexion-portail",
+      "label": "Faire se connecter l'utilisatrice au portail Microsoft 365 (office.com)",
+      "category": "tester",
+      "minutes": 2,
+      "relevance": "useful",
+      "outcomes": [
+        { "text": "La connexion réussit du premier coup avec le mot de passe habituel et la validation MFA sur le téléphone. Le compte, le mot de passe et la MFA fonctionnent : les demandes répétées d'Outlook ne viennent pas d'un mot de passe faux.", "reveals": ["c-connexion-ok"] }
+      ]
+    },
+    {
+      "id": "collegues-service",
+      "label": "Vérifier si d'autres membres du service Sinistres ont un problème de messagerie",
+      "category": "observer",
+      "minutes": 2,
+      "relevance": "useful",
+      "outcomes": [
+        { "text": "Le responsable du service confirme : personne d'autre n'a de problème, la messagerie fonctionne pour toute l'équipe. Aucun incident Microsoft 365 n'est publié sur le tableau de bord d'état du service. Le problème est propre au compte de Mme Belkacem.", "reveals": ["c-collegue-ok"] }
+      ]
+    },
+    {
+      "id": "fiche-licences",
+      "label": "Consulter les licences du compte dans le centre d'administration (lecture)",
+      "category": "consulter",
+      "minutes": 3,
+      "relevance": "key",
+      "outcomes": [
+        {
+          "when": { "all": ["licence-retablie"] },
+          "text": "La licence est de nouveau attribuée, héritée du groupe du service Sinistres.",
+          "terminal": { "shell": "powershell", "lines": ["PS> Get-MgUserLicenseDetail -UserId nbelkacem@caravelle-ac.fr | Select SkuPartNumber", "", "SkuPartNumber", "-------------", "SPE_E3"] }
+        },
+        {
+          "text": "Le compte n'a plus aucune licence. Il est actif, la connexion fonctionne, mais sans licence Exchange Online la boîte aux lettres n'est plus servie.",
+          "terminal": {
+            "shell": "powershell",
+            "lines": [
+              "PS> Get-MgUser -UserId nbelkacem@caravelle-ac.fr -Property DisplayName,AccountEnabled,Department,AssignedLicenses | Select DisplayName,AccountEnabled,Department,@{n='Licences';e={$_.AssignedLicenses.Count}}",
+              "",
+              "DisplayName     AccountEnabled Department Licences",
+              "-----------     -------------- ---------- --------",
+              "Nadia Belkacem            True Sinistres         0",
+              "",
+              "PS> Get-MgUserLicenseDetail -UserId nbelkacem@caravelle-ac.fr",
+              "PS>"
+            ]
+          },
+          "reveals": ["c-sans-licence"]
+        }
+      ]
+    },
+    {
+      "id": "groupes-utilisatrice",
+      "label": "Lister les groupes dont l'utilisatrice est membre",
+      "category": "consulter",
+      "minutes": 3,
+      "relevance": "key",
+      "outcomes": [
+        {
+          "when": { "all": ["licence-retablie"] },
+          "text": "L'utilisatrice est membre de GRP-SINISTRES et de LIC-M365-E3-SINISTRES.",
+          "terminal": { "shell": "powershell", "lines": ["PS> Get-MgUserMemberOf -UserId nbelkacem@caravelle-ac.fr | % { $_.AdditionalProperties.displayName }", "Tous-Collaborateurs", "GRP-SINISTRES", "LIC-M365-E3-SINISTRES", "Partage-Sinistres-Lecture-Ecriture"] }
+        },
+        {
+          "text": "Le groupe métier GRP-SINISTRES et le partage du service sont présents, mais aucun groupe LIC-M365-E3 : l'ancien groupe de licence de la Production a été retiré et celui des Sinistres n'a pas été ajouté.",
+          "terminal": { "shell": "powershell", "lines": ["PS> Get-MgUserMemberOf -UserId nbelkacem@caravelle-ac.fr | % { $_.AdditionalProperties.displayName }", "Tous-Collaborateurs", "GRP-SINISTRES", "Partage-Sinistres-Lecture-Ecriture"] },
+          "reveals": ["c-groupes"]
+        }
+      ]
+    },
+    {
+      "id": "journal-audit",
+      "label": "Consulter le journal d'audit des modifications de groupes du compte",
+      "category": "consulter",
+      "minutes": 4,
+      "relevance": "useful",
+      "outcomes": [
+        {
+          "text": "Lundi matin, lors du traitement de la mutation, le compte a été retiré des groupes de la Production, dont le groupe de licence, puis ajouté aux groupes métier des Sinistres. Le groupe de licence des Sinistres a été oublié.",
+          "terminal": {
+            "shell": "text",
+            "lines": [
+              "JOURNAL D'AUDIT – Gestion des groupes – nbelkacem",
+              "19/10/2026 08:46  Supprimer un membre du groupe  GRP-PRODUCTION          par adm-n2-lgarnier",
+              "19/10/2026 08:47  Supprimer un membre du groupe  LIC-M365-E3-PRODUCTION  par adm-n2-lgarnier",
+              "19/10/2026 08:49  Ajouter un membre au groupe    GRP-SINISTRES           par adm-n2-lgarnier",
+              "19/10/2026 08:50  Ajouter un membre au groupe    Partage-Sinistres-L-E   par adm-n2-lgarnier",
+              "19/10/2026 08:51  Modifier l'utilisateur          Department = Sinistres  par adm-n2-lgarnier"
+            ]
+          },
+          "reveals": ["c-audit-retrait"]
+        }
+      ]
+    },
+    {
+      "id": "etat-boite",
+      "label": "Consulter l'état de la boîte aux lettres dans le centre d'administration Exchange",
+      "category": "consulter",
+      "minutes": 3,
+      "relevance": "useful",
+      "outcomes": [
+        { "when": { "all": ["licence-retablie"] }, "text": "La boîte aux lettres est de nouveau active. Exchange signale que la réactivation peut prendre quelques minutes à se propager." },
+        { "text": "La boîte existe toujours, avec ses 4,2 Go de données, mais elle est signalée comme désactivée faute de licence. Le bandeau indique qu'elle est conservée pendant la période de grâce de 30 jours avant suppression : il faut agir rapidement, mais rien n'est perdu.", "reveals": ["c-boite-grace"] }
+      ]
+    },
+    {
+      "id": "procedure-licences",
+      "label": "Consulter la procédure PRC-LIC-02 « Licences et mutations »",
+      "category": "consulter",
+      "minutes": 2,
+      "relevance": "useful",
+      "outcomes": [
+        { "text": "PRC-LIC-02 : les licences sont attribuées uniquement par les groupes LIC-M365-*. Lors d'une mutation, retirer l'ancien groupe de licence et ajouter celui du nouveau service. Le N1 est délégué pour l'ajout aux groupes LIC-*, sur ticket RH ou de mutation validé. Attribution directe d'une licence à un utilisateur : interdite (non suivie par le contrôle de gestion des licences). Si la délégation fait défaut, demande au N2-M365.", "reveals": ["c-procedure"] }
+      ]
+    },
+    {
+      "id": "reparer-office",
+      "label": "Lancer la réparation en ligne d'Office",
+      "category": "corriger",
+      "minutes": 25,
+      "relevance": "irrelevant",
+      "outcomes": [
+        { "text": "Vingt-cinq minutes plus tard, Office est réparé et Outlook redemande toujours le mot de passe avant d'afficher « Boîte aux lettres non disponible ». OWA échouait déjà : le problème n'a jamais été sur le poste." }
+      ]
+    },
+    {
+      "id": "supprimer-profil-ost",
+      "label": "Supprimer le profil Outlook et le fichier OST pour « repartir à zéro »",
+      "category": "corriger",
+      "minutes": 6,
+      "relevance": "irrelevant",
+      "risk": { "level": "dangerous", "explanation": "Le fichier OST est aujourd'hui la seule copie accessible des messages : la boîte en ligne étant désactivée, il ne pourra pas être reconstruit, et les brouillons ou éléments non synchronisés qu'il contient seraient perdus définitivement. Un nouveau profil ne peut pas se créer tant que la boîte n'est pas servie : l'utilisatrice perd aussi l'accès hors connexion à ses mails. Toute suppression de profil exige une sauvegarde préalable et un diagnostic qui la justifie." },
+      "outcomes": [
+        { "text": "Le profil et le fichier OST de 3,8 Go sont supprimés. Outlook tente de créer un nouveau profil et échoue : « Impossible de se connecter à Microsoft Exchange ». Mme Belkacem n'a plus accès hors connexion à ses messages, et les trois brouillons de déclaration qu'elle n'avait pas envoyés sont perdus." }
+      ]
+    },
+    {
+      "id": "licence-directe",
+      "label": "Attribuer directement une licence Microsoft 365 E3 au compte, hors groupe",
+      "category": "corriger",
+      "minutes": 3,
+      "relevance": "neutral",
+      "risk": { "level": "caution", "explanation": "La procédure PRC-LIC-02 interdit l'attribution directe : elle échappe au suivi des licences par service et ne sera pas retirée au départ ou à la prochaine mutation de l'utilisatrice. Elle peut aussi consommer une licence d'un autre centre de coûts. Le rôle N1 ne le permet d'ailleurs pas : la tentative est tracée." },
+      "outcomes": [
+        { "text": "Le centre d'administration refuse : « Vous n'avez pas les autorisations nécessaires pour attribuer des licences ». La tentative apparaît dans le journal d'audit. La procédure prévoit l'ajout au groupe de licence du service." }
+      ]
+    },
+    {
+      "id": "nouveau-mot-de-passe",
+      "label": "Réinitialiser le mot de passe de l'utilisatrice",
+      "category": "corriger",
+      "minutes": 4,
+      "relevance": "neutral",
+      "outcomes": [
+        { "text": "Le mot de passe est réinitialisé. Mme Belkacem se reconnecte… et Outlook affiche toujours que la boîte n'est pas disponible. La connexion au portail fonctionnait déjà : le mot de passe n'était pas en cause, et vous lui avez imposé un changement inutile." }
+      ]
+    },
+    {
+      "id": "vider-identifiants",
+      "label": "Supprimer les identifiants Office du Gestionnaire d'identification Windows",
+      "category": "corriger",
+      "minutes": 3,
+      "relevance": "neutral",
+      "outcomes": [
+        { "text": "Après suppression des entrées MicrosoftOffice16_Data, Outlook redemande la connexion, la MFA est validée, puis le même message apparaît : « Boîte aux lettres non disponible ». Les identifiants mis en cache n'étaient pas en cause." }
+      ]
+    },
+    {
+      "id": "test-envoi",
+      "label": "Faire envoyer et recevoir un message test depuis Outlook",
+      "category": "tester",
+      "minutes": 4,
+      "relevance": "useful",
+      "outcomes": [
+        { "when": { "all": ["licence-retablie"] }, "text": "Après quelques minutes de propagation, Outlook se connecte sans redemander le mot de passe. Mme Belkacem s'envoie un message et reçoit une réponse d'un collègue des Sinistres ; tous ses anciens messages sont là. Vous la prévenez que des expéditeurs ont pu recevoir un message de non-remise depuis lundi et qu'il faudra peut-être leur demander de renvoyer. Elle peut reprendre ses déclarations." },
+        { "when": { "all": ["demande-n2-envoyee"] }, "text": "Outlook affiche toujours « Boîte aux lettres non disponible » : la demande au N2 est en attente de traitement." },
+        { "text": "Outlook redemande le mot de passe puis affiche « Boîte aux lettres non disponible ». Aucun message ne peut être envoyé." }
+      ]
+    }
+  ],
+  "diagnoses": [
+    { "id": "d-licence-groupe", "label": "Lors de la mutation, l'utilisatrice a été retirée du groupe de licence de la Production sans être ajoutée à celui des Sinistres : sans licence, sa boîte Exchange Online n'est plus servie", "correct": true, "requiresClues": ["c-sans-licence", "c-groupes", "c-owa-ko"], "feedback": "Exact. La licence est attribuée par groupe : le retrait de LIC-M365-E3-PRODUCTION a supprimé la licence, et l'ajout à LIC-M365-E3-SINISTRES a été oublié. La boîte, conservée pendant la période de grâce, n'est plus accessible par aucun client : Outlook comme OWA échouent." },
+    { "id": "d-profil", "label": "Le profil Outlook ou le fichier OST est corrompu", "correct": false, "feedback": "Un profil corrompu n'empêcherait pas OWA de fonctionner dans le navigateur. Ici, OWA échoue aussi : le problème est côté compte, pas sur le poste." },
+    { "id": "d-mot-de-passe", "label": "Le mot de passe de l'utilisatrice a expiré ou est incorrect", "correct": false, "feedback": "La connexion au portail Microsoft 365 réussit avec le mot de passe habituel et la MFA. Les demandes répétées d'Outlook sont un effet secondaire : il n'obtient pas de boîte à ouvrir." },
+    { "id": "d-panne-m365", "label": "Exchange Online est en panne", "correct": false, "feedback": "Les collègues du service n'ont aucun problème et aucun incident n'est publié : le problème est propre à ce compte." },
+    { "id": "d-office", "label": "L'installation d'Office est endommagée", "correct": false, "feedback": "OWA, qui ne dépend pas d'Office, échoue aussi. Réparer Office ne peut rien changer." }
+  ],
+  "resolutions": [
+    { "id": "r-groupe-licence", "label": "Selon PRC-LIC-02, ajouter l'utilisatrice au groupe LIC-M365-E3-SINISTRES (référence du ticket de mutation), attendre la propagation et vérifier", "correct": true, "setFlags": ["licence-retablie"], "feedback": "Bonne résolution : vous corrigez la cause dans le cadre prévu par la délégation, la licence est héritée du groupe du nouveau service et sera gérée correctement aux prochains mouvements. La boîte, toujours en période de grâce, est réactivée sans perte de données." },
+    { "id": "r-demande-n2", "label": "Transmettre une demande au N2-M365 sans plus de détail et mettre le ticket en attente", "correct": false, "setFlags": ["demande-n2-envoyee"], "feedback": "Escalader serait légitime si vous n'étiez pas délégué sur les groupes LIC-*, mais ici la procédure vous y autorise : l'utilisatrice resterait bloquée des heures pour une action que vous pouviez faire. Et une demande « sans détail » obligerait le N2 à refaire le diagnostic." },
+    { "id": "r-licence-directe", "label": "Attribuer une licence E3 directement sur le compte", "correct": false, "feedback": "Interdit par la procédure et hors de vos droits : une licence directe échappe au suivi par service et resterait attribuée lors des prochains mouvements, au risque d'une double facturation." },
+    { "id": "r-nouveau-profil", "label": "Recréer le profil Outlook et réparer Office", "correct": false, "feedback": "Le poste n'est pas en cause (OWA échoue aussi), et supprimer le profil sans sauvegarde ferait perdre l'accès hors connexion aux messages." }
+  ],
+  "fixedFlag": "licence-retablie",
+  "verificationActionId": "test-envoi",
+  "closureRubric": {
+    "criteria": [
+      { "id": "cause", "label": "Cause expliquée (retrait du groupe de licence lors de la mutation, plus de licence)", "points": 3, "patterns": ["licence", "groupe de licence", "lic-m365", "mutation", "changement de service"], "required": true },
+      { "id": "action", "label": "Action réalisée (ajout au groupe de licence du nouveau service selon la procédure)", "points": 3, "patterns": ["ajoute*", "ajout", "rattache*", "lic-m365-e3-sinistres", "prc-lic-02"] },
+      { "id": "validation", "label": "Validation (Outlook et OWA fonctionnent, message test)", "points": 2, "patterns": ["test", "message test", "envoi", "reception", "fonctionne", "valide*", "verifie*"] },
+      { "id": "prevention", "label": "Prévention ou signalement (checklist de mutation, information du N2)", "points": 2, "patterns": ["checklist", "procedure de mutation", "prevention", "signale*", "informe*", "n2", "eviter"] }
+    ],
+    "passPercent": 60
+  },
+  "hints": [
+    "Outlook et OWA échouent tous les deux, alors que la connexion au compte fonctionne : le problème est-il sur le poste, ou dans ce que le compte a le droit d'utiliser ?",
+    "Une boîte Exchange Online n'est servie que si le compte a une licence. Regardez les licences du compte et la façon dont elles sont attribuées dans cette entreprise.",
+    "Les licences arrivent par les groupes LIC-M365-E3-<service>. Lors de la mutation, l'ancien groupe a été retiré, mais le nouveau n'a pas été ajouté : appliquez PRC-LIC-02."
+  ],
+  "debrief": {
+    "cause": "Lors de la mutation de lundi, le compte a été retiré du groupe LIC-M365-E3-PRODUCTION, qui lui attribuait sa licence Microsoft 365 E3, mais n'a pas été ajouté à LIC-M365-E3-SINISTRES. Sans licence, la boîte Exchange Online est désactivée et conservée en période de grâce : Outlook redemande l'authentification puis ne trouve pas la boîte, OWA échoue de la même façon.",
+    "clues": [
+      "Le problème commence avec la mutation de lundi ; Outlook, resté ouvert sur son cache, ne l'a montré qu'au redémarrage",
+      "OWA échoue aussi : ce n'est pas le poste",
+      "La connexion au portail réussit : ce n'est pas le mot de passe",
+      "Le compte n'a plus de licence et n'est membre d'aucun groupe LIC-M365-E3"
+    ],
+    "relevantTests": [
+      "Test OWA pour séparer le poste du compte",
+      "Lecture des licences du compte",
+      "Liste des groupes et journal d'audit pour comprendre comment la licence a disparu"
+    ],
+    "wrongHypotheses": [
+      { "hypothesis": "Profil Outlook ou OST corrompu", "why": "OWA échoue aussi ; et supprimer l'OST aurait fait perdre la seule copie accessible des messages." },
+      { "hypothesis": "Mot de passe expiré", "why": "La connexion au portail fonctionne avec le mot de passe habituel et la MFA." },
+      { "hypothesis": "Panne de Microsoft 365", "why": "Le reste du service n'a aucun problème et aucun incident n'est publié." }
+    ],
+    "procedure": [
+      "Tester OWA et la connexion au portail pour situer le problème (poste, compte, service)",
+      "Consulter les licences du compte, puis ses groupes et le journal d'audit",
+      "Vérifier dans PRC-LIC-02 le groupe de licence attendu et votre délégation",
+      "Ajouter l'utilisatrice au groupe LIC-M365-E3 de son nouveau service en citant le ticket de mutation",
+      "Attendre la propagation, puis tester l'envoi et la réception depuis Outlook",
+      "Signaler l'oubli au N2 pour qu'il complète sa checklist de mutation"
+    ],
+    "prevention": [
+      "Ajouter à la checklist de mutation l'étape « remplacer le groupe de licence » juste après le retrait de l'ancien",
+      "Mettre en place une alerte sur les comptes actifs sans licence"
+    ],
+    "exampleClosingNote": "Cause : lors de la mutation de la Production vers les Sinistres (19/10), le compte a été retiré du groupe de licence LIC-M365-E3-PRODUCTION sans être ajouté à LIC-M365-E3-SINISTRES : plus de licence, boîte Exchange Online désactivée (période de grâce, aucune donnée perdue). Action : ajout au groupe LIC-M365-E3-SINISTRES selon la procédure PRC-LIC-02, référence du ticket de mutation. Validation : après propagation, Outlook se connecte sans redemander le mot de passe, message test envoyé et reçu, OWA fonctionne. Prévention : oubli signalé au N2 pour compléter la checklist de mutation (remplacer le groupe de licence)."
+  }
+}

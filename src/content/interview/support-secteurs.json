@@ -1,0 +1,374 @@
+[
+  {
+    "code": "itw-sect-ind-automate",
+    "role": "support_industriel",
+    "level": "debutant",
+    "kind": "situation",
+    "lang": "fr",
+    "sectors": ["industrie"],
+    "prompt": "Dans une usine, un chef d'équipe vous appelle : le PC de supervision d'une ligne de production n'affiche plus les données de l'automate et il vous demande de « relancer l'automate ». Que faites-vous ?",
+    "rubric": {
+      "criteria": [
+        { "id": "perimetre", "label": "Ne pas intervenir sur l'automate", "points": 3, "required": true, "patterns": ["je ne touche pas a l automate", "je ne touche pas l automate", "pas toucher a l automate", "je n interviens pas sur l automate", "je ne relance pas l automate", "pas de mon perimetre", "hors de mon perimetre", "pas mon role"] },
+        { "id": "securite", "label": "Sécurité des personnes et de la production", "points": 3, "required": true, "patterns": ["securite des personnes", "securite", "risque*", "machine*", "danger*", "arret de ligne", "accident"] },
+        { "id": "automaticien", "label": "Contacter le bon interlocuteur", "points": 2, "patterns": ["automaticien*", "maintenance", "responsable de production", "equipe ot", "responsable de ligne", "methodes"] },
+        { "id": "poste", "label": "Diagnostiquer côté poste de supervision", "points": 2, "patterns": ["poste de supervision", "cote it", "cote poste", "cable", "ping", "carte reseau", "application de supervision", "connexion du poste"] },
+        { "id": "changement", "label": "Rechercher un changement récent", "points": 1, "patterns": ["changement", "mise a jour", "intervention recente", "depuis quand"] },
+        { "id": "trace", "label": "Tracer et informer", "points": 1, "patterns": ["ticket", "trace*", "informe*"] }
+      ],
+      "redFlags": [
+        { "id": "relance", "label": "Relancer l'automate ou modifier l'OT", "patterns": ["je relance l automate", "je redemarre l automate", "je modifie le programme", "je coupe l automate"], "penalty": 4 },
+        { "id": "maj", "label": "Mettre à jour un poste OT sans validation", "patterns": ["je fais les mises a jour windows", "je lance windows update"], "penalty": 2 }
+      ],
+      "passPercent": 60,
+      "expectStructure": false
+    },
+    "modelAnswer": "Je ne touche pas à l'automate : ce n'est pas de mon périmètre, et relancer un automate peut mettre en mouvement une machine ou arrêter une ligne, avec un vrai risque pour la sécurité des personnes et la production. Je l'explique calmement au chef d'équipe et je fais intervenir le bon interlocuteur : l'automaticien ou la maintenance, et le responsable de production. De mon côté, je peux diagnostiquer le poste de supervision lui-même : est-il bien connecté, le câble et la carte réseau sont-ils en état, l'application de supervision fonctionne-t-elle, l'automate répond-il au ping si la procédure le permet ? Je demande aussi depuis quand et s'il y a eu un changement récent, une mise à jour par exemple. Je trace tout dans le ticket et j'informe les équipes de ce que j'ai constaté.",
+    "explanation": "En environnement industriel, le recruteur vérifie d'abord que vous connaissez vos limites : le monde OT (automates, supervision, machines) obéit à des règles de sécurité et de continuité que l'IT ne maîtrise pas. Il attend que vous refusiez d'agir sur l'automate, que vous fassiez intervenir les bons métiers et que vous restiez utile sur votre périmètre, le poste et sa connexion.",
+    "skills": ["diagnostic", "communication", "network-fundamentals"],
+    "lessonSlugs": ["n1-metier-niveaux", "n1-methode-diagnostic"],
+    "estimatedMinutes": 3
+  },
+  {
+    "code": "itw-sect-ind-it-ot",
+    "role": "support_industriel",
+    "level": "intermediaire",
+    "kind": "technique",
+    "lang": "fr",
+    "sectors": ["industrie"],
+    "prompt": "Quelle différence faites-vous entre l'IT et l'OT, et pourquoi sépare-t-on leurs réseaux dans une usine ?",
+    "rubric": {
+      "criteria": [
+        { "id": "it", "label": "IT : informatique de gestion", "points": 2, "patterns": ["informatique de gestion", "bureautique", "messagerie", "erp", "postes de bureau", "systeme d information"] },
+        { "id": "ot", "label": "OT : pilotage des équipements physiques", "points": 3, "required": true, "patterns": ["automate*", "supervision", "machines", "production", "equipements physiques", "capteurs", "scada", "ligne*"] },
+        { "id": "priorite", "label": "Priorités différentes : disponibilité et sécurité", "points": 2, "patterns": ["disponibilite", "continuite", "ne doit pas s arreter", "securite des personnes", "temps reel", "arret de production"] },
+        { "id": "segmentation", "label": "Segmentation des réseaux", "points": 3, "required": true, "patterns": ["segment*", "separ*", "vlan", "cloisonn*", "isol*", "pare-feu", "firewall", "zone*"] },
+        { "id": "risque", "label": "Limiter la propagation d'une attaque ou d'une panne", "points": 2, "patterns": ["propagation", "se propage", "rancongiciel", "ransomware", "virus", "malware", "contamin*", "attaque"] },
+        { "id": "maj", "label": "Contraintes de mise à jour des systèmes OT", "points": 1, "patterns": ["mises a jour", "anciens systemes", "systemes anciens", "obsolete*", "difficiles a mettre a jour", "valid*"] }
+      ],
+      "passPercent": 60,
+      "expectStructure": false
+    },
+    "modelAnswer": "L'IT, c'est l'informatique de gestion : postes de bureau, messagerie, ERP, fichiers. L'OT, c'est la technologie qui pilote les équipements physiques : automates, supervision, capteurs, machines de production. Les priorités ne sont pas les mêmes : en OT, la disponibilité et la sécurité des personnes passent avant tout, une ligne ne doit pas s'arrêter. Les systèmes OT sont aussi souvent anciens et difficiles à mettre à jour, car toute modification doit être validée avec la production. C'est pour ça qu'on segmente les réseaux : l'OT est isolé de l'IT dans des zones séparées, avec des VLAN et un pare-feu qui ne laisse passer que les flux nécessaires. Le but est d'éviter qu'un rançongiciel arrivé par un e-mail côté bureau se propage jusqu'aux machines. Pour moi, au support, cela veut dire respecter cette séparation et ne jamais brancher un équipement sans autorisation.",
+    "explanation": "Le recruteur évalue votre compréhension du contexte industriel : deux mondes avec des priorités différentes, et une segmentation qui protège la production. Il n'attend pas une expertise en cybersécurité industrielle, mais la conscience des conséquences concrètes pour votre travail : ne pas brancher, ne pas mettre à jour, ne pas relier les réseaux sans validation.",
+    "skills": ["vlan", "network-fundamentals", "security-hygiene"],
+    "lessonSlugs": ["n1-vlan", "n1-osi"],
+    "estimatedMinutes": 3
+  },
+  {
+    "code": "itw-sect-ind-cle-usb",
+    "role": "support_industriel",
+    "level": "debutant",
+    "kind": "situation",
+    "lang": "fr",
+    "sectors": ["industrie"],
+    "prompt": "Un technicien de maintenance externe veut brancher sa clé USB et son portable sur le réseau d'un atelier pour mettre à jour une machine. Il est pressé. Comment réagissez-vous ?",
+    "rubric": {
+      "criteria": [
+        { "id": "procedure", "label": "Appliquer la procédure d'accès des intervenants", "points": 3, "required": true, "patterns": ["procedure", "regles du site", "charte", "autorisation", "plan de prevention", "validation"] },
+        { "id": "risque", "label": "Expliquer le risque", "points": 2, "patterns": ["virus", "malware", "logiciel malveillant", "infection", "contamin*", "rancongiciel", "risque*"] },
+        { "id": "controle", "label": "Contrôler les supports et équipements", "points": 3, "required": true, "patterns": ["analyse*", "antivirus", "station de decontamination", "borne de decontamination", "scanner la cle", "verifier la cle", "poste dedie", "controle*"] },
+        { "id": "interlocuteurs", "label": "Associer les responsables", "points": 2, "patterns": ["responsable de production", "responsable maintenance", "rssi", "responsable securite", "mon responsable", "n2"] },
+        { "id": "calme", "label": "Rester courtois face à la pression", "points": 1, "patterns": ["courtois*", "calme*", "explique*", "je comprends"] },
+        { "id": "trace", "label": "Tracer l'intervention", "points": 1, "patterns": ["ticket", "trace*", "registre", "consign*"] }
+      ],
+      "redFlags": [
+        { "id": "laisse", "label": "Laisser brancher sans contrôle", "patterns": ["je le laisse brancher", "je le laisse faire", "pour cette fois", "je branche sa cle"], "penalty": 4 }
+      ],
+      "passPercent": 60,
+      "expectStructure": false
+    },
+    "modelAnswer": "Je reste courtois, je comprends qu'il soit pressé, mais je ne le laisse pas brancher quoi que ce soit directement sur le réseau de l'atelier. Une clé USB ou un portable externe peut introduire un logiciel malveillant jusqu'aux machines, avec un risque d'arrêt de production. J'applique donc la procédure du site pour les intervenants : vérifier que son intervention est autorisée et planifiée avec le responsable maintenance, puis faire analyser la clé sur la station de décontamination ou avec l'antivirus d'un poste dédié avant tout usage. Pour le portable, c'est l'équipe réseau ou sécurité qui décide s'il peut être raccordé, et sur quelle zone. Si j'ai un doute, je préviens mon responsable ou le RSSI avant d'aller plus loin. Je trace l'intervention dans le ticket, avec l'heure et le nom de l'intervenant.",
+    "explanation": "Le recruteur teste votre fermeté sur une règle de sécurité concrète, sous pression d'un intervenant extérieur. Les supports amovibles et les portables de prestataires sont une voie d'infection classique des réseaux industriels. Il attend le respect de la procédure, un contrôle des supports et l'implication des responsables, sans conflit inutile.",
+    "skills": ["security-hygiene", "communication"],
+    "lessonSlugs": ["n1-vlan", "n1-communication"],
+    "estimatedMinutes": 3
+  },
+  {
+    "code": "itw-sect-log-terminaux",
+    "role": "support_n1",
+    "level": "debutant",
+    "kind": "technique",
+    "lang": "fr",
+    "sectors": ["logistique"],
+    "prompt": "Dans un entrepôt, plusieurs terminaux RF (scanners portables) perdent régulièrement la connexion dans une même allée. Comment abordez-vous le problème ?",
+    "rubric": {
+      "criteria": [
+        { "id": "localisation", "label": "Corréler avec la zone", "points": 3, "required": true, "patterns": ["meme allee", "meme zone", "zone", "localis*", "endroit", "carte de couverture", "cartographie"] },
+        { "id": "wifi", "label": "Hypothèse de couverture radio", "points": 3, "required": true, "patterns": ["couverture", "signal", "borne*", "point d acces", "points d acces", "wi-fi", "wifi", "interference*", "rssi"] },
+        { "id": "environnement", "label": "Influence de l'environnement", "points": 2, "patterns": ["rayonnage*", "metal", "metallique*", "stock", "palettes", "obstacle*", "chariot*"] },
+        { "id": "infos", "label": "Collecter des données précises", "points": 2, "patterns": ["heure*", "numero de terminal", "numeros des terminaux", "combien de terminaux", "frequence", "moment*", "liste"] },
+        { "id": "terminal", "label": "Écarter le terminal lui-même", "points": 1, "patterns": ["batterie", "autre terminal", "comparer", "compare*", "configuration du terminal"] },
+        { "id": "escalade", "label": "Escalader à l'équipe réseau", "points": 2, "patterns": ["escalad*", "equipe reseau", "n2", "administrateur reseau", "prestataire wi-fi"] }
+      ],
+      "redFlags": [
+        { "id": "reset-tout", "label": "Réinitialiser tous les terminaux sans diagnostic", "patterns": ["je reinitialise tous les terminaux", "je remets tous les terminaux a zero"], "penalty": 2 }
+      ],
+      "passPercent": 60,
+      "expectStructure": false
+    },
+    "modelAnswer": "Si plusieurs terminaux décrochent dans la même allée, ce n'est probablement pas un problème de terminal mais de zone : je pense d'abord à la couverture Wi-Fi. Je collecte des données précises : les numéros des terminaux concernés, l'heure des coupures, l'endroit exact et la fréquence. Je vérifie aussi si quelque chose a changé dans l'environnement : des rayonnages métalliques déplacés, un stock plus haut que d'habitude ou des palettes qui font obstacle au signal, car le métal perturbe beaucoup la radio. Je compare avec un terminal qui fonctionne bien et je vérifie la batterie pour écarter le matériel. Si je peux, je regarde la force du signal affichée sur le terminal dans l'allée. Ensuite, j'escalade à l'équipe réseau avec ces éléments, pour qu'elle contrôle la borne qui couvre cette zone.",
+    "explanation": "Le recruteur évalue votre capacité à raisonner par corrélation : un symptôme lié à un lieu oriente vers l'infrastructure radio plutôt que vers les appareils. En entrepôt, l'environnement change sans cesse (stock, rayonnages) et influence le Wi-Fi. Des données précises transmises à l'équipe réseau valent mieux que des réinitialisations à l'aveugle.",
+    "skills": ["wifi", "diagnostic"],
+    "lessonSlugs": ["n1-wifi", "n1-methode-diagnostic"],
+    "estimatedMinutes": 3
+  },
+  {
+    "code": "itw-sect-log-thermique",
+    "role": "support_n1",
+    "level": "debutant",
+    "kind": "situation",
+    "lang": "fr",
+    "sectors": ["logistique"],
+    "prompt": "Le chef de quai vous appelle à 10 h 15 : l'imprimante thermique d'étiquettes transporteurs n'imprime plus, et l'enlèvement des colis est prévu à 11 h. Comment gérez-vous la situation ?",
+    "rubric": {
+      "criteria": [
+        { "id": "urgence", "label": "Prendre en compte l'échéance", "points": 2, "patterns": ["11 h", "11h", "enlevement", "camion*", "transporteur*", "echeance", "urgence", "priorit*"] },
+        { "id": "consommables", "label": "Vérifier imprimante et consommables", "points": 2, "patterns": ["rouleau", "etiquettes", "ruban", "tete d impression", "voyant*", "ecran", "etiquette de configuration", "page de configuration"] },
+        { "id": "reseau", "label": "Vérifier l'adresse et la connectivité", "points": 3, "required": true, "patterns": ["adresse ip", "ping", "dhcp", "adresse fixe", "reseau", "port"] },
+        { "id": "file", "label": "Vérifier la file d'impression ou le flux WMS", "points": 3, "required": true, "patterns": ["file d attente", "file d impression", "wms", "serveur d impression", "documents en erreur", "spouleur"] },
+        { "id": "contournement", "label": "Contournement pour tenir l'échéance", "points": 2, "patterns": ["contournement", "autre imprimante", "autre quai", "imprimante de secours", "quai voisin"] },
+        { "id": "changement", "label": "Rechercher un changement récent", "points": 1, "patterns": ["changement", "maintenance", "intervention", "remplace*", "hier"] }
+      ],
+      "redFlags": [
+        { "id": "reset-usine", "label": "Réinitialisation d'usine à l'aveugle", "patterns": ["reinitialisation d usine", "je remets l imprimante en usine", "reset usine"], "penalty": 2 }
+      ],
+      "passPercent": 60,
+      "expectStructure": false
+    },
+    "modelAnswer": "L'enlèvement à 11 h fixe la priorité : je dois traiter vite, tout en gardant un plan B. Je demande d'abord si quelque chose a changé, une intervention de maintenance récente par exemple. Je fais vérifier l'imprimante : message à l'écran, rouleau d'étiquettes et ruban bien en place, puis l'impression d'une étiquette de configuration pour savoir si le matériel fonctionne et lire son adresse IP. Je compare cette adresse avec celle déclarée dans le WMS ou sur le serveur d'impression, et je fais un ping. Ensuite je regarde la file d'impression ou les documents en erreur côté WMS. Si je ne trouve pas rapidement, je propose un contournement : imprimer les étiquettes sur l'imprimante du quai voisin pour ne pas manquer le camion, puis je poursuis le diagnostic et j'escalade si besoin.",
+    "explanation": "En logistique, une imprimante d'étiquettes bloquée arrête les expéditions : le recruteur évalue votre capacité à tenir compte d'une échéance métier tout en suivant une méthode (matériel, réseau, file d'impression ou WMS). Proposer un contournement pour ne pas manquer l'enlèvement montre que vous pensez d'abord à l'activité de l'utilisateur.",
+    "skills": ["printing", "diagnostic", "network-ip"],
+    "lessonSlugs": ["n1-imprimantes", "n1-dhcp"],
+    "estimatedMinutes": 3
+  },
+  {
+    "code": "itw-sect-log-wms",
+    "role": "support_n1",
+    "level": "intermediaire",
+    "kind": "technique",
+    "lang": "fr",
+    "sectors": ["logistique"],
+    "prompt": "Les opérateurs de préparation signalent que les commandes n'apparaissent plus sur leurs terminaux, alors que le WMS semble fonctionner au bureau. Quelle est votre démarche ?",
+    "rubric": {
+      "criteria": [
+        { "id": "perimetre", "label": "Mesurer le périmètre", "points": 3, "required": true, "patterns": ["tous les terminaux", "combien de terminaux", "quelle zone", "toutes les zones", "perimetre", "un seul terminal", "plusieurs terminaux", "qui est touche"] },
+        { "id": "depuis", "label": "Depuis quand et quel changement", "points": 2, "patterns": ["depuis quand", "heure", "changement", "mise a jour", "intervention"] },
+        { "id": "flux", "label": "Raisonner sur le chemin du flux", "points": 3, "required": true, "patterns": ["flux", "chemin", "entre le wms et les terminaux", "interface", "service", "serveur", "synchronisation", "file*"] },
+        { "id": "reseau", "label": "Tester le réseau des terminaux", "points": 2, "patterns": ["wi-fi", "wifi", "reseau", "connexion", "ping", "adresse ip"] },
+        { "id": "escalade", "label": "Escalader avec des éléments précis", "points": 2, "patterns": ["escalad*", "n2", "editeur", "equipe applicative", "responsable wms", "key user", "referent"] },
+        { "id": "contournement", "label": "Proposer une solution provisoire", "points": 1, "patterns": ["contournement", "mode degrade", "papier", "listes imprimees", "provisoire*"] }
+      ],
+      "redFlags": [
+        { "id": "reboot", "label": "Redémarrer le serveur WMS soi-même", "patterns": ["je redemarre le serveur", "je redemarre le wms"], "penalty": 3 }
+      ],
+      "passPercent": 60,
+      "expectStructure": false
+    },
+    "modelAnswer": "Le WMS fonctionne au bureau, donc je raisonne sur le chemin du flux entre le WMS et les terminaux. Je mesure d'abord le périmètre : tous les terminaux ou un seul, toutes les zones ou une seule allée, et depuis quand, avec un éventuel changement ou une mise à jour récente. Si un seul terminal est touché, je regarde sa connexion Wi-Fi, son adresse IP, sa session. Si tous les terminaux sont touchés, je soupçonne plutôt l'interface ou le service qui envoie les commandes aux terminaux, ou le réseau de l'entrepôt : je teste un terminal en Wi-Fi et un ping vers le serveur. J'escalade rapidement au N2 ou à l'équipe applicative avec ces éléments, car la préparation est bloquée. En attendant, je vois avec le chef d'équipe si un mode dégradé, par exemple des listes imprimées, permet de continuer à préparer.",
+    "explanation": "Le recruteur évalue votre capacité à découper un problème applicatif sans connaître le logiciel en détail : périmètre, chemin du flux, tests réseau simples, puis escalade documentée. Il apprécie aussi le réflexe de continuité d'activité, essentiel dans un entrepôt où chaque minute de préparation compte.",
+    "skills": ["diagnostic", "itsm", "wifi"],
+    "lessonSlugs": ["n1-methode-diagnostic", "n1-wifi", "n1-metier-niveaux"],
+    "estimatedMinutes": 3
+  },
+  {
+    "code": "itw-sect-lux-vip",
+    "role": "support_n1",
+    "level": "debutant",
+    "kind": "situation",
+    "lang": "fr",
+    "sectors": ["retail-luxe"],
+    "prompt": "Chez Maison Aubrac, maison de luxe, vous intervenez sur l'ordinateur d'une directrice artistique. Elle est pressée et des collections non dévoilées sont visibles à l'écran. Comment vous comportez-vous ?",
+    "rubric": {
+      "criteria": [
+        { "id": "discretion", "label": "Discrétion et confidentialité", "points": 3, "required": true, "patterns": ["discretion", "discret", "discrete", "confidential*", "confidentiel*", "je ne regarde pas", "je detourne", "ne pas lire"] },
+        { "id": "accord", "label": "Demander l'autorisation avant d'agir", "points": 3, "required": true, "patterns": ["son accord", "son autorisation", "je lui demande", "je demande la permission", "avec sa permission", "avant de prendre la main"] },
+        { "id": "fenetres", "label": "Lui laisser fermer ou réduire ses documents", "points": 2, "patterns": ["fermer ses documents", "reduire", "fermer ses fichiers", "masquer", "fermer les fenetres", "ses fenetres"] },
+        { "id": "efficacite", "label": "Efficacité et respect de son temps", "points": 2, "patterns": ["rapide*", "efficace*", "son temps", "creneau", "pressee", "delai"] },
+        { "id": "communication", "label": "Expliquer simplement ce que l'on fait", "points": 1, "patterns": ["j explique", "sans jargon", "simplement", "je la tiens informee"] },
+        { "id": "rigueur", "label": "Rester dans la procédure", "points": 1, "patterns": ["procedure", "ticket", "trace*", "rien d autre"] }
+      ],
+      "redFlags": [
+        { "id": "divulgation", "label": "Parler de ce que l'on a vu", "patterns": ["j en parle a mes collegues", "je prends une photo", "je raconte"], "penalty": 4 }
+      ],
+      "passPercent": 60,
+      "expectStructure": false
+    },
+    "modelAnswer": "Dans une maison de luxe, la discrétion fait partie du service. Avant de toucher au poste ou de prendre la main à distance, je lui demande son accord et je lui propose de fermer ou de réduire ses documents confidentiels. Si quelque chose reste visible, je ne regarde pas, je me concentre uniquement sur ce que je dois réparer et je ne parle à personne de ce que j'ai pu apercevoir. Comme elle est pressée, je suis efficace : je lui explique simplement ce que je vais faire et combien de temps cela prendra, ou je lui propose un créneau plus adapté si l'intervention est longue. Je reste dans la procédure : rien d'autre que ce qui est prévu dans le ticket, et je trace l'intervention sans y mentionner le contenu de son écran.",
+    "explanation": "Dans le luxe, les créations non dévoilées ont une valeur considérable et les fuites ont des conséquences lourdes. Le recruteur évalue votre posture : discrétion, demande d'autorisation, respect du temps d'une utilisatrice exigeante. Il observe aussi que vous ne laissez aucune trace du contenu vu, y compris dans le ticket.",
+    "skills": ["communication", "security-hygiene"],
+    "lessonSlugs": ["n1-communication"],
+    "estimatedMinutes": 2
+  },
+  {
+    "code": "itw-sect-lux-caisse",
+    "role": "support_n1",
+    "level": "intermediaire",
+    "kind": "situation",
+    "lang": "fr",
+    "sectors": ["retail-luxe"],
+    "prompt": "Premier jour des soldes privées dans une boutique Maison Aubrac : la caisse principale ne répond plus et des clients attendent pour payer. La responsable de boutique vous appelle. Que faites-vous ?",
+    "rubric": {
+      "criteria": [
+        { "id": "priorite", "label": "Traiter comme une priorité haute", "points": 2, "patterns": ["priorite", "prioritaire", "urgent*", "impact", "chiffre d affaires", "ventes", "clients attendent"] },
+        { "id": "continuite", "label": "Assurer la continuité des ventes", "points": 3, "required": true, "patterns": ["autre caisse", "caisse de secours", "terminal de paiement", "mode degrade", "mode hors ligne", "contournement", "tpe", "continuer a encaisser", "continuer les ventes"] },
+        { "id": "perimetre", "label": "Mesurer le périmètre", "points": 2, "patterns": ["autres caisses", "autres boutiques", "seule caisse", "une seule caisse", "toutes les caisses", "perimetre", "toute la boutique"] },
+        { "id": "diagnostic", "label": "Premiers tests simples", "points": 2, "patterns": ["cable", "reseau", "connexion", "redemarr*", "message d erreur", "ecran"] },
+        { "id": "escalade", "label": "Escalader rapidement", "points": 2, "patterns": ["escalad*", "n2", "editeur", "prestataire", "equipe caisse", "astreinte"] },
+        { "id": "calme", "label": "Rassurer la responsable", "points": 1, "patterns": ["rassur*", "calme*", "je reste en ligne", "je la tiens informee", "point toutes les"] },
+        { "id": "donnees", "label": "Préserver les transactions en cours", "points": 1, "patterns": ["transaction*", "ventes en cours", "ticket de caisse", "perte de donnees", "encaissement en cours"] }
+      ],
+      "redFlags": [
+        { "id": "attendre", "label": "Laisser la boutique sans solution", "patterns": ["ils attendront", "ce n est pas mon probleme", "rappelez plus tard"], "penalty": 3 },
+        { "id": "carte", "label": "Manipuler des données de carte", "patterns": ["noter les numeros de carte", "je note les numeros de carte"], "penalty": 3 }
+      ],
+      "passPercent": 60,
+      "expectStructure": false
+    },
+    "modelAnswer": "Une caisse bloquée un jour de soldes privées, c'est un impact direct sur les ventes et sur l'image auprès des clients : c'est prioritaire. Je reste en ligne avec la responsable pour la rassurer et ma première question est de savoir si elle peut continuer à encaisser autrement : une autre caisse de la boutique, un terminal de paiement en mode dégradé, selon la procédure prévue. Ensuite je mesure le périmètre : une seule caisse ou toutes les caisses, et les autres boutiques sont-elles touchées ? Je fais des tests simples : message d'erreur, câble réseau, connexion, puis un redémarrage seulement si aucune transaction n'est en cours. Si ce n'est pas réglé en quelques minutes, ou si plusieurs boutiques sont touchées, j'escalade immédiatement au N2 ou au prestataire caisse, et je fais un point avec elle toutes les quinze minutes.",
+    "explanation": "En retail, la caisse, c'est le chiffre d'affaires. Le recruteur évalue votre réflexe de continuité (encaisser autrement, selon la procédure prévue) avant le diagnostic, votre capacité à mesurer le périmètre et votre rapidité d'escalade. Rassurer la responsable de boutique, qui gère des clients en direct, fait partie de la réponse attendue.",
+    "skills": ["itsm", "diagnostic", "communication"],
+    "lessonSlugs": ["n1-ticket-cycle", "n1-methode-diagnostic", "n1-communication"],
+    "estimatedMinutes": 3
+  },
+  {
+    "code": "itw-sect-lux-stocks",
+    "role": "support_n1",
+    "level": "intermediaire",
+    "kind": "technique",
+    "lang": "fr",
+    "sectors": ["retail-luxe"],
+    "prompt": "Une boutique Maison Aubrac signale que le stock affiché pour un sac ne correspond pas à la réalité : le système indique deux pièces, il n'y en a plus aucune en réserve. Comment traitez-vous ce ticket ?",
+    "rubric": {
+      "criteria": [
+        { "id": "infos", "label": "Collecter des informations précises", "points": 3, "required": true, "patterns": ["reference", "references", "quel article", "quelle boutique", "heure", "derniere vente", "capture*", "exemple*"] },
+        { "id": "perimetre", "label": "Mesurer le périmètre", "points": 2, "patterns": ["un seul article", "plusieurs articles", "autres articles", "autres boutiques", "toutes les boutiques", "perimetre"] },
+        { "id": "synchro", "label": "Hypothèse de synchronisation", "points": 3, "required": true, "patterns": ["synchronis*", "remontee des ventes", "mise a jour du stock", "flux", "interface", "decalage", "retard"] },
+        { "id": "metier", "label": "Distinguer cause technique et cause métier", "points": 2, "patterns": ["erreur de saisie", "transfert", "inventaire", "vente non enregistree", "retour", "processus metier", "demarque"] },
+        { "id": "escalade", "label": "Orienter vers la bonne équipe", "points": 2, "patterns": ["escalad*", "n2", "equipe applicative", "referent", "responsable des stocks", "logistique", "key user"] },
+        { "id": "impact", "label": "Conscience de l'impact client", "points": 1, "patterns": ["client*", "vente en ligne", "promesse", "reservation", "impact"] }
+      ],
+      "redFlags": [
+        { "id": "modif", "label": "Corriger le stock soi-même sans droit", "patterns": ["je corrige le stock moi-meme", "je modifie le stock", "je modifie directement la base"], "penalty": 3 }
+      ],
+      "passPercent": 60,
+      "expectStructure": false
+    },
+    "modelAnswer": "Je commence par collecter des informations précises : la référence de l'article, la boutique, l'heure de la constatation, la dernière vente enregistrée et une capture de l'écran. Ensuite je mesure le périmètre : est-ce un seul article ou plusieurs, une seule boutique ou toutes ? Si plusieurs articles ou boutiques sont touchés, je soupçonne un problème de synchronisation : la remontée des ventes ou la mise à jour du stock entre la boutique et le système central a peut-être du retard. Si c'est un seul article, la cause est peut-être métier : un transfert entre boutiques non enregistré, un retour ou une erreur de saisie. Je ne corrige pas le stock moi-même : j'escalade à l'équipe applicative ou au référent stocks avec tous ces éléments, en précisant l'impact client, car un stock faux peut conduire à promettre un article indisponible.",
+    "explanation": "Le recruteur évalue votre capacité à qualifier un ticket « données » : informations précises, périmètre, distinction entre une panne de synchronisation et une anomalie de processus métier, puis orientation vers la bonne équipe. Le N1 n'a généralement pas à corriger le stock, mais un ticket bien qualifié fait gagner un temps précieux.",
+    "skills": ["itsm", "diagnostic", "documentation"],
+    "lessonSlugs": ["n1-ticket-cycle", "n1-methode-diagnostic"],
+    "estimatedMinutes": 3
+  },
+  {
+    "code": "itw-sect-lux-fuseaux",
+    "role": "support_n1",
+    "level": "intermediaire",
+    "kind": "situation",
+    "lang": "fr",
+    "sectors": ["retail-luxe"],
+    "prompt": "Vous travaillez au support de Maison Aubrac, qui a des boutiques en Europe, en Asie et aux États-Unis. La boutique de Tokyo signale un problème bloquant à 17 h, heure de Paris. Comment vous organisez-vous ?",
+    "rubric": {
+      "criteria": [
+        { "id": "fuseau", "label": "Tenir compte du décalage horaire", "points": 3, "required": true, "patterns": ["decalage horaire", "fuseau*", "heure locale", "heure de tokyo", "minuit a tokyo", "nuit a tokyo", "deja la nuit", "fermee"] },
+        { "id": "impact", "label": "Évaluer l'impact sur l'activité locale", "points": 2, "patterns": ["impact", "ouverture", "avant l ouverture", "prochaine ouverture", "boutique fermee", "ventes", "bloquant"] },
+        { "id": "relais", "label": "Relais et passation entre équipes", "points": 3, "required": true, "patterns": ["relais", "passation", "equipe asie", "suivi du soleil", "follow the sun", "astreinte", "transmettre", "equipe locale"] },
+        { "id": "ticket", "label": "Ticket complet et compréhensible", "points": 2, "patterns": ["ticket complet", "ticket", "en anglais", "documente*", "clairement", "trace*"] },
+        { "id": "communication", "label": "Informer la boutique de la suite", "points": 2, "patterns": ["informe*", "previen*", "message", "la boutique sait", "prochaine etape", "tenir informe"] },
+        { "id": "creneau", "label": "Planifier selon les heures locales", "points": 1, "patterns": ["planifi*", "creneau", "demain matin", "avant leur ouverture", "heures d ouverture"] }
+      ],
+      "passPercent": 60,
+      "expectStructure": false
+    },
+    "modelAnswer": "À 17 h à Paris, il est une heure du matin à Tokyo l'hiver, minuit l'été : la boutique est probablement déjà fermée. Je tiens donc compte du décalage horaire pour évaluer l'impact : le vrai enjeu est que tout fonctionne avant la prochaine ouverture. Je vérifie d'abord ce qui est bloquant et je fais le diagnostic possible à distance tout de suite. Si le problème n'est pas réglé avant ma fin de service, je prépare un ticket complet, en anglais si l'équipe qui prend le relais ne parle pas français : symptôme, tests effectués, impact, contact local. J'organise la passation avec l'équipe d'astreinte ou l'équipe Asie selon l'organisation du support. J'informe la boutique de la prochaine étape et je planifie si besoin un créneau avant leur ouverture, en heure locale de Tokyo.",
+    "explanation": "Le support international impose de raisonner en heure locale de l'utilisateur et de réussir les passations entre équipes. Le recruteur évalue votre organisation : mesurer l'impact réel compte tenu des horaires d'ouverture, documenter pour que le relais n'ait rien à redemander, et tenir la boutique informée.",
+    "skills": ["itsm", "communication", "documentation"],
+    "lessonSlugs": ["n1-ticket-cycle", "n1-communication"],
+    "estimatedMinutes": 3
+  },
+  {
+    "code": "itw-sect-sante-donnees",
+    "role": "support_n1",
+    "level": "debutant",
+    "kind": "situation",
+    "lang": "fr",
+    "sectors": ["sante"],
+    "prompt": "Dans une clinique, vous intervenez sur le poste d'un secrétariat médical. Un dossier patient est ouvert à l'écran et la secrétaire vous demande de le copier sur votre clé USB pour « le réparer plus tard ». Que faites-vous ?",
+    "rubric": {
+      "criteria": [
+        { "id": "refus", "label": "Refuser la copie de données patient", "points": 3, "required": true, "patterns": ["je refuse", "je ne copie pas", "pas de copie", "jamais sur une cle", "ne copie jamais", "je ne peux pas copier", "refus*"] },
+        { "id": "sensible", "label": "Données de santé sensibles et secret", "points": 3, "required": true, "patterns": ["donnees de sante", "donnees sensibles", "secret medical", "confidential*", "rgpd", "donnees personnelles", "donnees patients"] },
+        { "id": "discretion", "label": "Ne pas consulter le dossier", "points": 2, "patterns": ["je ne lis pas", "je ne consulte pas", "fermer le dossier", "ferme le dossier", "minimise*", "reduire la fenetre", "je detourne"] },
+        { "id": "alternative", "label": "Résoudre sans extraire les données", "points": 2, "patterns": ["sur place", "sur le poste", "a distance", "procedure", "n2", "editeur", "equipe applicative", "sans copier"] },
+        { "id": "explication", "label": "Expliquer avec pédagogie", "points": 1, "patterns": ["j explique", "pedagog*", "courtois*", "calmement"] },
+        { "id": "signalement", "label": "Tracer ou signaler si besoin", "points": 1, "patterns": ["ticket", "trace*", "dpo", "delegue a la protection", "responsable securite", "signal*"] }
+      ],
+      "redFlags": [
+        { "id": "copie", "label": "Copier les données", "patterns": ["je copie le dossier", "je le copie sur ma cle", "je l envoie par mail", "je l envoie sur ma messagerie"], "penalty": 4 }
+      ],
+      "passPercent": 60,
+      "expectStructure": false
+    },
+    "modelAnswer": "Je refuse poliment mais fermement : je ne copie jamais un dossier patient sur une clé USB, ni sur un autre support personnel. Ce sont des données de santé, parmi les plus sensibles, protégées par le secret médical et le RGPD : une clé perdue, et c'est une fuite grave pour les patients et la clinique. Je lui explique calmement pourquoi, et je lui propose de fermer le dossier ou de réduire la fenêtre pendant que j'interviens, car je n'ai pas à le consulter. Ensuite je cherche à résoudre le problème sur le poste lui-même, ou à distance selon la procédure, sans copier de données. Si le problème vient du logiciel médical, j'escalade au N2 ou à l'équipe applicative avec un ticket qui décrit le symptôme sans données patients. Si la demande se répète, j'en parle à mon responsable ou au DPO.",
+    "explanation": "En santé, la confidentialité n'est pas négociable : le recruteur vérifie que vous refusez toute extraction de données patients, même pour rendre service, et que vous connaissez la sensibilité de ces données. Il attend aussi une solution qui ne bloque pas la secrétaire : intervenir sur place, à distance ou via l'équipe applicative.",
+    "skills": ["security-hygiene", "communication"],
+    "lessonSlugs": ["n1-communication", "n1-ticket-cycle"],
+    "estimatedMinutes": 3
+  },
+  {
+    "code": "itw-sect-sante-continuite",
+    "role": "support_n1",
+    "level": "intermediaire",
+    "kind": "situation",
+    "lang": "fr",
+    "sectors": ["sante"],
+    "prompt": "À 3 h du matin, vous êtes d'astreinte : l'infirmière d'un service d'hospitalisation vous appelle, le poste qui permet de consulter les prescriptions ne démarre plus. Que faites-vous ?",
+    "rubric": {
+      "criteria": [
+        { "id": "patients", "label": "Mesurer l'impact sur les soins", "points": 3, "required": true, "patterns": ["patients", "soins", "prescriptions", "continuite des soins", "impact", "urgence vitale", "traitements"] },
+        { "id": "contournement", "label": "Proposer un poste ou une procédure de secours", "points": 3, "required": true, "patterns": ["autre poste", "poste de secours", "service voisin", "procedure degradee", "mode degrade", "procedure de secours", "plan de continuite", "version papier", "papier"] },
+        { "id": "diagnostic", "label": "Diagnostic simple guidé", "points": 2, "patterns": ["alimentation", "cable", "voyant*", "ecran", "redemarr*", "allume*", "message"] },
+        { "id": "perimetre", "label": "Vérifier si d'autres postes sont touchés", "points": 2, "patterns": ["autres postes", "autres services", "tout le service", "perimetre", "un seul poste"] },
+        { "id": "escalade", "label": "Escalader si besoin", "points": 1, "patterns": ["escalad*", "n2", "astreinte", "cadre de sante", "responsable"] },
+        { "id": "trace", "label": "Tracer pour l'équipe de jour", "points": 1, "patterns": ["ticket", "trace*", "equipe de jour", "passation", "demain matin"] }
+      ],
+      "redFlags": [
+        { "id": "attendre", "label": "Reporter au lendemain sans solution", "patterns": ["rappelez demain", "ce n est pas mon probleme", "attendre demain matin"], "penalty": 3 },
+        { "id": "partage", "label": "Partager ses identifiants", "patterns": ["je lui donne mon compte", "je lui donne mes identifiants", "connectez-vous avec mon compte"], "penalty": 3 }
+      ],
+      "passPercent": 60,
+      "expectStructure": false
+    },
+    "modelAnswer": "La priorité, c'est la continuité des soins : l'infirmière doit pouvoir consulter les prescriptions de ses patients. Je lui demande d'abord s'il existe un autre poste dans le service ou dans un service voisin d'où elle peut se connecter avec son propre compte, ou si la procédure de secours, par exemple une version papier des prescriptions, est disponible. Une fois ce contournement en place, je fais un diagnostic simple guidé : le poste est-il alimenté, voit-on des voyants, un message à l'écran, le câble est-il branché ? Je vérifie aussi si d'autres postes ou d'autres services sont touchés, auquel cas j'escalade immédiatement à l'astreinte N2. Si le poste reste en panne, je trace tout dans le ticket pour l'équipe de jour, avec le contournement mis en place et l'heure de l'appel.",
+    "explanation": "En milieu hospitalier, une panne informatique peut retarder un soin. Le recruteur évalue votre réflexe de continuité (poste de secours, procédure dégradée) avant le diagnostic, votre calme lors d'un appel de nuit et le respect des règles d'identité : chacun se connecte avec son propre compte, même en urgence.",
+    "skills": ["itsm", "diagnostic", "communication"],
+    "lessonSlugs": ["n1-ticket-cycle", "n1-methode-diagnostic"],
+    "estimatedMinutes": 3
+  },
+  {
+    "code": "itw-sect-sante-postes-partages",
+    "role": "support_n1",
+    "level": "debutant",
+    "kind": "technique",
+    "lang": "fr",
+    "sectors": ["sante"],
+    "prompt": "Dans un service de soins, plusieurs soignants utilisent le même poste à tour de rôle. Quels risques voyez-vous et quelles bonnes pratiques recommandez-vous ?",
+    "rubric": {
+      "criteria": [
+        { "id": "tracabilite", "label": "Traçabilité des actions", "points": 3, "required": true, "patterns": ["tracabilite", "qui a fait quoi", "qui a consulte", "responsabilite", "journalis*", "identifier qui"] },
+        { "id": "compte", "label": "Un compte personnel par utilisateur", "points": 3, "required": true, "patterns": ["compte personnel", "comptes personnels", "propre compte", "son compte", "compte nominatif", "comptes nominatifs", "pas de compte generique", "compte partage"] },
+        { "id": "verrouillage", "label": "Verrouiller ou fermer sa session", "points": 2, "patterns": ["verrouill*", "fermer sa session", "deconnect*", "changement rapide d utilisateur", "carte", "badge"] },
+        { "id": "confidentialite", "label": "Confidentialité des données de santé", "points": 2, "patterns": ["confidential*", "donnees de sante", "secret medical", "donnees patients", "dossier ouvert"] },
+        { "id": "veille", "label": "Verrouillage automatique", "points": 1, "patterns": ["mise en veille", "verrouillage automatique", "delai d inactivite", "inactivite"] },
+        { "id": "sensibilisation", "label": "Sensibiliser sans culpabiliser", "points": 1, "patterns": ["sensibilis*", "rappel*", "affiche*", "pedagog*"] }
+      ],
+      "passPercent": 60,
+      "expectStructure": false
+    },
+    "modelAnswer": "Le premier risque, c'est la perte de traçabilité : si tout le monde travaille sur une session ouverte par un seul soignant, on ne sait plus qui a consulté ou modifié un dossier, ce qui pose un problème de responsabilité. Le deuxième, c'est la confidentialité : un dossier patient peut rester ouvert à l'écran devant un visiteur. Je recommande donc que chaque soignant utilise son propre compte nominatif, jamais un compte générique partagé, et qu'il verrouille ou ferme sa session dès qu'il quitte le poste. Pour que ce soit tenable dans un service où l'on va vite, il existe des solutions comme l'authentification par badge ou carte et le changement rapide d'utilisateur, ainsi qu'un verrouillage automatique après une courte inactivité. Enfin, je sensibilise les équipes avec bienveillance, avec des rappels simples, sans culpabiliser des soignants très sollicités.",
+    "explanation": "Le recruteur vérifie que vous comprenez les enjeux spécifiques aux postes partagés en santé, traçabilité et confidentialité, et que vous proposez des solutions réalistes pour des soignants qui manquent de temps. Imposer des règles impraticables pousse au contournement ; les associer à des outils adaptés (badge, verrouillage automatique) les rend applicables.",
+    "skills": ["security-hygiene", "identity", "windows"],
+    "lessonSlugs": ["n1-windows-comptes", "n1-ad-notions"],
+    "estimatedMinutes": 3
+  }
+]

@@ -1,0 +1,180 @@
+{
+  "meta": {
+    "slug": "n1-arp-switch",
+    "title": "ARP, adresses MAC et rôle du switch",
+    "summary": "Comprendre comment un poste trouve l'adresse MAC de son voisin, comment un switch apprend où sont les machines, et diagnostiquer un conflit d'adresse IP avec arp -a et Get-NetNeighbor.",
+    "level": "debutant",
+    "prerequisites": ["Distinguer adresse MAC et adresse IP (leçon « Adresse IP, masque et passerelle »)", "Connaître les couches 2 et 3 du modèle OSI"],
+    "objectives": [
+      "Décrire la structure d'une trame Ethernet et d'une adresse MAC, OUI compris",
+      "Expliquer comment un switch remplit sa table d'adresses MAC et décide où envoyer une trame",
+      "Décrire l'échange ARP request / ARP reply et lire le cache ARP d'un poste",
+      "Reconnaître un conflit d'adresse IP signalé par Windows et collecter les éléments utiles à l'escalade",
+      "Différencier hub, switch et routeur, et connaître les bases du brassage et du PoE"
+    ],
+    "durationMin": 40,
+    "skills": [
+      { "code": "network-fundamentals", "weight": 3 }
+    ],
+    "next": "n1-commandes-reseau"
+  },
+  "blocks": [
+    { "id": "intro", "kind": "paragraph", "text": "Mardi, 15 h 20, siège du Groupe Valmont. Depuis le début d'après-midi, le poste de M. Fabre, au service marketing, perd le réseau toutes les deux ou trois minutes, puis le retrouve. Au même moment, un message s'affiche en bas de l'écran : « Windows a détecté un conflit d'adresse IP ». L'enquête mène à un vidéoprojecteur neuf, installé le matin dans la salle voisine, que le prestataire a configuré en adresse fixe… avec l'adresse que le DHCP avait déjà prêtée au poste de M. Fabre. Pour comprendre pourquoi les deux appareils se « volent » la connexion à tour de rôle, il faut descendre d'un étage, en couche 2 : là où vivent les adresses MAC, le protocole ARP et le switch." },
+    { "id": "intro-enjeu", "kind": "paragraph", "text": "Ces notions semblent abstraites, mais elles expliquent des pannes très concrètes : coupures intermittentes, poste qui ne joint plus que certains voisins, imprimante « fantôme », téléphone IP qui ne s'allume pas. Cette leçon vous donne les clés pour les reconnaître et, surtout, pour fournir au N2 les informations qui lui permettront de localiser physiquement le coupable." },
+    { "id": "h-trame", "kind": "heading", "level": 2, "text": "La trame Ethernet et l'adresse MAC" },
+    { "id": "def", "kind": "callout", "tone": "definition", "title": "Définition simple", "text": "Une **trame Ethernet** est l'enveloppe de couche 2 qui transporte les données entre deux équipements d'un même réseau local. Elle est adressée par des **adresses MAC** (Media Access Control) : des identifiants de 48 bits attribués aux cartes réseau, écrits en six paires de caractères hexadécimaux, par exemple `3C-52-82-4A-19-07`." },
+    { "id": "tab-trame", "kind": "table", "caption": "Les champs d'une trame Ethernet (IEEE 802.3), dans l'ordre", "headers": ["Champ", "Taille", "Contenu", "Ce qu'il faut en retenir"], "rows": [
+      ["MAC de destination", "6 octets", "Adresse de la carte destinataire, ou FF-FF-FF-FF-FF-FF pour une diffusion", "C'est ce champ que le switch lit pour décider où envoyer la trame"],
+      ["MAC source", "6 octets", "Adresse de la carte émettrice", "C'est ce champ que le switch apprend"],
+      ["Type (EtherType)", "2 octets", "Nature du contenu : 0x0800 pour IPv4, 0x0806 pour ARP, 0x86DD pour IPv6", "Indique à quelle couche supérieure remettre les données"],
+      ["Données", "46 à 1 500 octets", "Le paquet IP ou le message ARP", "1 500 octets est la taille maximale habituelle (MTU)"],
+      ["Contrôle (FCS)", "4 octets", "Code de vérification calculé sur la trame", "Une trame dont le code ne correspond pas est jetée : signe d'un câble ou d'un port défectueux"]
+    ] },
+    { "id": "p-oui", "kind": "paragraph", "text": "Une adresse MAC se lit en deux moitiés. Les trois premiers octets forment l'**OUI** (Organizationally Unique Identifier), un préfixe que l'**IEEE** attribue à chaque fabricant. Les trois derniers sont choisis par le fabricant pour chaque carte. Consulter le registre public de l'IEEE permet donc de retrouver le fabricant d'un appareil à partir de sa MAC, une aide précieuse pour identifier un appareil inconnu sur le réseau. Exemple utile : l'OUI `00-00-5E` appartient à l'IANA, et les adresses `00-00-5E-00-01-xx` sont des adresses MAC **virtuelles** utilisées par le protocole VRRP, lorsque deux routeurs se partagent une même passerelle." },
+    { "id": "info-aleatoire", "kind": "callout", "tone": "info", "title": "Les adresses MAC aléatoires", "text": "Windows, Android et iOS peuvent utiliser une **adresse MAC aléatoire** en Wi-Fi pour protéger la vie privée. On la reconnaît au deuxième caractère de l'adresse : 2, 6, A ou E (bit « administré localement »). Conséquence au support : un smartphone peut changer de MAC d'un réseau à l'autre, ce qui perturbe les réservations DHCP ou le filtrage par adresse MAC. Sur le Wi-Fi d'entreprise, cette option est souvent désactivée par stratégie." },
+    { "id": "h-switch", "kind": "heading", "level": 2, "text": "Le switch et sa table d'adresses MAC" },
+    { "id": "p-switch", "kind": "paragraph", "text": "Le **switch** (commutateur) relie les appareils d'un même réseau local. Son intelligence tient dans une table, la **table d'adresses MAC** (ou table CAM), qui associe chaque adresse MAC au port derrière lequel elle se trouve. Il la remplit tout seul, sans configuration, en appliquant deux règles très simples." },
+    { "id": "list-switch", "kind": "list", "ordered": true, "items": [
+      "**Apprendre** : à chaque trame reçue, le switch lit la **MAC source** et note « cette adresse se trouve derrière le port par lequel la trame est arrivée ». L'entrée est rafraîchie à chaque nouvelle trame et oubliée après une période d'inactivité (souvent 5 minutes par défaut).",
+      "**Transférer** : il lit la **MAC de destination**. S'il la connaît, il envoie la trame uniquement sur le port correspondant. S'il ne la connaît pas, ou s'il s'agit d'une diffusion (FF-FF-FF-FF-FF-FF), il l'envoie sur **tous les ports** du même VLAN, sauf celui d'arrivée : c'est l'**inondation**."
+    ] },
+    { "id": "analogie", "kind": "callout", "tone": "analogy", "title": "Analogie", "text": "Le switch ressemble au gardien d'une résidence qui distribue le courrier interne. Le premier jour, il ne connaît personne : quand une lettre arrive pour « M. Durand », il la photocopie et en glisse une copie dans toutes les boîtes (inondation). Mais chaque fois qu'un résident dépose une lettre, il note son nom et son numéro de boîte (apprentissage de la MAC source). Au bout de quelques heures, il connaît tout le monde et livre chaque lettre directement dans la bonne boîte." },
+    { "id": "cmd-mac-table", "kind": "command", "shell": "cisco-ios", "command": "show mac address-table dynamic", "explanation": "Commande d'un switch Cisco qui affiche les adresses MAC apprises dynamiquement, avec leur VLAN et leur port. Elle est en lecture seule, mais l'accès aux switchs est généralement réservé au N2 : c'est le résultat qu'il consultera pour localiser un appareil à partir de l'adresse MAC que vous lui transmettrez.", "output": "SW-SIEGE-ET2#show mac address-table dynamic\n          Mac Address Table\n-------------------------------------------\n\nVlan    Mac Address       Type        Ports\n----    -----------       --------    -----\n  10    0000.5e00.010a    DYNAMIC     Gi1/0/48\n  10    0080.773a.15c2    DYNAMIC     Gi1/0/5\n  10    3c52.824a.1907    DYNAMIC     Gi1/0/12\n  10    a4f9.3310.6b2e    DYNAMIC     Gi1/0/31\nTotal Mac Addresses for this criterion: 4", "outputNotes": [
+      { "match": "Vlan", "note": "La table est tenue par VLAN : la même MAC ne peut être jointe que dans son VLAN." },
+      { "match": "0000.5e00.010a", "note": "Cisco écrit les MAC en trois groupes de quatre caractères : c'est 00-00-5E-00-01-0A, la MAC virtuelle de la passerelle, vue derrière le port de liaison montante Gi1/0/48." },
+      { "match": "3c52.824a.1907", "note": "Le poste de M. Fabre (3C-52-82-4A-19-07) est branché sur le port 12 du switch du 2e étage." },
+      { "match": "a4f9.3310.6b2e", "note": "Le vidéoprojecteur de la salle voisine, sur le port 31 : c'est ainsi que le N2 retrouve physiquement un appareil." }
+    ] },
+    { "id": "h-equipements", "kind": "heading", "level": 2, "text": "Hub, switch, routeur : qui fait quoi ?" },
+    { "id": "tab-equipements", "kind": "table", "caption": "Comparer les trois équipements que l'on confond le plus souvent", "headers": ["Critère", "Hub (concentrateur)", "Switch (commutateur)", "Routeur"], "rows": [
+      ["Couche OSI", "1 (physique)", "2 (liaison)", "3 (réseau)"],
+      ["Adresse utilisée pour décider", "Aucune : il répète le signal", "Adresse MAC de destination", "Adresse IP de destination"],
+      ["Que fait-il d'une trame ?", "La recopie sur tous les ports", "L'envoie sur le seul bon port (une fois la MAC apprise)", "Reconstruit une nouvelle trame vers le réseau suivant"],
+      ["Diffusions", "Partout", "Inondées dans le même VLAN", "Ne les transmet pas : il sépare les domaines de diffusion"],
+      ["Relie…", "Des appareils d'un même réseau", "Des appareils d'un même réseau local (VLAN)", "Des réseaux différents entre eux"],
+      ["En entreprise aujourd'hui", "Obsolète, à retirer si vous en trouvez un", "Partout : baies d'étage, bureaux", "Cœur de réseau, sortie Internet (souvent intégré au pare-feu ou à un switch de niveau 3)"]
+    ] },
+    { "id": "p-l3", "kind": "paragraph", "text": "Vous entendrez parler de **switch de niveau 3** : c'est un switch capable de router entre VLAN. Au Groupe Valmont, la passerelle `10.20.10.1` du VLAN Bureaux est portée par le switch de cœur, qui relie aussi le VLAN Serveurs. Fonctionnellement, c'est bien un routeur : il change de réseau, donc de couche 3. La box Internet domestique, elle, cumule en un seul boîtier routeur, switch, point d'accès Wi-Fi, serveur DHCP et pare-feu : une source fréquente de confusion chez les utilisateurs." },
+    { "id": "h-arp", "kind": "heading", "level": 2, "text": "ARP : trouver l'adresse MAC qui correspond à une adresse IP" },
+    { "id": "p-arp", "kind": "paragraph", "text": "Problème : votre poste veut envoyer un paquet à l'imprimante `10.20.10.21`, sa voisine. Il connaît son adresse IP, mais pour construire la trame Ethernet, il lui faut son **adresse MAC**. C'est le rôle du protocole **ARP** (Address Resolution Protocol), décrit dans la RFC 826 : traduire une adresse IPv4 en adresse MAC, à l'intérieur d'un même réseau local. En IPv6, le même travail est assuré par le protocole de découverte des voisins (NDP)." },
+    { "id": "diag", "kind": "diagram", "diagram": "arp-exchange", "caption": "Le poste 10.20.10.87 diffuse une requête ARP « Qui a 10.20.10.21 ? » ; seule l'imprimante répond, directement au poste, avec son adresse MAC. Les deux appareils mettent l'information en cache." },
+    { "id": "list-arp", "kind": "list", "ordered": true, "items": [
+      "Le poste consulte son **cache ARP**. S'il connaît déjà la MAC de 10.20.10.21, il construit la trame immédiatement.",
+      "Sinon, il envoie une **requête ARP** (ARP request) en **diffusion**, vers FF-FF-FF-FF-FF-FF : « Qui a l'adresse 10.20.10.21 ? Répondez à 10.20.10.87, MAC 3C-52-82-4A-19-07. » Le switch inonde cette trame dans tout le VLAN.",
+      "Tous les appareils du VLAN la reçoivent ; seul celui qui possède 10.20.10.21 répond par une **réponse ARP** (ARP reply), en **envoi direct** au poste : « 10.20.10.21, c'est moi, MAC 00-80-77-3A-15-C2. »",
+      "Le poste enregistre la correspondance dans son cache ARP et envoie enfin sa trame. L'imprimante, qui a appris au passage l'adresse du poste, n'aura pas besoin de poser la question en retour."
+    ] },
+    { "id": "warn-passerelle", "kind": "callout", "tone": "warning", "title": "ARP ne sort jamais du réseau local", "text": "Pour joindre le serveur `10.20.30.15`, qui est dans un autre réseau, le poste ne demande **pas** sa MAC : il demande celle de **la passerelle** `10.20.10.1`. Une requête ARP est une diffusion, et les diffusions ne traversent pas les routeurs. Dans le cache ARP d'un poste, vous ne verrez donc jamais l'adresse d'un serveur distant, seulement celles de la passerelle et des voisins." },
+    { "id": "h-demo", "kind": "heading", "level": 2, "text": "Démonstration : lire le cache ARP d'un poste" },
+    { "id": "steps-demo", "kind": "steps", "title": "Vérifier qu'un poste résout correctement ses voisins", "steps": [
+      { "title": "Provoquer une résolution", "text": "Pinguez la passerelle : pour envoyer le ping, le poste doit connaître sa MAC, il fait donc une résolution ARP si besoin.", "command": "ping -n 1 10.20.10.1" },
+      { "title": "Afficher le cache ARP", "text": "La commande liste, pour chaque carte, les correspondances adresse IP ↔ adresse MAC connues. Aucun droit administrateur n'est nécessaire pour l'affichage.", "command": "arp -a" },
+      { "title": "Repérer la passerelle", "text": "La ligne 10.20.10.1 doit être présente, de type dynamique, avec une MAC cohérente. Si la passerelle n'apparaît pas après un ping, le poste ne parvient même pas à lui parler en couche 2 : VLAN du port, câble, port du switch." },
+      { "title": "Comparer avec un voisin", "text": "Sur un poste voisin qui fonctionne, la MAC de la passerelle doit être identique. Une MAC différente pour la même adresse IP signale un appareil qui usurpe cette adresse : conflit ou attaque." },
+      { "title": "Vérifier avec PowerShell", "text": "Get-NetNeighbor donne la même information avec l'état de chaque entrée. Une entrée Unreachable ou Incomplete signifie que la requête ARP est restée sans réponse.", "command": "Get-NetNeighbor -AddressFamily IPv4 -InterfaceAlias Ethernet" }
+    ] },
+    { "id": "cmd-arp", "kind": "command", "shell": "cmd", "command": "arp -a", "explanation": "Affiche le cache ARP de chaque interface IPv4. -a (all) liste toutes les entrées. Le type « dynamique » désigne une entrée apprise par ARP, « statique » une entrée fixe ou réservée par le système (diffusion, multidiffusion).", "output": "Interface : 10.20.10.87 --- 0xc\n  Adresse Internet      Adresse physique      Type\n  10.20.10.1            00-00-5e-00-01-0a     dynamique\n  10.20.10.21           00-80-77-3a-15-c2     dynamique\n  10.20.10.255          ff-ff-ff-ff-ff-ff     statique\n  224.0.0.22            01-00-5e-00-00-16     statique\n  224.0.0.251           01-00-5e-00-00-fb     statique\n  239.255.255.250       01-00-5e-7f-ff-fa     statique\n  255.255.255.255       ff-ff-ff-ff-ff-ff     statique", "outputNotes": [
+      { "match": "Interface : 10.20.10.87", "note": "Le cache est propre à chaque carte ; 0xc est le numéro d'interface en hexadécimal (12)." },
+      { "match": "10.20.10.1 ", "note": "La passerelle et sa MAC virtuelle VRRP (OUI 00-00-5e) : la sortie du réseau est résolue." },
+      { "match": "10.20.10.21", "note": "L'imprimante voisine, apprise dynamiquement après un échange ARP." },
+      { "match": "10.20.10.255", "note": "L'adresse de diffusion du réseau 10.20.10.0/24, associée à la MAC de diffusion : entrée normale." },
+      { "match": "224.0.0.22", "note": "Les adresses en 224 à 239 sont des adresses de multidiffusion, utilisées par des services de découverte : entrées normales." }
+    ] },
+    { "id": "cmd-neighbor", "kind": "command", "shell": "powershell", "command": "Get-NetNeighbor -AddressFamily IPv4 -InterfaceAlias Ethernet", "explanation": "Équivalent PowerShell de arp -a. La colonne State indique la fraîcheur de l'entrée : Reachable (confirmée récemment), Stale (ancienne, sera revérifiée à la prochaine utilisation), Unreachable ou Incomplete (pas de réponse), Permanent (entrée fixe).", "output": "ifIndex IPAddress                LinkLayerAddress      State       PolicyStore\n------- ---------                ----------------      -----       -----------\n12      255.255.255.255          FF-FF-FF-FF-FF-FF     Permanent   ActiveStore\n12      10.20.10.255             FF-FF-FF-FF-FF-FF     Permanent   ActiveStore\n12      10.20.10.142             00-00-00-00-00-00     Unreachable ActiveStore\n12      10.20.10.21              00-80-77-3A-15-C2     Stale       ActiveStore\n12      10.20.10.1               00-00-5E-00-01-0A     Reachable   ActiveStore", "outputNotes": [
+      { "match": "Unreachable", "note": "10.20.10.142 n'a pas répondu à la requête ARP : appareil éteint, débranché ou absent de ce VLAN. La MAC est vide." },
+      { "match": "Stale", "note": "Entrée encore utilisable mais pas confirmée récemment : rien d'anormal." },
+      { "match": "Reachable", "note": "La passerelle a été confirmée il y a peu : la couche 2 vers la sortie fonctionne." }
+    ] },
+    { "id": "h-conflit", "kind": "heading", "level": 2, "text": "Le conflit d'adresse IP" },
+    { "id": "p-conflit", "kind": "paragraph", "text": "Un **conflit d'adresse IP** se produit quand deux appareils du même réseau utilisent la même adresse. Chacun répond aux requêtes ARP pour cette adresse : les voisins et la passerelle enregistrent tantôt une MAC, tantôt l'autre, et le trafic part alternativement vers l'un ou l'autre appareil. D'où les coupures intermittentes de M. Fabre. Les causes habituelles : une adresse fixe saisie dans la plage distribuée par le DHCP, un appareil cloné, ou un ancien équipement rebranché avec son ancienne configuration." },
+    { "id": "p-windows-conflit", "kind": "paragraph", "text": "Windows détecte le conflit lui-même : quand une adresse est configurée, il envoie une requête ARP de vérification pour sa propre adresse. Si un autre appareil répond, il affiche une notification « Windows a détecté un conflit d'adresse IP » et enregistre un événement dans le journal **Système**, source **Tcpip**, identifiant **4199**. Ce message contient l'information la plus précieuse de l'enquête : **l'adresse MAC de l'autre appareil**. Selon le moment de la détection, Windows peut aussi refuser d'utiliser l'adresse et se replier sur une adresse 169.254.x.x." },
+    { "id": "cmd-event", "kind": "command", "shell": "powershell", "command": "Get-WinEvent -FilterHashtable @{ LogName = 'System'; ProviderName = 'Tcpip'; Id = 4199 } -MaxEvents 3 | Format-List TimeCreated, Message", "explanation": "Lit les trois derniers événements de conflit d'adresse IP dans le journal Système. -FilterHashtable filtre par journal, source et identifiant ; Format-List affiche la date et le texte complet. Aucun droit administrateur n'est nécessaire pour lire le journal Système.", "output": "TimeCreated : 21/10/2026 15:18:42\nMessage     : Le système a détecté un conflit d'adresses pour l'adresse IP 10.20.10.87 avec le système ayant l'adresse matérielle réseau A4-F9-33-10-6B-2E. Les opérations réseau sur ce système risquent d'être interrompues.\n\nTimeCreated : 21/10/2026 15:15:07\nMessage     : Le système a détecté un conflit d'adresses pour l'adresse IP 10.20.10.87 avec le système ayant l'adresse matérielle réseau A4-F9-33-10-6B-2E. Les opérations réseau sur ce système risquent d'être interrompues.", "outputNotes": [
+      { "match": "10.20.10.87", "note": "L'adresse disputée : celle que le DHCP a prêtée au poste de M. Fabre." },
+      { "match": "A4-F9-33-10-6B-2E", "note": "La MAC de l'autre appareil. Son OUI (A4-F9-33) permet de retrouver le fabricant dans le registre de l'IEEE, et le N2 peut la chercher dans la table MAC des switchs pour trouver le port." },
+      { "match": "15:15:07", "note": "Des événements répétés à quelques minutes d'intervalle correspondent aux coupures décrites par l'utilisateur." }
+    ] },
+    { "id": "field-conflit", "kind": "callout", "tone": "field", "title": "Sur le terrain", "text": "Face à un conflit, ne changez pas l'adresse du poste « pour que ça marche » : le coupable est presque toujours l'appareil en adresse fixe, pas le poste en DHCP. Relevez l'adresse disputée, la MAC de l'autre appareil, l'heure des événements, et escaladez. Le N2 retrouvera le port dans la table MAC du switch, puis l'appareil au bout du câble, et corrigera sa configuration ou créera une exclusion dans l'étendue DHCP." },
+    { "id": "h-cablage", "kind": "heading", "level": 2, "text": "Câblage et brassage en notions" },
+    { "id": "p-cablage", "kind": "paragraph", "text": "Dans un bâtiment, le chemin physique d'un poste se compose de plusieurs morceaux : le **cordon** entre le poste et la **prise murale** (souvent numérotée, par exemple 2.14-B), un **câble horizontal** fixe qui court dans les murs jusqu'au local technique, un **panneau de brassage** dans la baie, puis un **cordon de brassage** entre ce panneau et un port du switch. Le **brassage** consiste à choisir, dans la baie, sur quel port de switch (et donc quel VLAN) arrive chaque prise. Une prise « morte » est souvent simplement une prise non brassée." },
+    { "id": "list-cablage", "kind": "list", "ordered": false, "items": [
+      "Les câbles à paires torsadées utilisent des connecteurs **RJ45**. Les catégories courantes sont la Cat 5e (1 Gbit/s), la Cat 6 et la Cat 6A (10 Gbit/s sur 100 mètres).",
+      "La longueur maximale d'un lien Ethernet cuivre est de **100 mètres**, cordons compris : au-delà, il faut un switch intermédiaire ou de la fibre.",
+      "Les ports modernes détectent automatiquement le sens du câblage (auto-MDI-X) : la distinction entre câble droit et câble croisé n'est plus un sujet au quotidien.",
+      "Un câble pincé, écrasé sous un pied de bureau ou mal serti provoque des erreurs (trames rejetées par le contrôle FCS) ou une négociation à 100 Mbit/s au lieu de 1 Gbit/s."
+    ] },
+    { "id": "h-poe", "kind": "heading", "level": 2, "text": "PoE : l'alimentation par le câble réseau" },
+    { "id": "p-poe", "kind": "paragraph", "text": "Le **PoE** (Power over Ethernet), normalisé par l'IEEE dans la famille 802.3, permet à un switch d'alimenter un appareil par le même câble que les données. C'est ainsi que fonctionnent la plupart des téléphones IP, bornes Wi-Fi et caméras : pas de bloc d'alimentation à côté. On distingue trois générations principales, avec une puissance maximale fournie par port côté switch d'environ **15 W** (802.3af), **30 W** (802.3at, dit PoE+) et jusqu'à **90 W** (802.3bt). Chaque switch dispose aussi d'un **budget PoE** total : une fois épuisé, il refuse d'alimenter de nouveaux appareils." },
+    { "id": "tab-poe", "kind": "table", "caption": "Symptômes PoE fréquents au support", "headers": ["Symptôme", "Cause probable", "Vérification"], "rows": [
+      ["Téléphone IP éteint après un déménagement de bureau", "La nouvelle prise est brassée sur un port non PoE", "Tester la prise d'un voisin dont le téléphone fonctionne"],
+      ["Borne Wi-Fi qui redémarre en boucle", "Puissance insuffisante (borne PoE+ sur port 802.3af) ou budget du switch atteint", "Escalade au N2 avec le modèle de la borne et le numéro de prise"],
+      ["Le poste branché derrière le téléphone n'a plus de réseau", "Le téléphone, qui sert de mini-switch, est éteint ou défectueux", "Brancher temporairement le poste directement sur la prise"]
+    ] },
+    { "id": "mistakes", "kind": "mistakes", "items": [
+      { "mistake": "Changer l'adresse du poste pour résoudre un conflit d'adresse IP", "why": "Le poste en DHCP est rarement en cause ; l'appareil en adresse fixe reste mal configuré et le problème reviendra.", "fix": "Relever la MAC de l'autre appareil dans l'événement 4199 et escalader." },
+      { "mistake": "Chercher l'adresse MAC d'un serveur distant dans arp -a", "why": "ARP ne fonctionne que dans le réseau local ; pour un serveur distant, c'est la MAC de la passerelle qui est utilisée.", "fix": "Vérifier la présence et la cohérence de la passerelle dans le cache ARP." },
+      { "mistake": "Penser qu'un switch « route » entre les réseaux", "why": "Un switch de niveau 2 ne fait que commuter des trames dans un VLAN ; seul un routeur (ou un switch de niveau 3) change de réseau.", "fix": "Raisonner en couches : MAC pour le switch, IP pour le routeur." },
+      { "mistake": "Brancher un petit switch ou une box dans un bureau pour « ajouter des prises »", "why": "Cela peut créer une boucle réseau, introduire un serveur DHCP pirate ou être bloqué par la sécurité des ports.", "fix": "Demander une prise supplémentaire ou un équipement validé par l'équipe réseau." },
+      { "mistake": "Vider le cache ARP à chaque problème réseau", "why": "Le cache se reconstitue en quelques secondes ; cela ne corrige ni un conflit ni un problème de VLAN.", "fix": "Lire le cache pour diagnostiquer, et ne le vider (arp -d, droits administrateur) qu'après un changement de matériel identifié." }
+    ] },
+    { "id": "risks", "kind": "risks", "items": [
+      "Ne touchez jamais au brassage d'une baie sans autorisation et sans documentation à jour : débrancher le mauvais cordon peut couper un étage entier ou un serveur.",
+      "Ne branchez jamais un câble entre deux prises murales ni entre deux ports d'un même switch : vous risquez une boucle réseau qui peut saturer tout le VLAN.",
+      "Deux appareils qui revendiquent la même MAC de passerelle, ou une MAC de passerelle qui change soudainement, peuvent signaler une attaque par usurpation ARP : alertez la sécurité plutôt que de « nettoyer » le cache.",
+      "Un appareil PoE mal choisi ou un injecteur non conforme peut endommager l'équipement : utilisez le matériel validé par l'équipe réseau."
+    ] },
+    { "id": "quiz", "kind": "quiz", "title": "Vérifiez votre compréhension", "questions": ["arp-switch-apprentissage", "arp-requete-diffusion", "arp-equipements-couches", "arp-cache-passerelle", "arp-oui"] },
+    { "id": "exercise", "kind": "exercise", "title": "Le conflit du service marketing", "context": "M. Fabre (poste PC-MKT-012, en DHCP) subit des coupures réseau toutes les deux ou trois minutes depuis 14 h. Son poste a obtenu 10.20.10.87 par DHCP lundi. La notification « Windows a détecté un conflit d'adresse IP » s'est affichée plusieurs fois. Le journal Système contient des événements Tcpip 4199 indiquant un conflit pour 10.20.10.87 avec l'adresse matérielle A4-F9-33-10-6B-2E. Le matin même, un vidéoprojecteur a été installé dans la salle de réunion 2.16 par un prestataire.", "task": "Expliquez le mécanisme des coupures, les éléments que vous relevez, ce que vous faites (et ne faites pas) sur le poste, et la note d'escalade que vous rédigez.", "hints": [
+      "Deux appareils revendiquent la même adresse IP : que se passe-t-il dans le cache ARP de la passerelle et des voisins quand chacun répond ?",
+      "L'événement 4199 vous donne une adresse MAC. Que vous apprend son OUI, et comment le N2 peut-il trouver où l'appareil est branché ?",
+      "Le poste est en DHCP, le vidéoprojecteur a été installé ce matin par un prestataire. Lequel des deux a probablement une adresse fixe saisie à la main ?"
+    ], "solution": [
+      "Mécanisme : le poste et un autre appareil utilisent tous deux 10.20.10.87. Chacun répond aux requêtes ARP pour cette adresse ; la passerelle et les voisins mettent à jour leur cache tantôt avec la MAC du poste, tantôt avec A4-F9-33-10-6B-2E. Quand le cache pointe vers l'autre appareil, le trafic destiné au poste de M. Fabre part au mauvais endroit : c'est la coupure. Elle cesse quand une nouvelle réponse ARP remet la bonne MAC.",
+      "Éléments à relever : l'adresse disputée (10.20.10.87), la MAC de l'autre appareil (A4-F9-33-10-6B-2E), les heures des événements 4199, la MAC du poste de M. Fabre (ipconfig /all) et le contexte (vidéoprojecteur installé ce matin en salle 2.16). La recherche de l'OUI A4-F9-33 dans le registre de l'IEEE permet de vérifier si le fabricant correspond à celui du vidéoprojecteur.",
+      "Sur le poste : ne pas fixer une autre adresse, ne pas désactiver la carte. Un ipconfig /renew peut éventuellement être tenté si le poste s'est replié en 169.254.x.x, mais la cause doit être corrigée sur l'appareil en adresse fixe. Le N2 cherchera la MAC dans la table des switchs pour trouver le port, puis corrigera la configuration du vidéoprojecteur (passage en DHCP ou adresse hors de l'étendue, avec réservation ou exclusion).",
+      "Note d'escalade : « PC-MKT-012 (M. Fabre, MAC 3C-52-82-4A-19-07) : conflit d'adresse IP sur 10.20.10.87 depuis 14 h, coupures toutes les 2 à 3 min. Événements Tcpip 4199 : autre appareil MAC A4-F9-33-10-6B-2E. Suspicion : vidéoprojecteur installé ce matin en salle 2.16, probablement en adresse fixe dans l'étendue DHCP. Demande au N2 : localiser la MAC sur le switch, corriger la configuration de l'appareil. »"
+    ], "rubric": {
+      "criteria": [
+        { "id": "arp", "label": "Explique le mécanisme par les réponses ARP concurrentes", "points": 3, "patterns": ["arp", "cache arp", "deux appareils repondent", "meme adresse ip"], "required": true },
+        { "id": "mac", "label": "Relève l'adresse MAC de l'autre appareil", "points": 3, "patterns": ["a4-f9-33-10-6b-2e", "a4-f9-33", "adresse mac de l autre", "mac de l autre", "adresse materielle"], "required": true },
+        { "id": "oui", "label": "Utilise l'OUI ou la table MAC du switch pour identifier ou localiser l'appareil", "points": 2, "patterns": ["l oui", "son oui", "fabricant", "table mac", "port du switch", "localiser"] },
+        { "id": "videoprojecteur", "label": "Soupçonne l'appareil en adresse fixe (vidéoprojecteur)", "points": 2, "patterns": ["videoprojecteur", "adresse fixe", "ip fixe", "statique", "prestataire"] },
+        { "id": "event", "label": "Mentionne le journal Système / événement 4199", "points": 1, "patterns": ["4199", "journal", "observateur", "evenement"] },
+        { "id": "escalade", "label": "Escalade au N2", "points": 1, "patterns": ["escalad*", "n2", "equipe reseau"] }
+      ],
+      "redFlags": [
+        { "id": "changer-ip", "label": "Propose de changer l'adresse du poste de M. Fabre", "patterns": ["changer l adresse du poste", "mettre une autre adresse", "fixer une adresse sur le poste", "donner une ip fixe au poste"], "penalty": 3 }
+      ],
+      "passPercent": 60
+    } },
+    { "id": "interview", "kind": "interview", "questions": [
+      { "question": "À quoi sert ARP ? Décrivez l'échange.", "expectedPoints": ["ARP traduit une adresse IPv4 en adresse MAC", "Requête en diffusion : qui a telle adresse ?", "Réponse en envoi direct par le seul propriétaire de l'adresse", "Mise en cache de la correspondance", "Limité au réseau local : pour une destination distante, on résout la passerelle"], "modelAnswer": "ARP permet à un poste de trouver l'adresse MAC qui correspond à une adresse IPv4 de son réseau local, indispensable pour construire la trame Ethernet. Le poste diffuse une requête « qui a 10.20.10.21 ? » à tout le VLAN ; seul l'appareil concerné répond directement avec sa MAC, et le poste garde la réponse en cache. Pour une destination dans un autre réseau, le poste ne résout pas la destination finale mais la passerelle. On consulte le cache avec arp -a ou Get-NetNeighbor." },
+      { "question": "Quelle différence faites-vous entre un switch et un routeur ?", "expectedPoints": ["Le switch travaille en couche 2 avec les adresses MAC", "Il apprend les MAC source et transfère selon la MAC de destination", "Le routeur travaille en couche 3 avec les adresses IP", "Le routeur relie des réseaux différents et ne transmet pas les diffusions"], "modelAnswer": "Le switch relie les appareils d'un même réseau local. Il travaille en couche 2 : il apprend quelle adresse MAC se trouve derrière chaque port et envoie chaque trame uniquement vers le bon port. Le routeur, lui, travaille en couche 3 avec les adresses IP : il relie des réseaux différents, comme le VLAN Bureaux et le VLAN Serveurs, et ne laisse pas passer les diffusions. Un switch de niveau 3 combine les deux rôles." },
+      { "question": "Un utilisateur a un message de conflit d'adresse IP. Que faites-vous ?", "expectedPoints": ["Comprendre que deux appareils utilisent la même adresse", "Lire l'événement 4199 du journal Système pour obtenir la MAC de l'autre appareil", "Ne pas modifier l'adresse du poste en DHCP", "Escalader au N2 avec l'adresse, la MAC et l'heure, pour localisation sur le switch"], "modelAnswer": "Je sais que deux appareils du réseau utilisent la même adresse. Je relève l'adresse du poste et sa configuration DHCP, puis je lis dans le journal Système l'événement Tcpip 4199, qui donne la MAC de l'autre appareil. Je ne change pas l'adresse du poste : c'est généralement l'autre appareil, configuré en adresse fixe, qui est en cause. J'escalade au N2 avec l'adresse, la MAC et les heures, pour qu'il retrouve le port dans la table MAC du switch et corrige l'appareil." }
+    ] },
+    { "id": "glossary", "kind": "glossary", "terms": [
+      { "term": "Trame", "en": "Frame", "definition": "Unité de données de couche 2, adressée par adresses MAC." },
+      { "term": "Adresse MAC", "en": "Media Access Control address", "definition": "Identifiant de 48 bits d'une interface réseau, utilisé dans le réseau local." },
+      { "term": "Identifiant de fabricant", "en": "Organizationally Unique Identifier (OUI)", "definition": "Trois premiers octets d'une adresse MAC, attribués par l'IEEE à un fabricant." },
+      { "term": "Commutateur", "en": "Switch", "definition": "Équipement de couche 2 qui transfère les trames vers le bon port grâce à sa table MAC." },
+      { "term": "Table d'adresses MAC", "en": "MAC address table (CAM table)", "definition": "Table du switch qui associe chaque adresse MAC apprise à un port et à un VLAN." },
+      { "term": "Résolution d'adresse", "en": "Address Resolution Protocol (ARP)", "definition": "Protocole qui trouve l'adresse MAC correspondant à une adresse IPv4 du réseau local." },
+      { "term": "Conflit d'adresse IP", "en": "IP address conflict", "definition": "Situation où deux appareils du même réseau utilisent la même adresse IP." },
+      { "term": "Alimentation par Ethernet", "en": "Power over Ethernet (PoE)", "definition": "Alimentation électrique d'un appareil par son câble réseau, fournie par le switch." },
+      { "term": "Panneau de brassage", "en": "Patch panel", "definition": "Panneau de la baie où aboutissent les câbles des prises murales, relié aux switchs par des cordons." }
+    ] },
+    { "id": "summary", "kind": "summary", "points": [
+      "Une trame Ethernet porte une MAC de destination, une MAC source, un type, les données et un code de contrôle.",
+      "Une adresse MAC compte 48 bits ; ses trois premiers octets (OUI) identifient le fabricant dans le registre de l'IEEE.",
+      "Le switch apprend les MAC source et envoie chaque trame vers le bon port ; inconnue ou diffusion = inondation dans le VLAN.",
+      "ARP : requête en diffusion « qui a cette IP ? », réponse directe avec la MAC, mise en cache. Jamais au-delà du réseau local.",
+      "arp -a et Get-NetNeighbor montrent le cache ; l'événement Tcpip 4199 donne la MAC de l'appareil en conflit.",
+      "Hub = couche 1, switch = couche 2, routeur = couche 3. Brassage : prise, câble horizontal, panneau, cordon, port. PoE : 15, 30 ou jusqu'à 90 W par port."
+    ] },
+    { "id": "references", "kind": "references", "items": [
+      { "title": "RFC 826 — An Ethernet Address Resolution Protocol", "url": "https://www.rfc-editor.org/rfc/rfc826", "publisher": "IETF", "verifiedAt": "2026-10-21" },
+      { "title": "IEEE Registration Authority (registre des OUI / MA-L)", "url": "https://standards.ieee.org/products-programs/regauth/", "publisher": "IEEE", "verifiedAt": "2026-10-21" },
+      { "title": "arp", "url": "https://learn.microsoft.com/windows-server/administration/windows-commands/arp", "publisher": "Microsoft Learn", "verifiedAt": "2026-10-21" },
+      { "title": "Get-NetNeighbor", "url": "https://learn.microsoft.com/powershell/module/nettcpip/get-netneighbor", "publisher": "Microsoft Learn", "verifiedAt": "2026-10-21" }
+    ] }
+  ]
+}

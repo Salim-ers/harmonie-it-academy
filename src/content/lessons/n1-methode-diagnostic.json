@@ -1,0 +1,152 @@
+{
+  "meta": {
+    "slug": "n1-methode-diagnostic",
+    "title": "Une méthode de diagnostic en six étapes",
+    "summary": "Passer du « ça ne marche pas » à une cause identifiée grâce à une méthode reproductible : symptôme, impact, hypothèses, tests ordonnés, correction, validation et documentation.",
+    "level": "debutant",
+    "prerequisites": ["Savoir qualifier un ticket (leçon « Cycle de vie d'un ticket »)", "Savoir questionner un utilisateur (leçon « Communiquer avec l'utilisateur »)"],
+    "objectives": [
+      "Appliquer les six étapes de la méthode sur un cas réel",
+      "Formuler plusieurs hypothèses et les ordonner du plus simple et probable au plus coûteux",
+      "Isoler une panne en raisonnant par couches et en comparant avec un poste qui fonctionne",
+      "Utiliser la question « qu'est-ce qui a changé ? » avec des commandes de vérification",
+      "Reconnaître le moment où il faut arrêter de chercher et escalader"
+    ],
+    "durationMin": 40,
+    "skills": [
+      { "code": "diagnostic", "weight": 3 },
+      { "code": "itsm", "weight": 1 }
+    ],
+    "next": "n1-itil"
+  },
+  "blocks": [
+    { "id": "intro", "kind": "paragraph", "text": "Mercredi, 10 h 15, entrepôt de Nordelis Logistique. Le poste du bureau des expéditions n'ouvre plus le dossier partagé où sont rangés les bons de livraison. Le premier technicien qui intervient réinstalle le pilote de la carte réseau, puis vide le cache du navigateur, puis redémarre trois fois. Quarante minutes plus tard, rien n'a changé. La deuxième technicienne pose une seule question : « Qu'est-ce qui a changé depuis hier ? » Réponse : « Rien… ah si, on a changé le mot de passe du compte de l'entrepôt ce matin. » Le poste gardait l'ancien mot de passe en mémoire pour se connecter au partage. Cinq minutes plus tard, c'est réglé. La différence entre les deux n'est pas le niveau technique : c'est la **méthode**." },
+    { "id": "h-pourquoi", "kind": "heading", "level": 2, "text": "Pourquoi une méthode ?" },
+    { "id": "p-pourquoi", "kind": "paragraph", "text": "Sans méthode, on essaie ce qui vient à l'esprit, souvent la dernière panne rencontrée. On perd du temps, on modifie plusieurs choses à la fois, et quand le problème disparaît, on ne sait pas ce qui l'a résolu. Parfois même, on crée une deuxième panne en cherchant la première. Une méthode impose un ordre : comprendre avant d'agir, tester avant de modifier, et ne changer qu'une chose à la fois. Elle vous permet aussi d'expliquer votre raisonnement dans le ticket et de passer le relais proprement." },
+    { "id": "def", "kind": "callout", "tone": "definition", "title": "Définition simple", "text": "**Diagnostiquer**, c'est trouver la cause d'un symptôme en formulant des hypothèses et en les éliminant une par une grâce à des tests, du plus simple et probable au plus long ou risqué, jusqu'à ce qu'il n'en reste qu'une, confirmée par un fait." },
+    { "id": "analogie", "kind": "callout", "tone": "analogy", "title": "Analogie", "text": "Une lampe de chevet ne s'allume pas. Vous ne commencez pas par appeler un électricien pour refaire le tableau électrique. Vous vérifiez que la lampe est branchée, puis vous essayez une autre ampoule, puis vous branchez un autre appareil sur la même prise, puis vous regardez si les autres pièces ont du courant. Chaque test est rapide, et chacun élimine une partie du chemin entre le compteur et l'ampoule. C'est exactement la méthode du technicien." },
+    { "id": "h-six", "kind": "heading", "level": 2, "text": "Les six étapes" },
+    { "id": "diag-method", "kind": "diagram", "diagram": "diagnostic-method", "caption": "Symptôme, impact, hypothèses, tests ordonnés, correction, validation et documentation. Si les tests infirment toutes les hypothèses, on revient en arrière pour en formuler de nouvelles." },
+    { "id": "list-six", "kind": "list", "ordered": true, "items": [
+      "**Décrire le symptôme** avec précision : que voit l'utilisateur, quel message exact, depuis quand, dans quelles circonstances. On sépare le fait (« le dossier affiche Accès refusé ») de l'interprétation (« le réseau est en panne »).",
+      "**Mesurer l'impact** : une personne, un service, un site ? Cela fixe la priorité, mais aussi le périmètre de la recherche : si tout l'étage est touché, inutile de réinstaller le poste de l'utilisateur.",
+      "**Formuler des hypothèses** : au moins deux ou trois causes possibles. Se limiter à une seule, c'est risquer de s'acharner sur une fausse piste.",
+      "**Tester dans l'ordre** : du plus simple et probable au plus coûteux. Un test doit pouvoir confirmer ou éliminer une hypothèse, et on note son résultat.",
+      "**Corriger** : une seule modification à la fois, réversible si possible, dans le respect de vos droits et de la procédure.",
+      "**Valider et documenter** : faire vérifier par l'utilisateur que le symptôme a disparu, puis écrire dans le ticket la cause, la correction et, si c'est utile, proposer un article de base de connaissances."
+    ] },
+    { "id": "h-hypo", "kind": "heading", "level": 2, "text": "Formuler et ordonner les hypothèses" },
+    { "id": "p-hypo", "kind": "paragraph", "text": "Pour ordonner les tests, croisez deux critères : la **probabilité** de l'hypothèse, au vu de ce que vous savez, et le **coût** du test (temps, dérangement pour l'utilisateur, risque). On commence par ce qui est probable et peu coûteux. On garde pour la fin ce qui est improbable et coûteux, comme réinstaller une application ou réinitialiser un profil. Un test très rapide mais peu probable peut passer avant un test probable mais long : vérifier un câble prend dix secondes." },
+    { "id": "tab-hypo", "kind": "table", "caption": "Cas Nordelis : le poste PC-EXP-02 n'ouvre plus le partage \\\\srv-fic01\\Logistique", "headers": ["Hypothèse", "Probabilité", "Coût du test", "Test proposé"], "rows": [
+      ["Le poste n'a plus de réseau", "Faible (Teams et la messagerie fonctionnent)", "Très faible", "Ouvrir un site interne, `ipconfig`"],
+      ["Le serveur ou le partage est en panne", "Moyenne", "Faible", "Ouvrir le partage depuis un autre poste du même bureau"],
+      ["Le poste ne joint pas le serveur sur le port du partage", "Faible", "Faible", "`Test-NetConnection srv-fic01 -Port 445`"],
+      ["Les identifiants mémorisés pour le partage sont périmés", "Élevée si un mot de passe a changé", "Faible", "Demander ce qui a changé, consulter le Gestionnaire d'identification"],
+      ["Les droits sur le dossier ont été modifiés", "Moyenne", "Moyen (demande au N2)", "Escalader si les tests précédents sont négatifs"]
+    ] },
+    { "id": "h-couches", "kind": "heading", "level": 2, "text": "Diviser pour régner : raisonner par couches" },
+    { "id": "p-couches", "kind": "paragraph", "text": "Entre l'utilisateur et le service qu'il veut utiliser, il y a une chaîne d'éléments : le matériel, le système, le réseau local, le réseau de l'entreprise, le serveur, l'application, le compte et ses droits. Une panne se trouve quelque part sur cette chaîne. Plutôt que de tester les maillons un par un depuis le début, cherchez un test qui coupe la chaîne en deux. Si le poste joint le serveur sur le bon port, tout ce qui est réseau est innocenté d'un coup, et il reste le compte, les droits ou l'application. C'est le principe du **diviser pour régner**." },
+    { "id": "tab-couches", "kind": "table", "caption": "Les couches à interroger et un test typique pour chacune", "headers": ["Couche", "Question", "Test typique au N1"], "rows": [
+      ["Physique", "Le matériel est-il alimenté et branché ?", "Voyants, câble, autre prise, autre périphérique"],
+      ["Système", "Le poste fonctionne-t-il normalement ?", "Autres applications, redémarrage, espace disque"],
+      ["Réseau", "Le poste obtient-il une adresse et joint-il le serveur ?", "`ipconfig /all`, `ping`, `Test-NetConnection`"],
+      ["Nom", "Le nom du serveur est-il traduit en adresse ?", "`nslookup srv-fic01`"],
+      ["Service ou application", "Le service répond-il pour les autres ?", "Test depuis un autre poste"],
+      ["Identité et droits", "Le compte est-il valide et autorisé ?", "Test avec le compte sur un autre poste, état du compte, groupes"]
+    ] },
+    { "id": "h-change", "kind": "heading", "level": 2, "text": "« Qu'est-ce qui a changé ? »" },
+    { "id": "p-change", "kind": "paragraph", "text": "Un système qui fonctionnait hier et ne fonctionne plus aujourd'hui a presque toujours subi un changement : mise à jour Windows, nouveau logiciel, mot de passe modifié, déménagement de bureau, nouveau périphérique, changement côté serveur ou réseau. La question est simple, mais les utilisateurs répondent souvent « rien » par réflexe. Relancez avec des exemples concrets (« un nouveau casque, une mise à jour au redémarrage, un changement de mot de passe ? ») et vérifiez vous-même ce que le poste peut vous dire." },
+    { "id": "cmd-hotfix", "kind": "command", "shell": "powershell", "command": "Get-HotFix | Sort-Object InstalledOn -Descending | Select-Object -First 3", "explanation": "`Get-HotFix` liste les mises à jour Windows installées. `Sort-Object InstalledOn -Descending` les trie de la plus récente à la plus ancienne, et `Select-Object -First 3` ne garde que les trois premières. Cette commande ne demande pas de droits administrateur pour un poste local. Elle ne montre pas toutes les mises à jour (les mises à jour d'applications ou de pilotes n'y figurent pas toujours), mais elle répond vite à la question « Windows a-t-il été mis à jour récemment ? ».", "output": "Source        Description      HotFixID      InstalledBy          InstalledOn\n------        -----------      --------      -----------          -----------\nPC-EXP-02     Security Update  KB5066xxx     AUTORITE NT\\Système  20/10/2026 00:00:00\nPC-EXP-02     Update           KB5065xxx     AUTORITE NT\\Système  14/10/2026 00:00:00\nPC-EXP-02     Security Update  KB5063xxx     AUTORITE NT\\Système  16/09/2026 00:00:00", "outputNotes": [
+      { "match": "20/10/2026", "note": "Une mise à jour de sécurité a été installée hier. Ce n'est pas une preuve de culpabilité, mais c'est un changement à noter dans le ticket et à rapprocher de l'heure de début du symptôme." },
+      { "match": "KB5066xxx", "note": "Le numéro KB identifie la mise à jour. Les numéros sont masqués ici (données fictives). En vrai, vous le recopiez tel quel : le N2 peut vérifier s'il fait l'objet d'un problème connu." },
+      { "match": "Security Update", "note": "Le type de mise à jour, souvent affiché en anglais même sur un Windows en français, car il provient directement des informations système." }
+    ] },
+    { "id": "cmd-events", "kind": "command", "shell": "powershell", "command": "Get-WinEvent -FilterHashtable @{LogName='System'; Level=2; StartTime=(Get-Date).AddDays(-1)} -MaxEvents 5 | Format-Table TimeCreated, ProviderName, Id -AutoSize", "explanation": "`Get-WinEvent` lit les journaux d'événements de Windows. Le filtre demande le journal `System`, le niveau 2 (Erreur) et les dernières 24 heures ; `-MaxEvents 5` limite aux cinq plus récents. `Format-Table` n'affiche que l'heure, la source et le numéro d'événement. Ce n'est pas une preuve en soi : un poste sain contient toujours quelques erreurs. On cherche une erreur qui **coïncide** avec l'heure du symptôme.", "output": "TimeCreated          ProviderName                 Id\n-----------          ------------                 --\n21/10/2026 08:02:41  Microsoft-Windows-DNS-Client 1014\n20/10/2026 17:45:12  Service Control Manager      7031", "outputNotes": [
+      { "match": "DNS-Client 1014", "note": "Un échec ponctuel de résolution de nom au démarrage est fréquent et souvent sans conséquence. À noter, sans en tirer de conclusion hâtive." },
+      { "match": "7031", "note": "Un service s'est arrêté de façon inattendue la veille au soir. Si le symptôme a commencé à ce moment-là, c'est une piste ; sinon, c'est probablement sans rapport." }
+    ] },
+    { "id": "h-reproduire", "kind": "heading", "level": 2, "text": "Reproduire et comparer" },
+    { "id": "p-reproduire", "kind": "paragraph", "text": "**Reproduire**, c'est faire réapparaître le symptôme devant vous, en direct ou en prise en main à distance. Tant que vous ne l'avez pas vu, vous travaillez sur une description. Une fois reproduit, vous pouvez noter le message exact et vérifier, après correction, qu'il ne revient pas. Si le symptôme est intermittent, demandez à l'utilisateur de noter l'heure exacte et ce qu'il faisait à chaque apparition." },
+    { "id": "p-comparer", "kind": "paragraph", "text": "**Comparer avec un poste qui fonctionne** est l'un des tests les plus puissants. Si le collègue du même bureau ouvre le partage, le serveur et le réseau du bureau fonctionnent : la cause est propre au poste ou au compte de l'utilisateur. Si l'utilisateur se connecte sur le poste du collègue et que le problème le suit, c'est son compte ou ses droits. Si le problème reste sur son poste quel que soit le compte, c'est le poste. Deux comparaisons suffisent souvent à couper le problème en quatre." },
+    { "id": "h-demo", "kind": "heading", "level": 2, "text": "Démonstration : le partage de l'entrepôt" },
+    { "id": "steps-demo", "kind": "steps", "title": "Appliquer la méthode au poste PC-EXP-02", "steps": [
+      { "title": "Symptôme", "text": "L'utilisateur lit le message : « \\\\srv-fic01\\Logistique n'est pas accessible. […] Le nom d'utilisateur ou le mot de passe est incorrect. » Début : ce matin 8 h. Le message parle d'identifiants, pas de réseau : c'est déjà un indice fort." },
+      { "title": "Impact", "text": "Une personne, mais le bureau des expéditions ne peut plus imprimer ses bons de livraison. Le poste du collègue, PC-EXP-01, ouvre le partage sans problème." },
+      { "title": "Hypothèses", "text": "Réseau du poste, partage en panne, identifiants mémorisés périmés, droits modifiés. La comparaison avec PC-EXP-01 rend la panne du partage peu probable." },
+      { "title": "Test réseau qui coupe la chaîne en deux", "text": "Le poste joint-il le serveur sur le port utilisé par les partages Windows ?", "command": "Test-NetConnection srv-fic01 -Port 445" },
+      { "title": "Qu'est-ce qui a changé ?", "text": "Relance précise : le mot de passe du compte partagé de l'entrepôt a été changé ce matin par le responsable. Le poste garde l'ancien dans le Gestionnaire d'identification de Windows." },
+      { "title": "Correction, validation, documentation", "text": "Avec l'utilisateur, supprimer l'identifiant mémorisé pour srv-fic01 dans le Gestionnaire d'identification, rouvrir le partage et saisir le nouveau mot de passe (c'est l'utilisateur qui le tape, pas vous). Le partage s'ouvre. Le ticket décrit la cause, la correction, et suggère un article de base de connaissances." }
+    ] },
+    { "id": "cmd-tnc", "kind": "command", "shell": "powershell", "command": "Test-NetConnection srv-fic01 -Port 445", "explanation": "`Test-NetConnection` vérifie qu'un poste peut joindre une machine sur un port précis. Le port 445 est celui du partage de fichiers Windows (protocole SMB). Si le test réussit, le nom est résolu, le chemin réseau fonctionne et le serveur écoute : tout le réseau est innocenté d'un coup.", "output": "ComputerName     : srv-fic01\nRemoteAddress    : 10.20.1.25\nRemotePort       : 445\nInterfaceAlias   : Ethernet\nSourceAddress    : 10.20.40.62\nTcpTestSucceeded : True", "outputNotes": [
+      { "match": "RemoteAddress", "note": "Le nom srv-fic01 a été traduit en adresse : le DNS fonctionne." },
+      { "match": "SourceAddress", "note": "L'adresse du poste, cohérente avec le réseau de l'entreprise : pas d'APIPA, le DHCP a fonctionné." },
+      { "match": "TcpTestSucceeded : True", "note": "Le serveur répond sur le port 445. Le réseau est hors de cause : il reste le compte, les identifiants mémorisés ou les droits. C'est le test qui coupe la chaîne en deux." }
+    ] },
+    { "id": "field-une", "kind": "callout", "tone": "field", "title": "Sur le terrain : une chose à la fois", "text": "Si vous changez le pilote, videz un cache et redémarrez en même temps, et que le problème disparaît, vous ne saurez jamais lequel des trois gestes a fonctionné. La prochaine fois, vous referez les trois. Pire : l'un d'eux a peut-être créé un nouveau problème qui apparaîtra demain. Une modification, un test, une note dans le ticket." },
+    { "id": "h-stop", "kind": "heading", "level": 2, "text": "Savoir s'arrêter et escalader" },
+    { "id": "p-stop", "kind": "paragraph", "text": "La méthode vous dit aussi quand arrêter. Escaladez quand **toutes vos hypothèses accessibles sont éliminées**, quand le test suivant demande des **droits** que vous n'avez pas, quand la correction présente un **risque** (perte de données, effet sur d'autres utilisateurs), quand l'**impact** s'élargit, ou quand vous avez atteint le **temps** fixé pour un traitement de premier niveau. Votre travail n'est pas perdu : la liste des hypothèses éliminées, avec les tests et leurs résultats, est exactement ce dont le N2 a besoin pour repartir là où vous vous êtes arrêté." },
+    { "id": "tip-ticket", "kind": "callout", "tone": "tip", "title": "Écrire son raisonnement", "text": "Dans le ticket, notez vos tests sous la forme « hypothèse → test → résultat → conclusion ». Exemple : « Réseau du poste → Test-NetConnection srv-fic01 -Port 445 → True → réseau hors de cause. » Le N2 lit votre raisonnement en dix secondes et ne refait pas vos tests." },
+    { "id": "mistakes", "kind": "mistakes", "items": [
+      { "mistake": "Commencer par réinstaller", "why": "C'est le test le plus long et le plus risqué ; il efface aussi les indices.", "fix": "Garder la réinstallation pour la fin, après les tests simples, et avec l'accord de la procédure." },
+      { "mistake": "S'arrêter à la première hypothèse", "why": "On s'acharne sur une fausse piste et on interprète chaque résultat pour la confirmer.", "fix": "Écrire au moins trois hypothèses avant le premier test." },
+      { "mistake": "Modifier plusieurs choses à la fois", "why": "Impossible de savoir ce qui a résolu, ou ce qui a cassé.", "fix": "Une modification, un test, une note." },
+      { "mistake": "Croire l'utilisateur quand il dit « rien n'a changé »", "why": "Il ne pense pas aux mises à jour, aux mots de passe ou aux déménagements.", "fix": "Relancer avec des exemples concrets et vérifier les mises à jour et les journaux." },
+      { "mistake": "Clôturer sans faire vérifier par l'utilisateur", "why": "Le symptôme peut persister sous une autre forme ; le ticket sera rouvert.", "fix": "Faire refaire à l'utilisateur le geste qui échouait, devant vous." }
+    ] },
+    { "id": "risks", "kind": "risks", "items": [
+      "Avant toute correction qui peut effacer des données (réinitialisation d'un profil, réinstallation, suppression de fichiers), vérifiez la sauvegarde et respectez la procédure.",
+      "Ne testez jamais avec le mot de passe de l'utilisateur : c'est lui qui le saisit, en votre présence si nécessaire.",
+      "Une modification sur un serveur, un équipement réseau ou un paramètre partagé relève d'un changement validé, même si vous en avez techniquement l'accès.",
+      "Si un test révèle un indice de sécurité (programme inconnu, compte suspect, alerte antivirus), arrêtez le diagnostic et appliquez la procédure sécurité."
+    ] },
+    { "id": "quiz", "kind": "quiz", "title": "Vérifiez votre compréhension", "questions": ["methode-etapes-ordre", "methode-ordre-tests", "methode-comparaison", "methode-tnc-lecture", "methode-une-chose"] },
+    { "id": "exercise", "kind": "exercise", "title": "Diagnostiquer une impression qui échoue", "context": "Groupe Valmont, service RH, 3e étage. Depuis ce matin, M. Baron n'arrive plus à imprimer sur IMP-RH-02 : ses documents restent bloqués « En attente » dans la file. Sa collègue, assise à côté et utilisant la même imprimante, imprime normalement. M. Baron dit que « rien n'a changé ». En vérifiant, vous constatez qu'une mise à jour Windows a été installée hier sur son poste, PC-RH-005, et qu'il a branché ce matin une nouvelle station d'accueil pour son portable.", "task": "Déroulez la méthode : symptôme, impact, au moins trois hypothèses classées, les tests que vous faites dans l'ordre, et à quel moment vous escaladez.", "hints": [
+      "La collègue imprime sur la même imprimante : qu'est-ce que cela innocente d'emblée ?",
+      "Listez ce qui a changé sur le poste de M. Baron et uniquement sur le sien. Deux changements sont connus. Pensez aussi à la file d'attente elle-même.",
+      "Tests simples d'abord : voir si un nouveau document passe après avoir vidé la file de M. Baron, tester sans la station d'accueil (ou en Wi-Fi), vérifier que le poste joint l'imprimante. La mise à jour vient en dernier, car on ne la désinstalle pas au N1 sans procédure."
+    ], "solution": [
+      "Symptôme : documents bloqués « En attente » dans la file d'IMP-RH-02 sur PC-RH-005 depuis ce matin. Impact : une personne, contournement possible (imprimer depuis le poste de la collègue pour un document urgent, s'il n'est pas confidentiel, ou sur une autre imprimante RH). Priorité basse à moyenne selon l'urgence de M. Baron.",
+      "La collègue imprime sur la même imprimante : l'imprimante, son alimentation, son réseau et le serveur d'impression éventuel sont hors de cause. Le problème est propre au poste de M. Baron, à sa connexion ou à sa file. Hypothèses classées par probabilité et coût : (1) file d'attente bloquée par un document corrompu, test très simple ; (2) la nouvelle station d'accueil change la connexion réseau du poste, test simple ; (3) le poste ne joint plus l'imprimante, test simple ; (4) la mise à jour d'hier a affecté le pilote ou le composant d'impression, test plus coûteux.",
+      "Ordre des tests : annuler les documents de M. Baron dans la file et relancer une page de test ; s'il échoue, débrancher la station d'accueil ou passer en Wi-Fi et réessayer ; puis vérifier que le poste joint l'imprimante (`ping IMP-RH-02` ou `Test-NetConnection IMP-RH-02 -Port 9100` si l'imprimante utilise ce port). Une seule modification à la fois, et chaque résultat est noté.",
+      "On escalade au N2 si tous ces tests sont négatifs et que la mise à jour d'hier reste la seule différence : on joint le numéro KB relevé avec `Get-HotFix`, l'heure de début, le résultat de chaque test et le fait que la collègue imprime normalement. Le N1 ne désinstalle pas une mise à jour de sécurité de sa propre initiative ; c'est une décision qui relève du N2 et, souvent, d'un problème à ouvrir si d'autres postes sont touchés."
+    ], "rubric": {
+      "criteria": [
+        { "id": "collegue", "label": "Déduit de la collègue que l'imprimante n'est pas en cause", "points": 3, "patterns": ["collegue", "imprimante fonctionne", "imprimante hors de cause", "pas l'imprimante", "imprimante ok"], "required": true },
+        { "id": "hypotheses", "label": "Formule plusieurs hypothèses", "points": 2, "patterns": ["hypothese*", "pistes", "causes possibles"] },
+        { "id": "file", "label": "Teste la file d'attente (vider, annuler, relancer)", "points": 2, "patterns": ["file d'attente", "vider la file", "annuler les documents", "annuler les impressions", "spouleur", "spooler", "page de test"] },
+        { "id": "station", "label": "Teste l'effet de la station d'accueil", "points": 2, "patterns": ["station d'accueil", "dock", "docking", "debrancher la station", "sans la station"] },
+        { "id": "maj", "label": "Prend en compte la mise à jour, en dernier ou via le N2", "points": 2, "patterns": ["mise a jour", "get-hotfix", "kb", "windows update"] },
+        { "id": "escalade", "label": "Prévoit une escalade documentée si les tests échouent", "points": 1, "patterns": ["escalad*", "n2", "transmettre", "niveau 2"] }
+      ],
+      "redFlags": [
+        { "id": "desinstall", "label": "Désinstalle la mise à jour de sa propre initiative au N1", "patterns": ["je desinstalle la mise a jour", "desinstaller la mise a jour", "supprimer la mise a jour", "wusa"], "penalty": 2 },
+        { "id": "reinstall", "label": "Commence par réinstaller le poste", "patterns": ["reinstaller windows", "reinstaller le poste", "reinitialiser le pc", "remasteriser"], "penalty": 2 }
+      ],
+      "passPercent": 60
+    } },
+    { "id": "interview", "kind": "interview", "questions": [
+      { "question": "Décrivez votre méthode face à une panne que vous n'avez jamais rencontrée.", "expectedPoints": ["Décrire précisément le symptôme et l'impact", "Formuler plusieurs hypothèses", "Tester du plus simple et probable au plus coûteux, une chose à la fois", "Demander ce qui a changé et comparer avec un poste qui fonctionne", "Valider avec l'utilisateur et documenter", "Escalader avec ses tests si nécessaire"], "modelAnswer": "Je commence par décrire précisément le symptôme, avec le message exact et l'heure de début, puis je mesure l'impact : une personne ou plusieurs. Je formule plusieurs hypothèses et je les teste dans l'ordre, du plus simple et probable au plus coûteux, en ne changeant qu'une chose à la fois. Je demande toujours ce qui a changé récemment et je compare avec un poste qui fonctionne, parce que cela isole très vite le problème. Une fois la cause trouvée, je corrige, je fais vérifier par l'utilisateur et je documente. Si j'atteins la limite de mes droits ou du temps prévu, j'escalade avec la liste de mes tests et de leurs résultats." },
+      { "question": "Un utilisateur dit que son application métier « plante tout le temps ». Quelles sont vos premières questions ?", "expectedPoints": ["Que se passe-t-il exactement, quel message", "Depuis quand, et à quel moment (action déclenchante)", "Les collègues sont-ils touchés", "Qu'est-ce qui a changé récemment", "Peut-il reproduire devant moi"], "modelAnswer": "Je lui demande d'abord ce qui se passe exactement : un message d'erreur, une fermeture, un gel, et de me lire le message mot à mot. Puis depuis quand, et à quel moment : à l'ouverture, sur une action précise ? Je demande si ses collègues ont le même problème, pour savoir si c'est son poste ou l'application. Je demande ce qui a changé récemment, en donnant des exemples : mise à jour, nouveau périphérique. Enfin, je lui propose de reproduire le problème pendant une prise en main à distance pour le voir de mes yeux." }
+    ] },
+    { "id": "glossary", "kind": "glossary", "terms": [
+      { "term": "Hypothèse", "en": "Hypothesis", "definition": "Cause possible d'un symptôme, que l'on cherche à confirmer ou éliminer par un test." },
+      { "term": "Reproduire", "en": "Reproduce", "definition": "Faire réapparaître un symptôme de manière contrôlée pour l'observer." },
+      { "term": "Diviser pour régner", "en": "Divide and conquer / split-half", "definition": "Choisir des tests qui éliminent la moitié des causes possibles à chaque fois." },
+      { "term": "Cause racine", "en": "Root cause", "definition": "Origine profonde d'un ou plusieurs incidents, au-delà du symptôme." },
+      { "term": "Journal d'événements", "en": "Event log", "definition": "Historique des événements, avertissements et erreurs enregistrés par Windows." }
+    ] },
+    { "id": "summary", "kind": "summary", "points": [
+      "Six étapes : symptôme, impact, hypothèses, tests ordonnés, correction, validation et documentation.",
+      "On ordonne les tests en croisant probabilité et coût : d'abord le probable et le rapide, en dernier le long et le risqué.",
+      "Raisonner par couches et chercher le test qui coupe la chaîne en deux (par exemple `Test-NetConnection` sur le port du service).",
+      "« Qu'est-ce qui a changé ? » et « Est-ce que ça marche ailleurs ? » sont les deux questions les plus rentables du métier.",
+      "Une modification à la fois, et l'on escalade quand les hypothèses accessibles sont épuisées, avec le raisonnement écrit dans le ticket."
+    ] },
+    { "id": "references", "kind": "references", "items": [
+      { "title": "Test-NetConnection", "url": "https://learn.microsoft.com/powershell/module/nettcpip/test-netconnection", "publisher": "Microsoft Learn", "verifiedAt": "2026-10-21" },
+      { "title": "Get-WinEvent", "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.diagnostics/get-winevent", "publisher": "Microsoft Learn", "verifiedAt": "2026-10-21" },
+      { "title": "Get-HotFix", "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.management/get-hotfix", "publisher": "Microsoft Learn", "verifiedAt": "2026-10-21" },
+      { "title": "Documentation de dépannage des clients Windows", "url": "https://learn.microsoft.com/troubleshoot/windows-client/welcome-windows-client", "publisher": "Microsoft Learn", "verifiedAt": "2026-10-21" }
+    ] }
+  ]
+}

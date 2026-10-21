@@ -1,0 +1,180 @@
+{
+  "meta": {
+    "slug": "n1-dns",
+    "title": "DNS : de nom à adresse",
+    "summary": "Comprendre comment un nom devient une adresse IP, lire nslookup et Resolve-DnsName, vider le cache au bon moment et reconnaître un poste du domaine mal configuré en DNS.",
+    "level": "debutant",
+    "prerequisites": ["Savoir lire une configuration IP (leçon « Adresse IP, masque et passerelle »)", "Connaître le rôle du DHCP (leçon « DHCP »)"],
+    "objectives": [
+      "Expliquer pourquoi le DNS existe et décrire une résolution de nom de la racine au serveur faisant autorité",
+      "Distinguer requête récursive et requête itérative, et le rôle du cache",
+      "Reconnaître les enregistrements A, AAAA, CNAME, MX, PTR et SRV et dire à quoi sert chacun",
+      "Expliquer pourquoi un poste membre du domaine doit utiliser exclusivement les DNS internes",
+      "Diagnostiquer un problème de nom avec ipconfig, nslookup et Resolve-DnsName"
+    ],
+    "durationMin": 45,
+    "skills": [
+      { "code": "network-services", "weight": 3 },
+      { "code": "diagnostic", "weight": 2 }
+    ],
+    "next": "n1-osi"
+  },
+  "blocks": [
+    { "id": "intro", "kind": "paragraph", "text": "Vendredi, 9 h 05. Mme Roussel, commerciale au Groupe Valmont, revient d'un salon. Internet fonctionne sur son portable, mais l'intranet affiche « Ce site est inaccessible », le lecteur réseau `\\\\srv-fic01` a disparu et Windows lui signale que « le domaine n'est pas disponible ». Le ping vers `10.20.30.15`, l'adresse de l'intranet, répond pourtant parfaitement. La cause tient en une ligne de son `ipconfig /all` : quelqu'un, sur le salon, a configuré son DNS sur `8.8.8.8` « pour que le Wi-Fi marche mieux »." },
+    { "id": "intro-enjeu", "kind": "paragraph", "text": "Le DNS est impliqué dans une part énorme des tickets « réseau » : rien ne marche par le nom, tout marche par l'adresse. Savoir vérifier en deux commandes si la résolution de noms est en cause vous fera gagner un temps considérable, et vous évitera de soupçonner à tort le pare-feu, l'application ou le compte de l'utilisateur." },
+    { "id": "h-pourquoi", "kind": "heading", "level": 2, "text": "Pourquoi le DNS existe" },
+    { "id": "def", "kind": "callout", "tone": "definition", "title": "Définition simple", "text": "Le **DNS** (Domain Name System) est le service qui traduit un **nom** lisible par un humain, comme `intranet.valmont.local`, en **adresse IP** utilisable par la machine, comme `10.20.30.15`. C'est un annuaire distribué : aucun serveur ne connaît tous les noms, mais chacun sait à qui demander." },
+    { "id": "p-pourquoi", "kind": "paragraph", "text": "Les ordinateurs ne communiquent qu'avec des adresses IP. Les humains, eux, retiennent des noms. Le DNS fait le lien et apporte un second avantage : l'indirection. Si l'intranet déménage sur un nouveau serveur `10.20.30.22`, l'administrateur modifie un seul enregistrement DNS, et tous les postes suivent sans que personne ne change ses favoris. Le DNS utilise le **port 53**, en UDP pour la plupart des requêtes et en TCP pour les réponses volumineuses et les transferts de zone." },
+    { "id": "analogie", "kind": "callout", "tone": "analogy", "title": "Analogie", "text": "Le DNS fonctionne comme les renseignements téléphoniques d'autrefois. Vous demandez « le numéro de la boulangerie Martin à Lyon ». L'opératrice (votre serveur DNS) ne connaît pas tous les numéros de France : elle consulte d'abord l'annuaire national pour savoir qui gère Lyon, puis l'annuaire de Lyon, et vous rappelle avec le numéro. Comme elle note ses réponses sur un carnet (le **cache**), la prochaine personne qui demande la même boulangerie obtient la réponse immédiatement." },
+    { "id": "h-resolution", "kind": "heading", "level": 2, "text": "Comment se déroule une résolution" },
+    { "id": "p-arbre", "kind": "paragraph", "text": "Les noms DNS forment un arbre qui se lit de droite à gauche. Dans `www.exemple.fr.`, le point final (souvent omis) représente la **racine**. Sous la racine se trouvent les **domaines de premier niveau** ou TLD (`.fr`, `.com`, `.org`…). Sous `.fr`, le domaine `exemple.fr`, géré par son propriétaire sur des serveurs dits **faisant autorité** : ce sont eux qui détiennent la réponse officielle pour tous les noms de ce domaine." },
+    { "id": "diag", "kind": "diagram", "diagram": "dns-resolution", "caption": "Résolution de www.exemple.fr : le poste pose une question récursive à son serveur DNS ; celui-ci interroge successivement la racine, le serveur du TLD .fr et le serveur faisant autorité pour exemple.fr, puis met la réponse en cache." },
+    { "id": "list-resolution", "kind": "list", "ordered": true, "items": [
+      "Le poste consulte d'abord son **cache local** et son fichier **hosts**. S'il y trouve le nom, la résolution s'arrête là.",
+      "Sinon, il envoie une **requête récursive** à son serveur DNS configuré (au Groupe Valmont, `10.20.1.10`) : « Donne-moi la réponse finale, je ne veux pas faire le travail moi-même ».",
+      "Le serveur DNS vérifie son propre cache. S'il ne connaît pas la réponse et qu'il n'héberge pas la zone, il commence des **requêtes itératives** : il demande à un serveur **racine** qui gère `.fr`.",
+      "La racine ne connaît pas la réponse, mais renvoie l'adresse des serveurs du **TLD** `.fr`. Le serveur DNS leur demande qui gère `exemple.fr`.",
+      "Les serveurs de `.fr` renvoient l'adresse des serveurs **faisant autorité** pour `exemple.fr`. Le serveur DNS leur pose la question finale et obtient l'adresse de `www.exemple.fr`, par exemple `198.51.100.20`.",
+      "Le serveur DNS met la réponse en cache pour la durée indiquée par le **TTL** (durée de vie) et la renvoie au poste, qui la met lui aussi en cache."
+    ] },
+    { "id": "tab-recursif", "kind": "table", "caption": "Requête récursive ou itérative : qui fait le travail ?", "headers": ["Critère", "Requête récursive", "Requête itérative"], "rows": [
+      ["Qui la pose", "Le poste client à son serveur DNS", "Le serveur DNS aux serveurs racine, TLD et faisant autorité"],
+      ["Ce qu'on attend", "La réponse finale (ou une erreur)", "La réponse, ou une indication « demandez plutôt à tel serveur »"],
+      ["Qui fait les allers-retours", "Le serveur DNS interrogé", "Le demandeur, étape par étape"],
+      ["Exemple au Groupe Valmont", "PC-COM-031 demande www.exemple.fr à 10.20.1.10", "10.20.1.10 (ou son redirecteur) interroge la racine, puis .fr, puis exemple.fr"]
+    ] },
+    { "id": "field-redirecteur", "kind": "callout", "tone": "field", "title": "Sur le terrain", "text": "En entreprise, les contrôleurs de domaine qui servent de DNS internes ne font pas toujours eux-mêmes le parcours depuis la racine. Ils sont souvent configurés avec des **redirecteurs** : pour tout nom qui n'appartient pas à `valmont.local`, ils transmettent la question au résolveur du fournisseur d'accès ou du pare-feu. Pour vous, cela ne change rien : le poste pose sa question aux DNS internes, qui se débrouillent pour tout le reste." },
+    { "id": "h-cache", "kind": "heading", "level": 2, "text": "Le cache local et le fichier hosts" },
+    { "id": "p-cache", "kind": "paragraph", "text": "Windows garde en mémoire les réponses DNS reçues, chacune pendant son TTL : c'est le **cache du client DNS**. Il garde aussi les **réponses négatives** (« ce nom n'existe pas ») pendant quelques minutes. C'est très efficace, mais cela explique un symptôme fréquent : un serveur vient de changer d'adresse ou un nom vient d'être créé, et un poste continue d'utiliser l'ancienne information. Deux commandes permettent de consulter puis de vider ce cache." },
+    { "id": "cmd-displaydns", "kind": "command", "shell": "cmd", "command": "ipconfig /displaydns", "explanation": "Affiche le contenu du cache du client DNS, y compris les entrées issues du fichier hosts. Aucun droit administrateur n'est nécessaire. La sortie est souvent longue : ajoutez | more pour la lire page par page.", "output": "Configuration IP de Windows\n\n    intranet.valmont.local\n    ----------------------------------------\n    Nom d'enregistrement . . . . . : intranet.valmont.local\n    Type d'enregistrement. . . . . : 1\n    Durée de vie . . . . . . . . . : 2874\n    Longueur de données. . . . . . : 4\n    Section. . . . . . . . . . . . : Réponse\n    Enregistrement A (hôte). . . . : 10.20.30.15\n\n    portail.exemple.fr\n    ----------------------------------------\n    Nom d'enregistrement . . . . . : portail.exemple.fr\n    Type d'enregistrement. . . . . : 1\n    Durée de vie . . . . . . . . . : 84211\n    Longueur de données. . . . . . : 4\n    Section. . . . . . . . . . . . : Réponse\n    Enregistrement A (hôte). . . . : 192.0.2.80", "outputNotes": [
+      { "match": "Type d'enregistrement. . . . . : 1", "note": "Le type 1 correspond à un enregistrement A (adresse IPv4). Le type 28 serait un AAAA, le type 5 un CNAME." },
+      { "match": "Durée de vie . . . . . . . . . : 2874", "note": "Il reste 2 874 secondes (un peu moins de 48 minutes) avant que cette entrée n'expire du cache." },
+      { "match": "10.20.30.15", "note": "L'adresse que le poste utilisera pour l'intranet tant que l'entrée est en cache." },
+      { "match": "84211", "note": "Une durée de vie de plus de 23 heures : le domaine a peut-être défini un TTL long, mais les entrées issues du fichier hosts affichent elles aussi une durée de vie très longue. Si un seul poste se comporte bizarrement pour ce nom, ouvrez le fichier hosts." }
+    ] },
+    { "id": "cmd-flushdns", "kind": "command", "shell": "cmd", "command": "ipconfig /flushdns", "explanation": "Vide le cache du client DNS, y compris les réponses négatives. Le poste redemandera chaque nom à son serveur DNS. C'est sans risque et immédiat, mais inutile si le serveur DNS lui-même renvoie une mauvaise réponse. Les entrées du fichier hosts sont rechargées aussitôt : le flush ne les supprime pas.", "output": "Configuration IP de Windows\n\nCache de résolution DNS vidé.", "outputNotes": [
+      { "match": "vidé", "note": "Le cache est vide. Relancez le test (nslookup ou navigateur) pour voir si la nouvelle réponse est correcte." }
+    ] },
+    { "id": "p-hosts", "kind": "paragraph", "text": "Le fichier **hosts**, situé dans `C:\\Windows\\System32\\drivers\\etc\\hosts`, est une liste locale de correspondances nom ↔ adresse, consultée **avant** le serveur DNS. Il est vide par défaut (seules des lignes de commentaire commençant par `#`). Une ligne ajoutée un jour pour un test, comme `192.0.2.80 portail.exemple.fr`, continuera de forcer cette adresse des années plus tard, même si le site a déménagé. C'est aussi une cible des logiciels malveillants, qui y redirigent des sites bancaires." },
+    { "id": "warn-hosts", "kind": "callout", "tone": "warning", "title": "Un poste, un comportement à part", "text": "Si un seul poste résout un nom différemment de tous ses voisins alors qu'il utilise les mêmes serveurs DNS, ouvrez le fichier hosts (en lecture). Toute ligne non commentée doit être justifiée. Ne la supprimez pas vous-même sans comprendre pourquoi elle est là : signalez-la, car elle peut être légitime (application métier) ou malveillante." },
+    { "id": "h-enregistrements", "kind": "heading", "level": 2, "text": "Les enregistrements à connaître" },
+    { "id": "tab-records", "kind": "table", "caption": "Principaux types d'enregistrements DNS et exemples fictifs", "headers": ["Type", "Rôle", "Exemple", "Quand vous le croisez"], "rows": [
+      ["A", "Associe un nom à une adresse IPv4", "intranet.valmont.local → 10.20.30.15", "Tous les jours : accès à un serveur, un site, une imprimante"],
+      ["AAAA", "Associe un nom à une adresse IPv6", "www.exemple.fr → 2001:db8::20", "Sites publics accessibles en IPv6"],
+      ["CNAME", "Alias : un nom renvoie vers un autre nom", "www.exemple.fr → portail.exemple.fr", "Services hébergés, noms « commerciaux » pointant vers un serveur réel"],
+      ["MX", "Indique le serveur de messagerie d'un domaine, avec une priorité", "exemple.fr → 10 mail.exemple.fr", "Problèmes de réception de courriels externes"],
+      ["PTR", "Résolution inverse : adresse vers nom", "10.20.30.15 → intranet.valmont.local", "nslookup sur une adresse, journaux, outils de supervision"],
+      ["SRV", "Localise un service : nom de cible, port, priorité, poids", "_ldap._tcp.dc._msdcs.valmont.local → srv-dc01.valmont.local:389", "Active Directory : trouver un contrôleur de domaine"]
+    ] },
+    { "id": "p-srv", "kind": "paragraph", "text": "Le **SRV** mérite une attention particulière, car il est au cœur d'Active Directory. Quand un poste démarre ou qu'un utilisateur ouvre sa session, Windows ne connaît pas à l'avance le nom des contrôleurs de domaine. Il demande à son DNS les enregistrements SRV de la forme `_ldap._tcp.dc._msdcs.valmont.local`, qui renvoient la liste des contrôleurs avec leurs ports (389 pour LDAP, 88 pour Kerberos). Ces enregistrements n'existent **que** dans les DNS internes. Un poste qui interroge un DNS public ne trouvera jamais son contrôleur de domaine : ouverture de session avec les identifiants en cache, stratégies de groupe non appliquées, lecteurs réseau absents." },
+    { "id": "p-ptr", "kind": "paragraph", "text": "Les enregistrements **PTR** vivent dans des zones spéciales de **recherche inversée** : l'adresse est écrite à l'envers, suivie de `in-addr.arpa`. L'adresse `10.20.30.15` correspond ainsi au nom `15.30.20.10.in-addr.arpa`. Une zone inversée absente ou incomplète n'empêche pas l'accès aux ressources, mais explique le « Serveur : UnKnown » que vous verrez souvent en tête de nslookup." },
+    { "id": "h-interne", "kind": "heading", "level": 2, "text": "DNS interne et DNS public : pourquoi le mélange est interdit" },
+    { "id": "p-interne", "kind": "paragraph", "text": "Le domaine `valmont.local` n'existe que dans les DNS internes de l'entreprise, hébergés par les contrôleurs de domaine `10.20.1.10` et `10.20.1.11`. Ces serveurs connaissent les noms internes **et** savent résoudre les noms d'Internet via leurs redirecteurs. Un résolveur public, lui, ne connaît que les noms d'Internet. La règle est donc simple : un poste membre du domaine utilise **uniquement** les DNS internes, en premier comme en second serveur." },
+    { "id": "danger-mix", "kind": "callout", "tone": "danger", "title": "Le piège du DNS secondaire public", "text": "Configurer `10.20.1.10` en DNS principal et `8.8.8.8` en secondaire semble prudent. C'est une erreur : Windows bascule sur le serveur secondaire dès que le principal tarde à répondre, puis peut y rester. Il obtient alors des réponses « nom inexistant » pour tous les noms internes, et ces réponses négatives sont mises en cache. Résultat : des pannes intermittentes et inexplicables. Deux DNS internes, jamais un mélange." },
+    { "id": "h-outils", "kind": "heading", "level": 2, "text": "Interroger le DNS : nslookup et Resolve-DnsName" },
+    { "id": "cmd-nslookup", "kind": "command", "shell": "cmd", "command": "nslookup intranet.valmont.local", "explanation": "nslookup interroge directement un serveur DNS, par défaut le premier configuré sur la carte. Attention : il ignore le cache local et le fichier hosts. Il teste donc le serveur DNS, pas ce que le poste utilise réellement.", "output": "Serveur :   srv-dc01.valmont.local\nAddress:  10.20.1.10\n\nNom :    intranet.valmont.local\nAddress:  10.20.30.15", "outputNotes": [
+      { "match": "Serveur :", "note": "Le serveur interrogé. Si vous voyez « UnKnown », c'est seulement que la zone inversée ne connaît pas son nom : ce n'est pas une panne." },
+      { "match": "Address:  10.20.1.10", "note": "Vérifiez que c'est bien un DNS interne. Une adresse comme 8.8.8.8 ici signale une mauvaise configuration." },
+      { "match": "Address:  10.20.30.15", "note": "La réponse : le nom est résolu. Si l'accès échoue malgré tout, le problème n'est pas le DNS." }
+    ] },
+    { "id": "cmd-nslookup-ext", "kind": "command", "shell": "cmd", "command": "nslookup www.exemple.fr", "explanation": "Même commande pour un nom d'Internet. La mention « Réponse ne faisant pas autorité » est normale : le serveur interne a obtenu la réponse ailleurs (ou dans son cache) et la relaie.", "output": "Serveur :   srv-dc01.valmont.local\nAddress:  10.20.1.10\n\nRéponse ne faisant pas autorité :\nNom :    portail.exemple.fr\nAddresses:  2001:db8::20\n          198.51.100.20\nAliases:  www.exemple.fr", "outputNotes": [
+      { "match": "Réponse ne faisant pas autorité", "note": "Normal pour un nom externe : le DNS interne n'héberge pas la zone exemple.fr." },
+      { "match": "Nom :    portail.exemple.fr", "note": "Le nom canonique, c'est-à-dire la cible du CNAME." },
+      { "match": "Addresses:", "note": "Deux adresses : un AAAA (IPv6) et un A (IPv4)." },
+      { "match": "Aliases:", "note": "www.exemple.fr est un alias (CNAME) vers portail.exemple.fr." }
+    ] },
+    { "id": "cmd-nslookup-err", "kind": "command", "shell": "cmd", "command": "nslookup srv-fic01.valmont.local 8.8.8.8", "explanation": "On peut préciser le serveur à interroger en second argument. Ici, on démontre au poste de Mme Roussel ce que voit un résolveur public : il ne connaît pas le domaine interne.", "output": "Serveur :   dns.google\nAddress:  8.8.8.8\n\n*** dns.google ne parvient pas à trouver srv-fic01.valmont.local : Non-existent domain", "outputNotes": [
+      { "match": "8.8.8.8", "note": "Résolveur public : il n'a aucune connaissance de valmont.local." },
+      { "match": "Non-existent domain", "note": "Réponse « nom inexistant » (NXDOMAIN). Pour un nom interne, la cause est presque toujours un mauvais serveur DNS sur le poste, pas un serveur supprimé." }
+    ] },
+    { "id": "cmd-resolve", "kind": "command", "shell": "powershell", "command": "Resolve-DnsName -Name _ldap._tcp.dc._msdcs.valmont.local -Type SRV", "explanation": "Resolve-DnsName est l'équivalent PowerShell de nslookup, plus précis : il utilise par défaut le même chemin que Windows (cache et fichier hosts compris) et permet de choisir le type d'enregistrement avec -Type. Ici, on vérifie que le poste trouve bien les contrôleurs de domaine.", "output": "Name                                     Type   TTL   Section    NameTarget                     Priority Weight Port\n----                                     ----   ---   -------    ----------                     -------- ------ ----\n_ldap._tcp.dc._msdcs.valmont.local       SRV    600   Answer     srv-dc01.valmont.local         0        100    389\n_ldap._tcp.dc._msdcs.valmont.local       SRV    600   Answer     srv-dc02.valmont.local         0        100    389\n\nName       : srv-dc01.valmont.local\nQueryType  : A\nTTL        : 3600\nSection    : Additional\nIP4Address : 10.20.1.10\n\nName       : srv-dc02.valmont.local\nQueryType  : A\nTTL        : 3600\nSection    : Additional\nIP4Address : 10.20.1.11", "outputNotes": [
+      { "match": "NameTarget", "note": "Les deux contrôleurs de domaine annoncés par le DNS pour le service LDAP." },
+      { "match": "Port", "note": "389 : le port LDAP. Les SRV donnent le port, ce que ne fait pas un enregistrement A." },
+      { "match": "Additional", "note": "Le serveur ajoute spontanément l'adresse IPv4 de chaque contrôleur pour éviter une seconde requête." }
+    ] },
+    { "id": "p-resolve-option", "kind": "paragraph", "text": "Deux options utiles de `Resolve-DnsName` : `-Server 10.20.1.11` pour interroger un serveur précis (comparer les deux DNS internes), et `-DnsOnly` pour ignorer le fichier hosts et les autres mécanismes locaux. Comparer le résultat avec et sans `-DnsOnly` révèle immédiatement une entrée du fichier hosts." },
+    { "id": "h-demo", "kind": "heading", "level": 2, "text": "Démonstration : le portable de Mme Roussel" },
+    { "id": "steps-demo", "kind": "steps", "title": "Prouver puis corriger un problème de DNS en cinq étapes", "steps": [
+      { "title": "Séparer réseau et noms", "text": "Un ping vers l'adresse de l'intranet répond, un ping vers son nom échoue avec « La requête Ping n'a pas pu trouver l'hôte ». Le réseau fonctionne : la résolution de noms est en cause.", "command": "ping intranet.valmont.local" },
+      { "title": "Lire les serveurs DNS configurés", "text": "Dans ipconfig /all, la ligne « Serveurs DNS » affiche 8.8.8.8 au lieu de 10.20.1.10 et 10.20.1.11, et « DHCP activé » vaut Oui : la carte prend son adresse en DHCP, mais le DNS a été forcé à la main dans les propriétés IPv4.", "command": "ipconfig /all" },
+      { "title": "Démontrer la cause", "text": "Interroger un DNS interne réussit, interroger 8.8.8.8 échoue. Vous tenez la preuve à noter dans le ticket.", "command": "nslookup intranet.valmont.local 10.20.1.10" },
+      { "title": "Corriger la configuration", "text": "Dans les propriétés IPv4 de la carte, cocher « Obtenir les adresses des serveurs DNS automatiquement » (droits administrateur requis). Le DHCP fournira alors 10.20.1.10 et 10.20.1.11." },
+      { "title": "Purger et vérifier", "text": "Vider le cache pour effacer les réponses négatives mémorisées, puis vérifier les noms internes et la localisation du contrôleur de domaine. Enfin, demander à l'utilisatrice de fermer puis rouvrir sa session pour que les lecteurs réseau et les stratégies s'appliquent.", "command": "ipconfig /flushdns" }
+    ] },
+    { "id": "h-symptomes", "kind": "heading", "level": 2, "text": "Symptômes typiques et premières pistes" },
+    { "id": "tab-symptomes", "kind": "table", "caption": "Reconnaître un problème DNS", "headers": ["Symptôme", "Piste probable", "Vérification"], "rows": [
+      ["Ping par adresse OK, ping par nom KO", "Résolution de noms", "nslookup du nom, serveurs DNS dans ipconfig /all"],
+      ["Internet OK, ressources internes KO, « domaine non disponible »", "DNS public configuré sur un poste du domaine", "Serveurs DNS de la carte, nslookup vers un nom en valmont.local"],
+      ["Un seul poste voit l'ancien serveur après une migration", "Cache local ou fichier hosts", "ipconfig /displaydns, fichier hosts, puis ipconfig /flushdns"],
+      ["Un nom fraîchement créé n'est pas trouvé pendant quelques minutes", "Réponse négative en cache ou réplication entre DNS", "ipconfig /flushdns, Resolve-DnsName -Server sur chaque DNS interne"],
+      ["Tout le site perd les noms en même temps", "Serveurs DNS internes indisponibles", "nslookup vers 10.20.1.10 puis 10.20.1.11 ; escalade immédiate"]
+    ] },
+    { "id": "mistakes", "kind": "mistakes", "items": [
+      { "mistake": "Ajouter 8.8.8.8 en DNS secondaire « en secours »", "why": "Le poste finit par interroger ce résolveur public, qui ne connaît pas les noms internes : pannes intermittentes et réponses négatives en cache.", "fix": "Deux DNS internes uniquement, distribués par DHCP." },
+      { "mistake": "Conclure que le serveur est en panne parce que son nom ne répond pas", "why": "Si le nom ne se résout pas, le serveur n'est même pas contacté.", "fix": "Tester l'adresse IP puis le nom : séparer réseau et résolution." },
+      { "mistake": "Croire que nslookup montre ce que voit le navigateur", "why": "nslookup interroge directement le serveur DNS et ignore le cache local et le fichier hosts.", "fix": "Utiliser aussi ipconfig /displaydns ou Resolve-DnsName sans -DnsOnly." },
+      { "mistake": "Vider le cache DNS pour tout problème réseau", "why": "Le flush ne corrige ni un mauvais serveur DNS, ni une coupure réseau, ni un enregistrement faux sur le serveur.", "fix": "Le réserver aux cas d'ancienne réponse mémorisée, après avoir identifié le symptôme." },
+      { "mistake": "S'alarmer de « Serveur : UnKnown » dans nslookup", "why": "Ce message signifie seulement que le nom du serveur DNS n'est pas trouvé en résolution inverse.", "fix": "Regarder la ligne Address et la réponse obtenue." }
+    ] },
+    { "id": "risks", "kind": "risks", "items": [
+      "Ne modifiez jamais les enregistrements ou les zones des serveurs DNS : c'est le rôle du N2 ou des administrateurs, et une erreur peut couper l'accès de toute l'entreprise.",
+      "Ne supprimez pas une ligne du fichier hosts sans l'avoir comprise et documentée : elle peut être nécessaire à une application métier, ou constituer la preuve d'une infection à transmettre à la sécurité.",
+      "Une redirection inattendue d'un site bancaire ou de messagerie vers une adresse inconnue est un incident de sécurité potentiel : isolez le poste selon la procédure et alertez.",
+      "Changer les DNS d'un poste à distance peut casser la prise en main si celle-ci passe par un nom : prévenez l'utilisateur."
+    ] },
+    { "id": "quiz", "kind": "quiz", "title": "Vérifiez votre compréhension", "questions": ["dns-ordre-resolution", "dns-types-enregistrements", "dns-srv-ad", "dns-dns-public", "dns-commande-flush"] },
+    { "id": "exercise", "kind": "exercise", "title": "Le nouvel intranet que seul un poste ne voit pas", "context": "Le week-end dernier, l'intranet du Groupe Valmont a migré de l'ancien serveur 10.20.30.15 vers le nouveau 10.20.30.22. Lundi, tout le monde accède au nouvel intranet, sauf M. Lambert (poste PC-RH-007), qui voit encore l'ancienne version, désormais figée. Ses serveurs DNS sont bien 10.20.1.10 et 10.20.1.11. La commande nslookup intranet.valmont.local, lancée sur son poste, renvoie 10.20.30.22. Un ping intranet.valmont.local depuis son poste répond pourtant depuis 10.20.30.15.", "task": "Expliquez pourquoi nslookup et ping donnent deux adresses différentes, indiquez les vérifications à mener dans l'ordre et ce que vous notez dans le ticket.", "hints": [
+      "nslookup et ping n'utilisent pas le même chemin pour résoudre un nom. Lequel consulte les mécanismes locaux du poste ?",
+      "Où Windows regarde-t-il avant d'interroger le serveur DNS ? Deux endroits sont possibles.",
+      "Affichez le cache avec ipconfig /displaydns : si la durée de vie de l'entrée est anormalement longue, ou si l'entrée revient après un flush, ouvrez le fichier hosts."
+    ], "solution": [
+      "nslookup interroge directement le serveur DNS, qui renvoie la bonne adresse 10.20.30.22 : les serveurs DNS sont à jour. Le ping, lui, passe par le résolveur de Windows, qui consulte d'abord le fichier hosts et le cache local. La mauvaise adresse vient donc du poste lui-même.",
+      "Première vérification : ipconfig /displaydns pour voir l'entrée intranet.valmont.local et sa durée de vie. Si l'entrée est simplement ancienne, ipconfig /flushdns suffit. Si elle réapparaît immédiatement après le flush avec 10.20.30.15, c'est qu'elle provient du fichier hosts.",
+      "Deuxième vérification : ouvrir en lecture C:\\Windows\\System32\\drivers\\etc\\hosts. On y trouve probablement une ligne « 10.20.30.15 intranet.valmont.local » ajoutée lors d'un ancien test. Après accord (et avec des droits administrateur), commenter ou supprimer la ligne, vider le cache et vérifier qu'un ping répond depuis 10.20.30.22. Resolve-DnsName avec et sans -DnsOnly permet aussi de démontrer la différence.",
+      "Note de ticket : « PC-RH-007 : intranet résolu en 10.20.30.15 (ancien serveur) par le poste, alors que le DNS renvoie 10.20.30.22. Cause : entrée statique dans le fichier hosts. Ligne commentée, cache vidé, accès au nouvel intranet confirmé par l'utilisateur. Proposition : vérifier les autres postes déployés avec le même master. »"
+    ], "rubric": {
+      "criteria": [
+        { "id": "nslookup", "label": "Explique que nslookup interroge directement le serveur DNS", "points": 2, "patterns": ["nslookup interroge", "directement le serveur", "ignore le cache", "ignore le fichier hosts", "contourne", "nslookup ne lit pas"] },
+        { "id": "local", "label": "Situe la cause sur le poste (cache ou hosts)", "points": 2, "patterns": ["cache", "local", "poste lui-meme"], "required": true },
+        { "id": "hosts", "label": "Pense au fichier hosts", "points": 3, "patterns": ["hosts", "fichier host"], "required": true },
+        { "id": "displaydns", "label": "Consulte le cache avec ipconfig /displaydns", "points": 1, "patterns": ["displaydns", "afficher le cache"] },
+        { "id": "flush", "label": "Vide le cache après correction", "points": 1, "patterns": ["flushdns", "vider le cache", "vide le cache", "purger le cache"] },
+        { "id": "verif", "label": "Vérifie le résultat et documente", "points": 1, "patterns": ["10.20.30.22", "verifi*", "ticket", "confirm*"] }
+      ],
+      "redFlags": [
+        { "id": "dnspublic", "label": "Propose un DNS public", "patterns": ["8.8.8.8", "1.1.1.1", "dns public", "dns google"], "penalty": 3 },
+        { "id": "dnsserveur", "label": "Propose de modifier l'enregistrement sur le serveur DNS", "patterns": ["modifier l enregistrement", "changer l enregistrement", "modifier la zone", "corriger le serveur dns"], "penalty": 2 }
+      ],
+      "passPercent": 60
+    } },
+    { "id": "interview", "kind": "interview", "questions": [
+      { "question": "Un utilisateur accède à Internet mais pas aux ressources internes, et Windows indique que le domaine n'est pas disponible. Quelle est votre première hypothèse et comment la vérifiez-vous ?", "expectedPoints": ["Hypothèse d'un DNS public ou incorrect configuré sur le poste", "Vérification des serveurs DNS avec ipconfig /all", "Test nslookup d'un nom interne", "Correction en revenant aux DNS internes via DHCP, puis flush du cache", "Rôle des enregistrements SRV pour localiser les contrôleurs de domaine"], "modelAnswer": "Je pense d'abord au DNS : si le poste interroge un résolveur public, il résout les noms d'Internet mais aucun nom de valmont.local, et il ne trouve pas les enregistrements SRV qui lui indiquent ses contrôleurs de domaine. Je vérifie les serveurs DNS dans ipconfig /all, puis je teste un nom interne avec nslookup. Si c'est confirmé, je remets la carte en obtention automatique des DNS, je vide le cache avec ipconfig /flushdns et je fais rouvrir la session. Je note la cause dans le ticket." },
+      { "question": "Quelle différence faites-vous entre un enregistrement A et un CNAME ?", "expectedPoints": ["A : un nom vers une adresse IPv4", "CNAME : un alias, un nom vers un autre nom", "Le CNAME nécessite ensuite la résolution du nom cible", "AAAA est l'équivalent du A en IPv6"], "modelAnswer": "Un enregistrement A associe directement un nom à une adresse IPv4, par exemple intranet.valmont.local vers 10.20.30.15. Un CNAME est un alias : il indique qu'un nom est un autre nom, et c'est l'enregistrement A ou AAAA de ce nom cible qui donne l'adresse. C'est pratique pour faire pointer plusieurs noms vers le même serveur et ne changer l'adresse qu'à un seul endroit." },
+      { "question": "Pourquoi ne faut-il pas mettre un DNS public en secondaire sur un poste du domaine ?", "expectedPoints": ["Le DNS public ne connaît pas la zone interne", "Windows peut basculer sur le secondaire si le principal tarde", "Réponses négatives mises en cache, pannes intermittentes", "Les deux DNS doivent être internes"], "modelAnswer": "Parce qu'un DNS public ne connaît pas valmont.local. Si le DNS principal tarde à répondre, Windows bascule sur le secondaire et reçoit des réponses « nom inexistant » pour tous les noms internes, qu'il met en cache. Cela produit des pannes intermittentes très difficiles à comprendre. Les deux serveurs DNS d'un poste du domaine doivent être des DNS internes, qui savent par ailleurs résoudre Internet." }
+    ] },
+    { "id": "glossary", "kind": "glossary", "terms": [
+      { "term": "Système de noms de domaine", "en": "Domain Name System (DNS)", "definition": "Annuaire distribué qui traduit les noms en adresses IP et inversement." },
+      { "term": "Résolveur", "en": "Resolver", "definition": "Composant ou serveur qui se charge d'obtenir la réponse à une question DNS." },
+      { "term": "Serveur faisant autorité", "en": "Authoritative server", "definition": "Serveur qui détient la réponse officielle pour une zone donnée." },
+      { "term": "Domaine de premier niveau", "en": "Top-Level Domain (TLD)", "definition": "Dernière partie d'un nom, comme .fr ou .com, gérée sous la racine." },
+      { "term": "Durée de vie", "en": "Time To Live (TTL)", "definition": "Nombre de secondes pendant lesquelles une réponse peut être conservée en cache." },
+      { "term": "Redirecteur", "en": "Forwarder", "definition": "Serveur DNS vers lequel un DNS interne transmet les questions qu'il ne sait pas traiter lui-même." },
+      { "term": "Recherche inversée", "en": "Reverse lookup", "definition": "Résolution d'une adresse IP en nom, au moyen d'enregistrements PTR." },
+      { "term": "Nom inexistant", "en": "NXDOMAIN (Non-existent domain)", "definition": "Réponse indiquant que le nom demandé n'existe pas pour le serveur interrogé." }
+    ] },
+    { "id": "summary", "kind": "summary", "points": [
+      "Le DNS traduit les noms en adresses ; il utilise le port 53 (UDP surtout, TCP pour les grosses réponses).",
+      "Le poste pose une question récursive à son DNS, qui interroge de façon itérative la racine, le TLD puis le serveur faisant autorité, et met la réponse en cache selon le TTL.",
+      "Avant tout serveur, Windows consulte son cache et le fichier hosts : ipconfig /displaydns pour voir, ipconfig /flushdns pour vider.",
+      "A (IPv4), AAAA (IPv6), CNAME (alias), MX (messagerie), PTR (inverse), SRV (localisation de services, indispensable à Active Directory).",
+      "Un poste du domaine n'utilise que les DNS internes : un résolveur public ne connaît ni les noms internes ni les SRV des contrôleurs de domaine.",
+      "Ping par adresse OK et par nom KO : suspectez d'abord le DNS. nslookup teste le serveur, Resolve-DnsName teste aussi le chemin local."
+    ] },
+    { "id": "references", "kind": "references", "items": [
+      { "title": "RFC 1034 — Domain Names: Concepts and Facilities", "url": "https://www.rfc-editor.org/rfc/rfc1034", "publisher": "IETF", "verifiedAt": "2026-10-21" },
+      { "title": "RFC 2782 — A DNS RR for specifying the location of services (DNS SRV)", "url": "https://www.rfc-editor.org/rfc/rfc2782", "publisher": "IETF", "verifiedAt": "2026-10-21" },
+      { "title": "nslookup", "url": "https://learn.microsoft.com/windows-server/administration/windows-commands/nslookup", "publisher": "Microsoft Learn", "verifiedAt": "2026-10-21" },
+      { "title": "Resolve-DnsName", "url": "https://learn.microsoft.com/powershell/module/dnsclient/resolve-dnsname", "publisher": "Microsoft Learn", "verifiedAt": "2026-10-21" }
+    ] }
+  ]
+}

@@ -1,0 +1,349 @@
+{
+  "slug": "boutique-dns-manuel",
+  "title": "Les stocks invisibles, une cliente à l'écoute",
+  "summary": "En boutique, la tablette d'une conseillère n'ouvre plus l'application des stocks, alors qu'Internet fonctionne. Une cliente importante attend : résolvez vite et discrètement, sans perturber la boutique.",
+  "sector": "retail-luxe",
+  "difficulty": 2,
+  "requiredTier": 2,
+  "estimatedMinutes": 20,
+  "skills": ["network-services", "network-ip", "wifi", "diagnostic", "communication"],
+  "company": {
+    "name": "Maison Aubrac (maison fictive de maroquinerie et d'horlogerie)",
+    "description": "Maison de luxe fictive de 12 boutiques en Europe. Chaque boutique dispose d'un routeur et d'un point d'accès Wi-Fi d'entreprise gérés par l'équipe réseau du siège ; le terminal de paiement et la caisse passent par le même routeur. Les tablettes-PC des conseillers de vente sont sous Windows 11 et utilisent une application web interne de consultation des stocks, hébergée au siège et joignable par le tunnel du site (stocks.aubrac.local). Le DNS interne de la boutique est 10.42.8.1."
+  },
+  "ticket": {
+    "reference": "INC-2026-05317",
+    "reporter": { "name": "Léa Dumont", "role": "Conseillère de vente", "site": "Boutique de la rue des Orfèvres" },
+    "channel": "telephone",
+    "title": "Tablette : application des stocks inaccessible, Internet OK",
+    "description": "Appel chuchoté depuis la réserve : « Une cliente très importante est en salon privé, elle veut savoir si une montre est disponible dans une autre boutique. Ma tablette n'ouvre plus l'application des stocks : « Ce site est inaccessible ». Internet marche, et les tablettes de mes collègues fonctionnent. Je ne peux pas la faire attendre longtemps. »",
+    "impact": "individuel",
+    "urgency": "haute",
+    "slaMinutes": 30
+  },
+  "startFlags": [],
+  "clues": [
+    { "id": "c-depannage-domicile", "label": "La tablette a été emportée en déplacement chez une cliente la semaine dernière ; un « ami informaticien » a modifié un réglage pour la connecter au Wi-Fi de l'hôtel" },
+    { "id": "c-message-navigateur", "label": "Le navigateur affiche « Ce site est inaccessible – DNS_PROBE_FINISHED_NXDOMAIN » pour stocks.aubrac.local" },
+    { "id": "c-collegues-ok", "label": "Les tablettes des collègues, sur le même Wi-Fi, ouvrent l'application des stocks" },
+    { "id": "c-ipconfig-dns-public", "label": "ipconfig /all : DHCP activé, adresse et passerelle de la boutique, mais serveur DNS 8.8.8.8" },
+    { "id": "c-nslookup-echec", "label": "nslookup stocks.aubrac.local échoue avec le serveur par défaut 8.8.8.8 (domaine inexistant)" },
+    { "id": "c-nslookup-interne-ok", "label": "nslookup stocks.aubrac.local 10.42.8.1 répond 10.10.20.45" },
+    { "id": "c-ping-ip-ok", "label": "ping 10.10.20.45 (adresse de l'application) répond : le chemin réseau vers l'application fonctionne" },
+    { "id": "c-dns-manuel", "label": "Propriétés de la carte Wi-Fi : attribution DNS « Manuelle », 8.8.8.8 saisi à la main ; attribution IP « Automatique (DHCP) »" }
+  ],
+  "actions": [
+    {
+      "id": "rassurer-cliente",
+      "label": "Proposer à la conseillère une solution d'attente discrète (consulter le stock depuis la tablette d'une collègue)",
+      "category": "interroger",
+      "minutes": 1,
+      "relevance": "useful",
+      "outcomes": [
+        { "text": "Vous suggérez à Mme Dumont de demander discrètement à sa collègue Clara de consulter le stock sur sa tablette pendant que vous réglez la sienne. La cliente obtient sa réponse en deux minutes, sans rien remarquer. Vous avez maintenant le temps de diagnostiquer calmement." }
+      ]
+    },
+    {
+      "id": "interroger-changements",
+      "label": "Demander si la tablette a été utilisée ailleurs ou modifiée récemment",
+      "category": "interroger",
+      "minutes": 2,
+      "relevance": "useful",
+      "outcomes": [
+        { "text": "« La semaine dernière, je l'ai emportée pour une présentation chez une cliente à l'hôtel. Le Wi-Fi de l'hôtel ne marchait pas, un ami qui s'y connaît a changé un réglage et après ça a marché. Ici, je ne l'ai rallumée que ce matin : c'était mon jour de repos hier. »", "reveals": ["c-depannage-domicile"] }
+      ]
+    },
+    {
+      "id": "observer-erreur",
+      "label": "Relever le message d'erreur exact du navigateur",
+      "category": "observer",
+      "minutes": 1,
+      "relevance": "useful",
+      "outcomes": [
+        { "when": { "all": ["dns-standard-ok"] }, "text": "La page d'accueil de l'application des stocks s'affiche." },
+        { "text": "« Ce site est inaccessible. Vérifiez que l'adresse stocks.aubrac.local est correcte. DNS_PROBE_FINISHED_NXDOMAIN ». Le navigateur n'a même pas trouvé l'adresse du serveur : c'est la résolution du nom qui échoue, pas la connexion.", "reveals": ["c-message-navigateur"] }
+      ]
+    },
+    {
+      "id": "collegues",
+      "label": "Faire confirmer qu'une tablette voisine ouvre l'application sur le même Wi-Fi",
+      "category": "observer",
+      "minutes": 1,
+      "relevance": "useful",
+      "outcomes": [
+        { "text": "La tablette de Clara, connectée au même réseau « AUBRAC-VENTE », ouvre l'application des stocks instantanément. Le Wi-Fi, le tunnel vers le siège et l'application fonctionnent.", "reveals": ["c-collegues-ok"] }
+      ]
+    },
+    {
+      "id": "ipconfig-all",
+      "label": "Relever la configuration IP de la carte Wi-Fi (ipconfig /all)",
+      "category": "tester",
+      "minutes": 2,
+      "relevance": "key",
+      "outcomes": [
+        {
+          "when": { "all": ["dns-standard-ok"] },
+          "text": "La carte reçoit désormais le DNS interne de la boutique par DHCP.",
+          "terminal": { "shell": "cmd", "lines": ["C:\\> ipconfig /all", "", "Carte réseau sans fil Wi-Fi :", "", "   Suffixe DNS propre à la connexion. . . : aubrac.local", "   DHCP activé. . . . . . . . . . . . . . : Oui", "   Adresse IPv4. . . . . . . . . . . . . .: 10.42.8.57(préféré)", "   Masque de sous-réseau. . . . . . . . . : 255.255.255.0", "   Passerelle par défaut. . . . . . . . . : 10.42.8.1", "   Serveur DHCP . . . . . . . . . . . . . : 10.42.8.1", "   Serveurs DNS. . . . . . . . . . . . .  : 10.42.8.1"] }
+        },
+        {
+          "text": "La tablette obtient bien son adresse et sa passerelle par DHCP sur le réseau de la boutique, mais son serveur DNS n'est pas celui de la boutique : 8.8.8.8, un résolveur public sur Internet, qui ne connaît pas les noms internes en .local. Le suffixe DNS de la connexion est aussi absent.",
+          "terminal": {
+            "shell": "cmd",
+            "lines": [
+              "C:\\> ipconfig /all",
+              "",
+              "Configuration IP de Windows",
+              "",
+              "   Nom de l'hôte . . . . . . . . . . : TAB-AUB-ORF-04",
+              "   Suffixe DNS principal . . . . . . :",
+              "",
+              "Carte réseau sans fil Wi-Fi :",
+              "",
+              "   Suffixe DNS propre à la connexion. . . :",
+              "   Description. . . . . . . . . . . . . . : Intel(R) Wi-Fi 6E AX211 160MHz",
+              "   Adresse physique . . . . . . . . . . . : 8C-17-59-D2-4E-A1",
+              "   DHCP activé. . . . . . . . . . . . . . : Oui",
+              "   Configuration automatique activée. . . : Oui",
+              "   Adresse IPv4. . . . . . . . . . . . . .: 10.42.8.57(préféré)",
+              "   Masque de sous-réseau. . . . . . . . . : 255.255.255.0",
+              "   Bail obtenu. . . . . . . . . . . . . . : mercredi 21 octobre 2026 09:48:12",
+              "   Bail expirant. . . . . . . . . . . . . : jeudi 22 octobre 2026 09:48:12",
+              "   Passerelle par défaut. . . . . . . . . : 10.42.8.1",
+              "   Serveur DHCP . . . . . . . . . . . . . : 10.42.8.1",
+              "   Serveurs DNS. . . . . . . . . . . . .  : 8.8.8.8",
+              "   NetBIOS sur Tcpip. . . . . . . . . . . : Activé"
+            ]
+          },
+          "reveals": ["c-ipconfig-dns-public"]
+        }
+      ]
+    },
+    {
+      "id": "nslookup-defaut",
+      "label": "Résoudre le nom de l'application avec le DNS configuré (nslookup stocks.aubrac.local)",
+      "category": "tester",
+      "minutes": 2,
+      "relevance": "key",
+      "outcomes": [
+        {
+          "when": { "all": ["dns-standard-ok"] },
+          "text": "Le DNS de la boutique résout le nom.",
+          "terminal": { "shell": "cmd", "lines": ["C:\\> nslookup stocks.aubrac.local", "Serveur :   routeur-orf.aubrac.local", "Address:  10.42.8.1", "", "Nom :    stocks.aubrac.local", "Address:  10.10.20.45"] }
+        },
+        {
+          "text": "Le serveur DNS public interrogé répond que ce nom n'existe pas : il ne connaît pas la zone interne aubrac.local.",
+          "terminal": {
+            "shell": "cmd",
+            "lines": [
+              "C:\\> nslookup stocks.aubrac.local",
+              "Serveur :   dns.google",
+              "Address:  8.8.8.8",
+              "",
+              "*** dns.google ne parvient pas à trouver stocks.aubrac.local : Non-existent domain"
+            ]
+          },
+          "reveals": ["c-nslookup-echec"]
+        }
+      ]
+    },
+    {
+      "id": "nslookup-interne",
+      "label": "Résoudre le nom en interrogeant explicitement le DNS de la boutique (nslookup stocks.aubrac.local 10.42.8.1)",
+      "category": "tester",
+      "minutes": 2,
+      "relevance": "key",
+      "outcomes": [
+        {
+          "text": "Interrogé directement, le DNS interne de la boutique résout le nom sans difficulté : le nom existe et le serveur DNS de la boutique fonctionne. Seul le choix du serveur DNS par la tablette est en cause.",
+          "terminal": {
+            "shell": "cmd",
+            "lines": [
+              "C:\\> nslookup stocks.aubrac.local 10.42.8.1",
+              "Serveur :   routeur-orf.aubrac.local",
+              "Address:  10.42.8.1",
+              "",
+              "Nom :    stocks.aubrac.local",
+              "Address:  10.10.20.45"
+            ]
+          },
+          "reveals": ["c-nslookup-interne-ok"]
+        }
+      ]
+    },
+    {
+      "id": "ping-ip-appli",
+      "label": "Tester la connectivité vers l'adresse de l'application (ping 10.10.20.45)",
+      "category": "tester",
+      "minutes": 1,
+      "relevance": "useful",
+      "outcomes": [
+        {
+          "text": "Le serveur de l'application répond par son adresse : le Wi-Fi, la passerelle et le tunnel vers le siège fonctionnent depuis cette tablette.",
+          "terminal": {
+            "shell": "cmd",
+            "lines": [
+              "C:\\> ping 10.10.20.45",
+              "",
+              "Envoi d'une requête 'Ping'  10.10.20.45 avec 32 octets de données :",
+              "Réponse de 10.10.20.45 : octets=32 temps=18 ms TTL=125",
+              "Réponse de 10.10.20.45 : octets=32 temps=17 ms TTL=125",
+              "Réponse de 10.10.20.45 : octets=32 temps=19 ms TTL=125",
+              "Réponse de 10.10.20.45 : octets=32 temps=17 ms TTL=125",
+              "",
+              "Statistiques Ping pour 10.10.20.45:",
+              "    Paquets : envoyés = 4, reçus = 4, perdus = 0 (perte 0%),",
+              "Durée approximative des boucles en millisecondes :",
+              "    Minimum = 17ms, Maximum = 19ms, Moyenne = 17ms"
+            ]
+          },
+          "reveals": ["c-ping-ip-ok"]
+        }
+      ]
+    },
+    {
+      "id": "proprietes-carte",
+      "label": "Ouvrir les propriétés IP de la connexion Wi-Fi (Paramètres > Réseau et Internet > Wi-Fi > AUBRAC-VENTE)",
+      "category": "observer",
+      "minutes": 2,
+      "relevance": "useful",
+      "outcomes": [
+        { "when": { "all": ["dns-standard-ok"] }, "text": "Attribution IP : Automatique (DHCP). Attribution du serveur DNS : Automatique (DHCP)." },
+        {
+          "text": "L'adresse IP est bien en automatique, mais l'attribution du serveur DNS a été passée en manuel, avec 8.8.8.8 en DNS préféré. Ce réglage, fait pour un autre réseau, prime sur le DNS fourni par le DHCP de la boutique.",
+          "terminal": { "shell": "text", "lines": ["Wi-Fi > Propriétés du matériel", "Attribution IP ................ Automatique (DHCP)", "Attribution du serveur DNS .... Manuelle", "    DNS préféré IPv4 .......... 8.8.8.8", "    DNS auxiliaire IPv4 ....... (vide)", "Adresses IPv4 ................. 10.42.8.57", "Serveurs DNS IPv4 ............. 8.8.8.8 (non chiffré)"] },
+          "reveals": ["c-dns-manuel"]
+        }
+      ]
+    },
+    {
+      "id": "fichier-hosts",
+      "label": "Ajouter « 10.10.20.45 stocks.aubrac.local » au fichier hosts « en attendant »",
+      "category": "corriger",
+      "minutes": 4,
+      "relevance": "neutral",
+      "risk": { "level": "caution", "explanation": "Une entrée hosts court-circuite le DNS de façon invisible et permanente : le jour où l'application changera d'adresse (migration, plan de reprise), cette tablette sera la seule à tomber en panne, et personne ne pensera à regarder le fichier hosts. Elle ne règle pas non plus les autres noms internes (impression, messagerie interne). C'est un contournement à éviter, ou à documenter et retirer immédiatement." },
+      "outcomes": [
+        { "text": "L'application des stocks s'ouvre sur la tablette. Mais l'imprimante de la boutique (imp-orf.aubrac.local) reste introuvable, et le DNS reste à 8.8.8.8 : vous avez masqué un symptôme sans corriger la cause. L'entrée devra être retirée." }
+      ]
+    },
+    {
+      "id": "redemarrer-routeur",
+      "label": "Faire redémarrer le routeur de la boutique",
+      "category": "corriger",
+      "minutes": 6,
+      "relevance": "irrelevant",
+      "risk": { "level": "dangerous", "explanation": "Le routeur porte toute la boutique : terminal de paiement, caisse, Wi-Fi des conseillers, téléphonie et vidéoprotection. Le redémarrer en pleine journée de vente coupe les paiements pendant plusieurs minutes, devant une cliente importante, et peut casser le tunnel vers le siège. Une intervention sur un équipement partagé du site exige l'accord du directeur de boutique et de l'équipe réseau, hors des heures d'ouverture. Ici, il est en plus hors de cause : les autres tablettes fonctionnent." },
+      "outcomes": [
+        { "text": "Pendant six minutes, plus rien ne fonctionne en boutique : le terminal de paiement affiche « Pas de connexion » au moment où un client règle un achat à la caisse, et le directeur de boutique appelle le siège. Au retour du routeur, la tablette de Mme Dumont n'ouvre toujours pas l'application : son DNS est toujours 8.8.8.8." }
+      ]
+    },
+    {
+      "id": "reinstaller-appli",
+      "label": "Réinstaller l'application des stocks sur la tablette",
+      "category": "corriger",
+      "minutes": 15,
+      "relevance": "irrelevant",
+      "outcomes": [
+        { "text": "L'application est une application web ouverte dans le navigateur : il n'y a rien à réinstaller, sinon le raccourci. Après quinze minutes à recréer le raccourci et à vider le cache du navigateur, la page affiche toujours « Ce site est inaccessible »." }
+      ]
+    },
+    {
+      "id": "oublier-wifi",
+      "label": "Oublier le réseau Wi-Fi et s'y reconnecter",
+      "category": "corriger",
+      "minutes": 3,
+      "relevance": "neutral",
+      "outcomes": [
+        { "when": { "all": ["dns-standard-ok"] }, "text": "La tablette se reconnecte et conserve le DNS automatique." },
+        { "text": "La tablette se reconnecte au réseau AUBRAC-VENTE avec son certificat. ipconfig montre toujours 8.8.8.8 en DNS : sur ce poste, le réglage DNS manuel est resté en place à la reconnexion, et le problème avec lui." }
+      ]
+    },
+    {
+      "id": "flushdns-seul",
+      "label": "Vider le cache DNS (ipconfig /flushdns) sans autre modification",
+      "category": "tester",
+      "minutes": 1,
+      "relevance": "neutral",
+      "outcomes": [
+        { "when": { "all": ["dns-standard-ok"] }, "text": "Le cache est vidé ; le nom se résout via le DNS de la boutique.", "terminal": { "shell": "cmd", "lines": ["C:\\> ipconfig /flushdns", "", "Configuration IP de Windows", "", "Cache de résolution DNS vidé."] } },
+        { "text": "Le cache est vidé, mais la tablette interroge toujours 8.8.8.8, qui ne connaît pas le nom : l'application reste inaccessible.", "terminal": { "shell": "cmd", "lines": ["C:\\> ipconfig /flushdns", "", "Configuration IP de Windows", "", "Cache de résolution DNS vidé."] } }
+      ]
+    },
+    {
+      "id": "tester-appli",
+      "label": "Ouvrir l'application des stocks et rechercher une référence avec la conseillère",
+      "category": "tester",
+      "minutes": 2,
+      "relevance": "useful",
+      "outcomes": [
+        { "when": { "all": ["dns-standard-ok"] }, "text": "L'application des stocks s'ouvre immédiatement. Mme Dumont recherche la référence demandée par la cliente : la disponibilité dans les autres boutiques s'affiche. L'imprimante de la boutique est de nouveau visible elle aussi. Elle retourne au salon." },
+        { "text": "« Ce site est inaccessible. DNS_PROBE_FINISHED_NXDOMAIN »." }
+      ]
+    }
+  ],
+  "diagnoses": [
+    { "id": "d-dns-manuel", "label": "Le DNS de la carte Wi-Fi a été forcé à la main sur 8.8.8.8 : la tablette interroge un résolveur public qui ne connaît pas les noms internes, alors que le réseau fonctionne", "correct": true, "requiresClues": ["c-ipconfig-dns-public", "c-nslookup-echec", "c-nslookup-interne-ok"], "feedback": "Exact. Lors du dépannage à l'hôtel, l'attribution DNS a été passée en manuel sur 8.8.8.8. De retour en boutique, la tablette obtient son adresse par DHCP mais garde ce DNS public, qui résout les sites Internet mais ignore la zone interne aubrac.local. Le même nom se résout avec le DNS de la boutique, et l'application répond par son adresse IP." },
+    { "id": "d-appli-panne", "label": "L'application des stocks est en panne", "correct": false, "feedback": "Les tablettes des collègues ouvrent l'application, et son serveur répond au ping depuis cette tablette : l'application fonctionne." },
+    { "id": "d-wifi", "label": "La tablette est mal connectée au Wi-Fi de la boutique", "correct": false, "feedback": "La tablette a une adresse et une passerelle de la boutique, accède à Internet et joint le serveur de l'application par son adresse IP : la connexion Wi-Fi fonctionne." },
+    { "id": "d-routeur", "label": "Le routeur ou le tunnel vers le siège est défaillant", "correct": false, "feedback": "Les autres tablettes utilisent le même routeur et le même tunnel sans problème, et cette tablette joint 10.10.20.45 au siège." },
+    { "id": "d-droits", "label": "Le compte de la conseillère n'a plus les droits sur l'application", "correct": false, "feedback": "Un problème de droits produirait une page de refus après connexion à l'application. Ici, le navigateur ne trouve même pas l'adresse du serveur (NXDOMAIN)." }
+  ],
+  "resolutions": [
+    { "id": "r-dns-auto", "label": "Remettre l'attribution du serveur DNS en automatique (DHCP), vider le cache DNS (ipconfig /flushdns) et tester l'application", "correct": true, "setFlags": ["dns-standard-ok"], "feedback": "Bonne résolution : la tablette retrouve la configuration standard de la boutique et reçoit le DNS interne par DHCP. Elle fonctionnera aussi correctement sur d'autres réseaux, sans réglage caché." },
+    { "id": "r-hosts", "label": "Ajouter l'application dans le fichier hosts", "correct": false, "feedback": "L'application s'ouvrirait, mais les autres noms internes resteraient introuvables et cette entrée cachée provoquerait une panne incompréhensible au prochain changement d'adresse du serveur. Vous masqueriez la cause." },
+    { "id": "r-dns-interne-fixe", "label": "Saisir manuellement 10.42.8.1 comme DNS de la carte Wi-Fi", "correct": false, "feedback": "Cela marcherait ici, mais vous remplaceriez un réglage manuel par un autre : à la prochaine visite dans une autre boutique (autre plan d'adressage) ou en déplacement, la tablette ne résoudrait plus rien. La configuration standard est l'attribution automatique." },
+    { "id": "r-routeur", "label": "Redémarrer le routeur de la boutique", "correct": false, "feedback": "Le routeur fonctionne pour toute la boutique ; le redémarrer couperait le paiement pendant les ventes sans toucher au réglage de la tablette." }
+  ],
+  "fixedFlag": "dns-standard-ok",
+  "verificationActionId": "tester-appli",
+  "closureRubric": {
+    "criteria": [
+      { "id": "cause", "label": "Cause expliquée (DNS forcé manuellement sur 8.8.8.8, noms internes non résolus)", "points": 3, "patterns": ["8.8.8.8", "dns manuel", "dns force", "dns public", "configuration manuelle", "resolution"], "required": true },
+      { "id": "action", "label": "Action réalisée (DNS remis en automatique, cache vidé)", "points": 3, "patterns": ["automatique", "dhcp", "flushdns", "remis", "retabli*"] },
+      { "id": "validation", "label": "Validation (application ouverte, nslookup OK)", "points": 2, "patterns": ["nslookup", "test*", "s ouvre", "fonctionne", "valide*", "verifie*"] },
+      { "id": "prevention", "label": "Prévention (sensibilisation, ne pas modifier la configuration réseau hors support)", "points": 2, "patterns": ["sensibilis*", "rappel*", "prevention", "a l avenir", "contacter le support", "ne pas modifier", "conseil*"] }
+    ],
+    "redFlags": [
+      { "id": "routeur", "label": "Redémarrage du routeur de la boutique", "patterns": ["redemarre le routeur", "redemarrage du routeur"], "penalty": 3 }
+    ],
+    "passPercent": 60
+  },
+  "hints": [
+    "Internet fonctionne, mais pas un nom interne. Le problème vient-il du chemin réseau ou de la traduction du nom en adresse ?",
+    "Comparez le serveur DNS de la tablette avec celui qu'elle devrait recevoir de la boutique, puis interrogez chacun des deux avec nslookup.",
+    "Le DNS a été forcé sur 8.8.8.8 lors d'un dépannage hors boutique : remettez l'attribution DNS en automatique et videz le cache."
+  ],
+  "debrief": {
+    "cause": "Lors d'un dépannage dans un hôtel, l'attribution du serveur DNS de la carte Wi-Fi a été passée en manuel sur 8.8.8.8. En boutique, la tablette reçoit bien son adresse par DHCP mais continue d'interroger ce résolveur public, qui ignore la zone interne aubrac.local : stocks.aubrac.local n'est pas résolu, alors qu'Internet et le chemin réseau vers l'application fonctionnent.",
+    "clues": [
+      "Message NXDOMAIN : le nom n'est pas résolu, la connexion n'est même pas tentée",
+      "ipconfig /all : DHCP activé mais DNS 8.8.8.8",
+      "nslookup échoue via 8.8.8.8 et réussit via 10.42.8.1",
+      "Le serveur de l'application répond au ping par son adresse IP"
+    ],
+    "relevantTests": [
+      "ipconfig /all (comparer le DNS à celui de la boutique)",
+      "nslookup avec le serveur par défaut, puis avec le DNS interne explicite",
+      "ping de l'adresse IP de l'application pour séparer réseau et résolution de noms"
+    ],
+    "wrongHypotheses": [
+      { "hypothesis": "Application en panne", "why": "Les collègues l'utilisent et son serveur répond au ping." },
+      { "hypothesis": "Routeur ou Wi-Fi défaillant", "why": "La tablette a une adresse, accède à Internet et joint le serveur par son IP." },
+      { "hypothesis": "Problème de droits", "why": "Le navigateur ne trouve pas l'adresse du serveur : on n'arrive même pas jusqu'à l'authentification." }
+    ],
+    "procedure": [
+      "Proposer une solution d'attente discrète pour la cliente (tablette d'une collègue)",
+      "Relever le message exact et la configuration IP (ipconfig /all)",
+      "Tester la résolution avec nslookup, via le DNS configuré puis via le DNS de la boutique",
+      "Confirmer que l'application répond par son adresse IP",
+      "Remettre l'attribution DNS en automatique dans les propriétés Wi-Fi, puis ipconfig /flushdns",
+      "Tester l'application avec la conseillère et documenter"
+    ],
+    "prevention": [
+      "Rappeler aux conseillers de contacter le support plutôt que de faire modifier la configuration réseau par un tiers",
+      "Proposer au N2 de verrouiller par stratégie le paramétrage DNS des tablettes"
+    ],
+    "exampleClosingNote": "Cause : sur la tablette TAB-AUB-ORF-04, le DNS de la carte Wi-Fi avait été forcé en configuration manuelle sur 8.8.8.8 lors d'un dépannage à l'hôtel ; ce DNS public ne résout pas les noms internes (stocks.aubrac.local en NXDOMAIN), alors qu'Internet et le ping de 10.10.20.45 fonctionnaient. Action : attribution DNS remise en automatique (DHCP), cache vidé avec ipconfig /flushdns. Validation : nslookup stocks.aubrac.local résolu par 10.42.8.1, application des stocks ouverte et référence consultée avec Mme Dumont. Prévention : rappel donné de contacter le support plutôt que de modifier la configuration réseau ; verrouillage du DNS des tablettes par stratégie proposé au N2."
+  }
+}

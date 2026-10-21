@@ -1,0 +1,175 @@
+{
+  "meta": {
+    "slug": "n1-uefi-boot",
+    "title": "BIOS, UEFI et démarrage de Windows",
+    "summary": "Suivre le démarrage d'un poste de l'allumage à la session, comprendre UEFI, GPT, Secure Boot, TPM et BitLocker, et réagir correctement à un écran de récupération.",
+    "level": "debutant",
+    "prerequisites": ["Anatomie d'un ordinateur (leçon « Anatomie d'un ordinateur : ce qui tombe en panne et pourquoi »)"],
+    "objectives": [
+      "Décrire dans l'ordre les étapes du démarrage d'un poste, du POST à l'ouverture de session",
+      "Expliquer la différence entre BIOS hérité et UEFI, et entre partitionnement MBR et GPT",
+      "Vérifier sur un poste le mode de démarrage, l'état de Secure Boot et la présence d'un TPM 2.0",
+      "Expliquer pourquoi un écran de récupération BitLocker apparaît et appliquer la procédure de vérification d'identité avant de communiquer une clé",
+      "Accéder à l'environnement de récupération Windows (WinRE) et savoir ce qu'il permet"
+    ],
+    "durationMin": 40,
+    "skills": [
+      { "code": "hardware", "weight": 3 },
+      { "code": "windows", "weight": 2 }
+    ],
+    "next": "n1-imprimantes"
+  },
+  "blocks": [
+    { "id": "intro", "kind": "paragraph", "text": "Jeudi, 7 h 50. Le service d'assistance du Groupe Valmont reçoit six appels en dix minutes : « Mon PC me demande une clé de 48 chiffres, je ne l'ai jamais eue. » La veille au soir, une mise à jour du firmware a été déployée sur un lot de portables. Rien n'est cassé : BitLocker a fait exactement son travail. Mais un technicien qui ne comprend pas le démarrage risque deux erreurs graves : paniquer et réinstaller, ou dicter la clé au premier appelant venu. Cette leçon vous évite les deux." },
+    { "id": "h-demarrage", "kind": "heading", "level": 2, "text": "Ce qui se passe entre le bouton et la session" },
+    { "id": "p-demarrage", "kind": "paragraph", "text": "Quand on appuie sur le bouton, Windows n'est pas encore là. Il dort sur le disque. Un petit logiciel gravé sur la carte mère, le **firmware**, doit d'abord réveiller le matériel, puis trouver le disque, puis passer la main au chargeur de Windows. Chaque étape vérifie la précédente. Savoir **à quelle étape le démarrage s'arrête** est le diagnostic le plus utile que vous puissiez faire au téléphone." },
+    { "id": "def", "kind": "callout", "tone": "definition", "title": "Définition simple", "text": "Le **firmware** est le logiciel intégré à la carte mère qui s'exécute en premier à l'allumage. L'ancien standard s'appelle **BIOS** ; son successeur moderne s'appelle **UEFI**. Il teste le matériel (le **POST**), puis lance le gestionnaire de démarrage de Windows situé sur le disque. Par habitude, beaucoup de gens disent encore « le BIOS » en parlant de l'UEFI." },
+    { "id": "analogie", "kind": "callout", "tone": "analogy", "title": "Analogie", "text": "Imaginez l'ouverture d'un magasin le matin. Le gardien (le firmware) arrive le premier : il allume les lumières et vérifie que les portes et l'alarme fonctionnent (le POST). Il consulte ensuite la liste des responsables autorisés à ouvrir (l'ordre de démarrage) et vérifie leur badge (Secure Boot). Le coffre-fort (BitLocker) ne s'ouvre que si tout est conforme à la veille ; si une serrure a changé pendant la nuit, il exige le code de secours. Enfin, le responsable ouvre la boutique (Windows) et les vendeurs prennent leur poste (les services)." },
+    { "id": "diag-boot", "kind": "diagram", "diagram": "boot-sequence", "caption": "La séquence de démarrage : allumage, POST, firmware UEFI, gestionnaire de démarrage sur la partition EFI, vérifications Secure Boot et TPM, chargement de Windows puis ouverture de session." },
+    { "id": "boot-list", "kind": "list", "ordered": true, "items": [
+      "**Allumage et POST** : le firmware vérifie le processeur, la mémoire, la carte graphique et le clavier. Un problème grave à ce stade se traduit par des bips ou des voyants qui clignotent, avant même le logo.",
+      "**Choix du périphérique de démarrage** : le firmware lit l'**ordre de démarrage** (disque interne, clé USB, réseau) et cherche un chargeur valide.",
+      "**Gestionnaire de démarrage Windows** : sur un poste UEFI, il se trouve dans la petite **partition système EFI** du disque. Il lit la configuration de démarrage et lance le chargeur de Windows.",
+      "**Vérifications de sécurité** : Secure Boot contrôle que chaque élément est signé par un éditeur de confiance ; le **TPM** mesure la chaîne de démarrage, ce qui permet à BitLocker de déverrouiller le disque automatiquement si rien n'a changé.",
+      "**Chargement de Windows** : le noyau démarre, les pilotes se chargent, puis les services. C'est l'étape du logo qui tourne.",
+      "**Ouverture de session** : l'écran de connexion apparaît ; le profil utilisateur se charge après la saisie des identifiants."
+    ] },
+    { "id": "h-uefi", "kind": "heading", "level": 2, "text": "BIOS hérité ou UEFI, MBR ou GPT" },
+    { "id": "p-uefi", "kind": "paragraph", "text": "Le **BIOS** date des premiers PC. Il est simple mais limité : il démarre depuis le tout premier secteur du disque et ne sait pas vérifier ce qu'il lance. L'**UEFI** l'a remplacé sur tous les postes récents. Il offre une interface graphique utilisable à la souris, démarre plus vite, gère les grands disques et surtout permet **Secure Boot**. Beaucoup de firmwares UEFI proposaient un mode de compatibilité, appelé **CSM** ou « Legacy », pour démarrer comme un ancien BIOS. Ce mode est en voie de disparition et il est incompatible avec Secure Boot." },
+    { "id": "p-gpt", "kind": "paragraph", "text": "Le mode de démarrage va de pair avec la façon dont le disque est découpé. Un disque **MBR** (ancien format) accepte au plus quatre partitions principales et ne peut pas exploiter au-delà d'environ 2 To. Un disque **GPT** (format moderne) n'a pas ces limites et stocke une copie de secours de sa table de partitions. Retenez le couple : **UEFI démarre sur GPT, BIOS hérité démarre sur MBR**. Changer le mode de démarrage dans le firmware sans convertir le disque rend le poste non démarrable : ce n'est jamais un réglage à tester « pour voir »." },
+    { "id": "tab-uefi", "kind": "table", "caption": "BIOS hérité et UEFI côte à côte", "headers": ["Critère", "BIOS hérité (Legacy, CSM)", "UEFI"], "rows": [
+      ["Style de disque", "MBR", "GPT"],
+      ["Taille de disque exploitable", "Environ 2 To au maximum", "Très largement au-delà"],
+      ["Partitions", "Quatre principales au plus", "Jusqu'à 128 sous Windows"],
+      ["Secure Boot", "Impossible", "Disponible"],
+      ["Interface de réglage", "Texte, clavier uniquement", "Souvent graphique, souris possible"],
+      ["Windows 11", "Non pris en charge", "Exigé"]
+    ] },
+    { "id": "h-secu", "kind": "heading", "level": 2, "text": "Secure Boot, TPM 2.0 et exigences de Windows 11" },
+    { "id": "p-secureboot", "kind": "paragraph", "text": "**Secure Boot** est un contrôle effectué par le firmware : avant de lancer un élément de démarrage, il vérifie sa signature numérique dans une liste de signatures de confiance stockée dans la carte mère. Un programme malveillant qui tenterait de s'installer avant Windows (un *bootkit*) serait refusé. Côté support, Secure Boot se manifeste surtout lorsqu'il bloque une clé USB de démarrage non signée ou après une modification des réglages du firmware." },
+    { "id": "p-tpm", "kind": "paragraph", "text": "Le **TPM** (Trusted Platform Module) est une petite puce, ou une fonction intégrée au processeur, qui protège des clés de chiffrement. Pendant le démarrage, il enregistre une **empreinte** de chaque étape. Si l'empreinte est identique à celle attendue, il libère la clé qui déverrouille le disque chiffré par BitLocker. Si quelque chose a changé (firmware mis à jour, ordre de démarrage modifié, disque déplacé dans une autre machine), il refuse : Windows demande alors la clé de récupération." },
+    { "id": "tab-w11", "kind": "table", "caption": "Configuration minimale exigée par Windows 11 (résumé)", "headers": ["Élément", "Exigence minimale"], "rows": [
+      ["Processeur", "1 GHz, au moins 2 cœurs, 64 bits et présent dans la liste des processeurs compatibles"],
+      ["Mémoire vive", "4 Go"],
+      ["Stockage", "64 Go"],
+      ["Firmware", "UEFI, compatible Secure Boot"],
+      ["TPM", "Version 2.0"],
+      ["Carte graphique", "Compatible DirectX 12, pilote WDDM 2.0"],
+      ["Écran", "Haute définition (720p), plus de 9 pouces"]
+    ] },
+    { "id": "info-w11", "kind": "callout", "tone": "info", "title": "Pourquoi certains PC « récents » refusent Windows 11", "text": "Beaucoup de postes achetés vers 2016 ou 2017 ont un TPM 2.0 et un firmware UEFI, mais un processeur absent de la liste de compatibilité. D'autres ont tout ce qu'il faut, mais le TPM est désactivé dans le firmware ou le poste démarre encore en mode hérité. Le diagnostic consiste à vérifier ces trois points un par un. La décision de modifier le firmware ou de remplacer le poste appartient à l'équipe qui gère le parc." },
+    { "id": "h-verifier", "kind": "heading", "level": 2, "text": "Démonstration : contrôler le démarrage d'un poste" },
+    { "id": "steps-demo", "kind": "steps", "title": "Vérifier mode de démarrage, Secure Boot, TPM et BitLocker en cinq étapes", "steps": [
+      { "title": "Lire le résumé système", "text": "Touche Windows + R, msinfo32. Repérez les lignes « Mode BIOS » (UEFI attendu) et « État du démarrage sécurisé » (Activé attendu). Aucun droit administrateur n'est nécessaire.", "command": "msinfo32" },
+      { "title": "Contrôler le style du disque", "text": "Dans PowerShell, la colonne Partition Style doit indiquer GPT sur un poste UEFI.", "command": "Get-Disk" },
+      { "title": "Ouvrir une console PowerShell en administrateur", "text": "Les commandes suivantes exigent l'élévation. Utilisez votre compte d'administration dédié, jamais celui de l'utilisateur, et refermez la console à la fin." },
+      { "title": "Vérifier Secure Boot et le TPM", "text": "Confirm-SecureBootUEFI renvoie True ou False. Get-Tpm indique si la puce est présente et prête. La console tpm.msc affiche la version de spécification (2.0 attendue).", "command": "Confirm-SecureBootUEFI\nGet-Tpm" },
+      { "title": "Vérifier l'état de BitLocker", "text": "Get-BitLockerVolume montre si le disque est chiffré et avec quels protecteurs. C'est une simple lecture : elle ne modifie rien.", "command": "Get-BitLockerVolume" }
+    ] },
+    { "id": "cmd-getdisk", "kind": "command", "shell": "powershell", "command": "Get-Disk", "explanation": "Get-Disk liste les disques vus par Windows avec leur état et leur style de partitionnement. Elle fonctionne sans élévation pour la lecture.", "output": "Number Friendly Name              Serial Number          HealthStatus OperationalStatus Total Size Partition\n                                                                                                  Style\n------ -------------              -------------          ------------ ----------------- ---------- ---------\n0      SAMSUNG MZVL4512HBLU-00BTW 0025_38B1_21C4_9A07.   Healthy      Online             476.94 GB GPT", "outputNotes": [
+      { "match": "Online", "note": "Le disque est en ligne et utilisable. « Offline » sur un disque secondaire explique souvent une lettre de lecteur disparue." },
+      { "match": "GPT", "note": "Style GPT : cohérent avec un démarrage UEFI. Un disque système en MBR indique un poste démarré en mode hérité, donc non éligible à Windows 11 en l'état." }
+    ] },
+    { "id": "cmd-secureboot", "kind": "command", "shell": "powershell", "command": "Confirm-SecureBootUEFI", "explanation": "Cette cmdlet interroge le firmware et renvoie True si Secure Boot est actif, False s'il est désactivé. Elle exige une console élevée. Sur un poste démarré en mode BIOS hérité, elle renvoie une erreur indiquant que la cmdlet n'est pas prise en charge sur cette plateforme : c'est en soi une information.", "output": "True", "outputNotes": [
+      { "match": "True", "note": "Secure Boot est actif. False signifie que le poste est en UEFI mais que la vérification est désactivée dans le firmware : à signaler, pas à corriger soi-même." }
+    ] },
+    { "id": "cmd-tpm", "kind": "command", "shell": "powershell", "command": "Get-Tpm", "explanation": "Get-Tpm affiche l'état de la puce de sécurité. Elle exige une console élevée. Pour connaître la version de spécification (1.2 ou 2.0), ouvrez la console graphique tpm.msc.", "output": "TpmPresent                : True\nTpmReady                  : True\nTpmEnabled                : True\nTpmActivated              : True\nTpmOwned                  : True\nRestartPending            : False\nManufacturerIdTxt         : INTC\nLockedOut                 : False", "outputNotes": [
+      { "match": "TpmPresent", "note": "Le firmware expose bien un TPM à Windows. False sur un poste récent signifie souvent qu'il est désactivé dans les réglages du firmware." },
+      { "match": "TpmReady", "note": "Le TPM est initialisé et utilisable par Windows et BitLocker." },
+      { "match": "INTC", "note": "Fabricant du TPM : ici un TPM intégré à la plateforme Intel. Il n'y a pas forcément de puce séparée sur la carte mère." },
+      { "match": "LockedOut", "note": "True indique que le TPM s'est verrouillé après trop d'essais de code PIN erronés : il faut alors attendre ou escalader." }
+    ] },
+    { "id": "cmd-bitlocker", "kind": "command", "shell": "powershell", "command": "Get-BitLockerVolume -MountPoint C:", "explanation": "Get-BitLockerVolume affiche l'état du chiffrement d'un volume (console élevée requise). -MountPoint précise la lettre du volume ; sans ce paramètre, tous les volumes sont listés.", "output": "   ComputerName: PC-CPT-014\n\nVolumeType      Mount CapacityGB VolumeStatus   Encryption KeyProtector             AutoUnlock Protection\n                Point                           Percentage                          Enabled    Status\n----------      ----- ---------- ------------   ---------- ------------             ---------- ----------\nOperatingSystem C:        475,72 FullyEncrypted 100        {Tpm, RecoveryPassword}             On", "outputNotes": [
+      { "match": "FullyEncrypted", "note": "Le volume est entièrement chiffré. Sans le TPM ou sans la clé de récupération, son contenu est illisible." },
+      { "match": "RecoveryPassword", "note": "Il existe un mot de passe de récupération, la fameuse clé de 48 chiffres. Elle est normalement sauvegardée dans l'annuaire de l'entreprise." },
+      { "match": "On", "note": "Protection active. « Off » sur un poste d'entreprise signifie souvent que BitLocker a été suspendu, par exemple avant une mise à jour du firmware." }
+    ] },
+    { "id": "h-ordre", "kind": "heading", "level": 2, "text": "L'ordre de démarrage et le menu de démarrage" },
+    { "id": "p-ordre", "kind": "paragraph", "text": "Le firmware essaie les périphériques dans l'ordre configuré. Sur la plupart des postes d'entreprise, le disque interne est en tête. Pour démarrer une seule fois sur une clé USB d'installation, on n'a pas besoin de modifier cet ordre : on utilise le **menu de démarrage ponctuel**, accessible par une touche au moment du logo. Cette touche dépend du constructeur (souvent F12, F9, F10 ou Échap) : consultez la documentation du modèle. L'accès aux réglages du firmware est en général protégé par un mot de passe administrateur en entreprise, et c'est normal." },
+    { "id": "field-usb", "kind": "callout", "tone": "field", "title": "Sur le terrain", "text": "Un classique du lundi matin : « Aucun périphérique de démarrage trouvé ». Avant d'imaginer un disque mort, demandez si une clé USB, un disque externe ou une carte mémoire est branché. Certains firmwares tentent de démarrer dessus et échouent. Débrancher et redémarrer règle le problème dans un nombre surprenant de cas." },
+    { "id": "h-bitlocker", "kind": "heading", "level": 2, "text": "BitLocker et la clé de récupération" },
+    { "id": "p-bitlocker", "kind": "paragraph", "text": "**BitLocker** chiffre le disque. Si un portable est volé, le voleur ne peut pas lire les données en sortant le disque. Au quotidien, l'utilisateur ne voit rien : le TPM déverrouille le disque tout seul. Mais quand le TPM détecte un changement dans la chaîne de démarrage, Windows affiche un écran bleu de **récupération BitLocker** qui demande une **clé de récupération** de 48 chiffres. Les causes les plus courantes : mise à jour du firmware, modification de l'ordre de démarrage, démarrage sur le réseau ou sur une clé USB, remplacement de la carte mère, TPM réinitialisé, trop d'essais de code PIN erronés, parfois un changement de station d'accueil." },
+    { "id": "p-cle", "kind": "paragraph", "text": "L'écran de récupération affiche un **identificateur de clé** (une suite de caractères). Dans l'entreprise, la clé correspondante est sauvegardée dans l'annuaire : Active Directory pour un poste joint au domaine, Microsoft Entra ID pour un poste joint au cloud, consultable par exemple depuis la console Intune. Le technicien retrouve la clé grâce au nom du poste **et** vérifie que les premiers caractères de l'identificateur correspondent. S'ils ne correspondent pas, ce n'est pas la bonne clé." },
+    { "id": "danger-cle", "kind": "callout", "tone": "danger", "title": "Une clé de récupération est un passe-partout", "text": "Avec la clé de récupération, n'importe qui peut lire tout le disque, y compris un voleur qui aurait le portable entre les mains. Ne la communiquez **qu'après avoir vérifié l'identité** de l'appelant selon la procédure de l'entreprise (rappel sur le numéro connu de l'annuaire, validation par le responsable, question de contrôle…) et après avoir vérifié qu'il est bien l'utilisateur légitime de ce poste. Jamais par courriel ni par messagerie à une adresse non vérifiée, jamais à un « collègue qui appelle de la part de ». Tracez chaque communication dans le ticket." },
+    { "id": "h-winre", "kind": "heading", "level": 2, "text": "L'environnement de récupération Windows (WinRE)" },
+    { "id": "p-winre", "kind": "paragraph", "text": "**WinRE** est un mini-Windows de secours stocké dans une partition de récupération. Il se lance automatiquement après plusieurs échecs de démarrage consécutifs (c'est l'écran « Réparation automatique ») ou à la demande : en maintenant Maj enfoncée tout en cliquant sur Redémarrer, ou avec la commande `shutdown /r /o`. On y trouve l'outil de réparation du démarrage, la restauration du système à un point antérieur, la désinstallation de la dernière mise à jour, l'invite de commandes et la réinitialisation du PC. Au N1, vous l'utilisez surtout pour **désinstaller une mise à jour problématique** ou **restaurer un point** selon la procédure. La réinitialisation et l'invite de commandes de récupération relèvent du N2." },
+    { "id": "cmd-reagentc", "kind": "command", "shell": "cmd", "command": "reagentc /info", "explanation": "reagentc /info affiche l'état de l'environnement de récupération (invite de commandes élevée requise). Un WinRE désactivé prive le poste de ses outils de réparation automatique : c'est une information à remonter.", "output": "Configuration de l'environnement de récupération Windows (Windows RE) et de la réinitialisation du système :\n\n    État de Windows RE :          Enabled\n    Emplacement de Windows RE :    \\\\?\\GLOBALROOT\\device\\harddisk0\\partition4\\Recovery\\WindowsRE\n\nREAGENTC.EXE : opération réussie.", "outputNotes": [
+      { "match": "Enabled", "note": "WinRE est actif : le poste pourra lancer la réparation automatique en cas d'échec de démarrage." },
+      { "match": "partition4", "note": "WinRE est stocké dans la quatrième partition du disque 0, la partition de récupération placée après C:." }
+    ] },
+    { "id": "h-symptomes", "kind": "heading", "level": 2, "text": "Symptômes de démarrage et premières pistes" },
+    { "id": "tab-symptomes", "kind": "table", "caption": "Repérer l'étape qui bloque", "headers": ["Ce que voit l'utilisateur", "Étape probable", "Première piste"], "rows": [
+      ["Bips ou voyants clignotants, pas de logo", "POST", "Matériel : RAM, carte graphique ; noter la séquence et escalader"],
+      ["« Aucun périphérique de démarrage »", "Choix du périphérique", "Clé USB ou disque externe branché, ordre de démarrage, disque absent"],
+      ["Écran bleu de récupération BitLocker", "Vérification TPM", "Changement récent (firmware, dock, ordre de démarrage) ; clé après vérification d'identité"],
+      ["Message de violation Secure Boot", "Vérification de signature", "Média de démarrage non signé ou réglages firmware modifiés : escalader"],
+      ["Boucle « Réparation automatique »", "Chargement de Windows", "WinRE : désinstaller la dernière mise à jour, point de restauration"],
+      ["Date et heure fausses à chaque allumage", "Firmware", "Pile de la carte mère à remplacer"]
+    ] },
+    { "id": "mistakes", "kind": "mistakes", "items": [
+      { "mistake": "Dicter la clé BitLocker dès que l'appelant donne un nom de poste", "why": "Toute personne en possession du portable, y compris un voleur, pourrait l'obtenir ainsi.", "fix": "Appliquer la procédure de vérification d'identité, contrôler l'identificateur de clé et tracer la communication." },
+      { "mistake": "Passer le firmware de UEFI à Legacy pour « faire démarrer » une clé USB", "why": "Le disque GPT ne démarre plus en mode hérité et le changement peut déclencher la récupération BitLocker.", "fix": "Utiliser le menu de démarrage ponctuel et un média compatible UEFI, ou escalader." },
+      { "mistake": "Réinstaller Windows face à un écran BitLocker", "why": "Les données non sauvegardées sont perdues alors qu'une simple clé suffisait.", "fix": "Retrouver la clé dans l'annuaire, déverrouiller, puis chercher la cause du déclenchement." },
+      { "mistake": "Annoncer « le PC ne passe pas Windows 11 » sans vérifier les réglages", "why": "Le TPM ou Secure Boot sont parfois simplement désactivés dans le firmware.", "fix": "Vérifier processeur, mode de démarrage, Secure Boot et TPM, puis transmettre le constat." }
+    ] },
+    { "id": "risks", "kind": "risks", "items": [
+      "La clé de récupération BitLocker donne accès à l'intégralité du disque : ne la communiquez qu'après vérification d'identité selon la procédure, et tracez-la dans le ticket.",
+      "Ne modifiez jamais le mode de démarrage (UEFI/Legacy), Secure Boot ou le TPM sans validation : le poste peut devenir non démarrable ou exiger sa clé de récupération.",
+      "Effacer le TPM (dans tpm.msc ou le firmware) peut rendre les données chiffrées définitivement inaccessibles si la clé de récupération n'est pas sauvegardée : c'est une action réservée au N2.",
+      "Une mise à jour de firmware ne doit jamais être interrompue : laissez le portable sur secteur et prévenez l'utilisateur de ne pas l'éteindre.",
+      "La réinitialisation du PC depuis WinRE peut effacer des applications et des données : jamais sans validation et sans sauvegarde vérifiée."
+    ] },
+    { "id": "quiz", "kind": "quiz", "title": "Vérifiez votre compréhension", "questions": ["boot-ordre-etapes", "boot-gpt-uefi", "boot-w11-exigences", "boot-bitlocker-vf", "boot-winre-fill"] },
+    { "id": "exercise", "kind": "exercise", "title": "Un appel pour une clé de récupération", "context": "Jeudi, 8 h 05. Un appelant se présente comme Thomas Garnier, contrôleur de gestion au Groupe Valmont. Son portable PC-FIN-022 affiche l'écran de récupération BitLocker avec l'identificateur de clé commençant par 3F2A91C0. Il appelle depuis son téléphone personnel, est pressé (réunion à 8 h 30) et vous demande de lui « envoyer la clé par SMS ». Vous savez qu'une mise à jour du firmware a été déployée cette nuit sur les portables de la finance.", "task": "Décrivez en quelques lignes comment vous traitez l'appel : ce que vous vérifiez avant tout, où vous trouvez la clé, comment vous la communiquez, ce que vous notez dans le ticket et ce que vous signalez au N2.", "hints": [
+      "Avant de chercher la clé, demandez-vous : qu'est-ce qui me prouve que cette personne est bien M. Garnier et qu'elle a le droit d'accéder à ce poste ?",
+      "La clé est rattachée au poste dans l'annuaire. Quelle information affichée à l'écran permet de vérifier que c'est la bonne clé ?",
+      "Plusieurs appels identiques en même temps et une mise à jour cette nuit : est-ce un incident isolé ? Qui doit être prévenu ?"
+    ], "solution": [
+      "La priorité est la **vérification d'identité**, quelle que soit l'urgence. L'appelant utilise un téléphone personnel : on applique la procédure de l'entreprise, par exemple en rappelant le numéro professionnel inscrit dans l'annuaire, ou en demandant une validation par son responsable. On vérifie aussi que PC-FIN-022 est bien attribué à M. Garnier dans l'inventaire.",
+      "Une fois l'identité confirmée, on recherche la clé du poste PC-FIN-022 dans l'annuaire (Active Directory, Entra ID ou la console Intune selon l'organisation) et on vérifie que l'**identificateur** commence bien par 3F2A91C0. Une clé dont l'identificateur ne correspond pas ne fonctionnera pas : il faut alors chercher une autre clé enregistrée pour ce poste.",
+      "On **dicte la clé de vive voix** par blocs de six chiffres, sur le canal vérifié, et l'utilisateur la saisit pendant l'appel. On refuse l'envoi par SMS sur un numéro non vérifié : un message écrit peut être lu par d'autres et reste stocké. On attend que le poste ait démarré avant de raccrocher.",
+      "Dans le ticket : poste, utilisateur, méthode de vérification d'identité utilisée, identificateur de clé, heure de communication, cause probable (mise à jour du firmware de la nuit). Comme plusieurs postes sont touchés après le même déploiement, on **signale l'incident au N2** : BitLocker aurait dû être suspendu pendant la mise à jour, et la politique peut prévoir le renouvellement des clés utilisées."
+    ], "rubric": {
+      "criteria": [
+        { "id": "identite", "label": "Vérifie l'identité de l'appelant avant toute communication", "points": 3, "patterns": ["verifier l identite", "verification d identite", "identite", "rappeler", "rappel", "numero professionnel", "annuaire", "responsable", "question de controle"], "required": true },
+        { "id": "identificateur", "label": "Contrôle l'identificateur de clé", "points": 2, "patterns": ["identificateur", "3f2a91c0", "id de cle", "key id", "correspond"] },
+        { "id": "source", "label": "Récupère la clé dans l'annuaire de l'entreprise", "points": 2, "patterns": ["active directory", "entra", "intune", "annuaire", "console"] },
+        { "id": "canal", "label": "Refuse l'envoi par écrit sur un canal non vérifié et dicte la clé", "points": 2, "patterns": ["pas par sms", "pas de sms", "refuse", "de vive voix", "dicter", "oralement", "au telephone"] },
+        { "id": "trace", "label": "Trace la communication dans le ticket", "points": 1, "patterns": ["ticket", "tracer", "noter", "documenter", "consigner"] },
+        { "id": "cause", "label": "Relie l'incident à la mise à jour du firmware et prévient le N2", "points": 2, "patterns": ["firmware", "mise a jour", "bios", "uefi", "n2", "escalad*", "plusieurs postes", "incident majeur"] }
+      ],
+      "redFlags": [
+        { "id": "sms", "label": "Accepte d'envoyer la clé par SMS ou courriel", "patterns": ["j envoie la cle par", "je lui envoie la cle", "j accepte d envoyer", "j accepte de l envoyer", "je la lui envoie"], "penalty": 3 },
+        { "id": "reinstall", "label": "Propose de réinstaller Windows", "patterns": ["je reinstalle", "on reinstalle", "il faut reinstaller"], "penalty": 2 }
+      ],
+      "passPercent": 60
+    } },
+    { "id": "interview", "kind": "interview", "questions": [
+      { "question": "Un utilisateur a un écran BitLocker qui lui demande une clé. Comment réagissez-vous ?", "expectedPoints": ["Rassurer : les données ne sont pas perdues", "Vérifier l'identité selon la procédure avant toute communication", "Retrouver la clé dans l'annuaire avec le nom du poste et contrôler l'identificateur", "Dicter la clé sur un canal vérifié et tracer dans le ticket", "Chercher la cause (firmware, ordre de démarrage, matériel) et escalader si plusieurs postes"], "modelAnswer": "Je rassure d'abord l'utilisateur : son disque est simplement verrouillé, rien n'est perdu. Ensuite, je vérifie son identité selon notre procédure, par exemple en le rappelant sur son numéro professionnel, parce que cette clé ouvre tout le disque. Je retrouve la clé du poste dans Active Directory ou Entra ID, je vérifie que l'identificateur affiché à l'écran correspond, puis je la dicte de vive voix. Je note tout dans le ticket et je cherche la cause : mise à jour de firmware, changement de dock ou d'ordre de démarrage. Si plusieurs postes sont touchés en même temps, je le signale au N2." },
+      { "question": "Quelle est la différence entre BIOS et UEFI ?", "expectedPoints": ["Deux générations de firmware, UEFI est le successeur", "UEFI démarre sur des disques GPT, le BIOS hérité sur MBR", "UEFI permet Secure Boot", "Windows 11 exige UEFI avec Secure Boot"], "modelAnswer": "Ce sont deux générations du firmware de la carte mère, le logiciel qui démarre avant Windows. Le BIOS est l'ancien standard : il démarre sur des disques MBR et ne vérifie pas ce qu'il lance. L'UEFI l'a remplacé : il gère les disques GPT, démarre plus vite et permet Secure Boot, qui refuse les chargeurs non signés. Windows 11 exige un firmware UEFI compatible Secure Boot et un TPM 2.0." },
+      { "question": "À quoi sert le TPM ?", "expectedPoints": ["Puce ou fonction qui protège des clés de chiffrement", "Mesure la chaîne de démarrage", "Permet à BitLocker de déverrouiller le disque automatiquement", "Exigé en version 2.0 par Windows 11"], "modelAnswer": "Le TPM est un composant de sécurité, une puce ou une fonction du processeur, qui stocke des clés de façon protégée. Au démarrage, il mesure chaque étape. Si tout est conforme, il libère la clé qui permet à BitLocker de déverrouiller le disque sans que l'utilisateur ne fasse rien. Si quelque chose a changé, il refuse, et Windows demande la clé de récupération. Windows 11 exige un TPM 2.0." }
+    ] },
+    { "id": "glossary", "kind": "glossary", "terms": [
+      { "term": "Firmware", "en": "Firmware", "definition": "Logiciel intégré à la carte mère, exécuté en premier à l'allumage." },
+      { "term": "Autotest de démarrage", "en": "POST (Power-On Self-Test)", "definition": "Vérification rapide du matériel effectuée par le firmware avant le démarrage du système." },
+      { "term": "Démarrage sécurisé", "en": "Secure Boot", "definition": "Contrôle par le firmware de la signature numérique des éléments de démarrage." },
+      { "term": "Module de plateforme sécurisée", "en": "TPM (Trusted Platform Module)", "definition": "Composant qui protège des clés et mesure la chaîne de démarrage." },
+      { "term": "Table de partitions GUID", "en": "GPT (GUID Partition Table)", "definition": "Format moderne de partitionnement des disques, utilisé avec UEFI." },
+      { "term": "Clé de récupération", "en": "Recovery key / recovery password", "definition": "Code de 48 chiffres qui déverrouille un disque BitLocker quand le TPM refuse." },
+      { "term": "Environnement de récupération Windows", "en": "Windows Recovery Environment (WinRE)", "definition": "Système de secours qui propose réparation du démarrage, restauration et désinstallation de mises à jour." }
+    ] },
+    { "id": "summary", "kind": "summary", "points": [
+      "Démarrage : POST, choix du périphérique, gestionnaire de démarrage sur la partition EFI, Secure Boot et TPM, chargement de Windows, session.",
+      "UEFI démarre sur GPT et permet Secure Boot ; le BIOS hérité démarre sur MBR. Ne jamais basculer de mode « pour voir ».",
+      "Windows 11 exige UEFI compatible Secure Boot, TPM 2.0 et un processeur compatible ; msinfo32, Get-Tpm et Confirm-SecureBootUEFI permettent de vérifier.",
+      "Un écran BitLocker n'est pas une panne : le TPM a détecté un changement. La clé ne se communique qu'après vérification d'identité, de vive voix, et se trace.",
+      "WinRE propose réparation, restauration et désinstallation de mises à jour ; la réinitialisation relève du N2."
+    ] },
+    { "id": "references", "kind": "references", "items": [
+      { "title": "Configuration requise pour Windows 11", "url": "https://learn.microsoft.com/windows/whats-new/windows-11-requirements", "publisher": "Microsoft Learn", "verifiedAt": "2026-10-21" },
+      { "title": "Vue d'ensemble de la récupération BitLocker", "url": "https://learn.microsoft.com/windows/security/operating-system-security/data-protection/bitlocker/recovery-overview", "publisher": "Microsoft Learn", "verifiedAt": "2026-10-21" },
+      { "title": "Secure Boot", "url": "https://learn.microsoft.com/windows-hardware/design/device-experiences/oem-secure-boot", "publisher": "Microsoft Learn", "verifiedAt": "2026-10-21" },
+      { "title": "Environnement de récupération Windows (Windows RE)", "url": "https://learn.microsoft.com/windows-hardware/manufacture/desktop/windows-recovery-environment--windows-re--technical-reference", "publisher": "Microsoft Learn", "verifiedAt": "2026-10-21" }
+    ] }
+  ]
+}

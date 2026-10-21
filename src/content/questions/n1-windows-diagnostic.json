@@ -1,0 +1,120 @@
+[
+  {
+    "code": "windiag-id-match",
+    "lesson": "n1-windows-diagnostic",
+    "skill": "windows",
+    "prompt": "Associez chaque ID d'événement à sa signification.",
+    "data": {
+      "type": "match",
+      "left": [
+        { "id": "e41", "text": "41 (Kernel-Power)" },
+        { "id": "e1074", "text": "1074 (User32)" },
+        { "id": "e7000", "text": "7000 (Service Control Manager)" },
+        { "id": "e1000", "text": "1000 (Application Error)" }
+      ],
+      "right": [
+        { "id": "brutal", "text": "Redémarrage sans arrêt propre" },
+        { "id": "demande", "text": "Arrêt ou redémarrage demandé par un processus ou un utilisateur" },
+        { "id": "service", "text": "Un service n'a pas pu démarrer" },
+        { "id": "appli", "text": "Une application a planté" },
+        { "id": "logon", "text": "Ouverture de session réussie" }
+      ],
+      "answer": { "e41": "brutal", "e1074": "demande", "e7000": "service", "e1000": "appli" }
+    },
+    "explanation": "41 Kernel-Power : le système a redémarré sans arrêt propre. 1074 : l'arrêt était demandé, avec la raison et l'initiateur. 7000 : échec de démarrage d'un service. 1000 : plantage d'une application, avec l'exécutable en cause. Les ouvertures de session sont enregistrées dans le journal Sécurité avec d'autres ID ; aucun de ceux proposés ici ne les désigne.",
+    "difficulty": 2
+  },
+  {
+    "code": "windiag-starttype",
+    "lesson": "n1-windows-diagnostic",
+    "skill": "windows",
+    "prompt": "Get-Service montre que le service Windows Update (wuauserv) est « Stopped » avec un type de démarrage « Manual ». Que concluez-vous ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Le service est en panne et doit être passé en Automatique" },
+        { "id": "b", "text": "C'est un état normal : le service démarre à la demande quand une recherche de mises à jour a lieu" },
+        { "id": "c", "text": "Le service a été désactivé par une stratégie" },
+        { "id": "d", "text": "Le poste ne pourra plus jamais se mettre à jour" }
+      ],
+      "answer": "b"
+    },
+    "explanation": "Un service en démarrage manuel ne tourne que lorsqu'on en a besoin : le voir arrêté est normal. Le passer en Automatique sans raison modifierait la configuration prévue. Un service désactivé afficherait « Disabled », pas « Manual ». Et rien n'empêche ici le service de démarrer lors de la prochaine recherche de mises à jour.",
+    "difficulty": 2
+  },
+  {
+    "code": "windiag-41-vf",
+    "lesson": "n1-windows-diagnostic",
+    "skill": "diagnostic",
+    "prompt": "Vrai ou faux : un événement 41 Kernel-Power suffit à lui seul pour connaître la cause de l'arrêt du poste.",
+    "data": { "type": "truefalse", "answer": false },
+    "explanation": "Faux. Le 41 constate seulement que le système a redémarré sans arrêt propre. La cause se déduit du contexte : un événement BugCheck associé indique un écran bleu, un 41 sans code de vérification d'erreur évoque une coupure d'alimentation, un bouton maintenu ou une surchauffe. Il faut aussi regarder ce qui précède dans les journaux et le motif de répétition.",
+    "difficulty": 2
+  },
+  {
+    "code": "windiag-taskmgr-multiple",
+    "lesson": "n1-windows-diagnostic",
+    "skill": "diagnostic",
+    "prompt": "Un poste est très lent. Dans le Gestionnaire des tâches, quelles observations sont des pistes utiles ? (plusieurs réponses)",
+    "data": {
+      "type": "multiple",
+      "choices": [
+        { "id": "cpu", "text": "Un processus qui occupe le processeur à près de 100 % en continu" },
+        { "id": "ram", "text": "Une mémoire utilisée à plus de 90 % de la RAM installée" },
+        { "id": "disk", "text": "Un disque à 100 % avec un temps de réponse très élevé" },
+        { "id": "nb", "text": "La présence de nombreux processus nommés « Service Host »" },
+        { "id": "uptime", "text": "Le simple fait que le poste soit sous Windows 11" }
+      ],
+      "answer": ["cpu", "ram", "disk"]
+    },
+    "explanation": "Un processeur saturé, une mémoire presque pleine ou un disque à 100 % avec un temps de réponse élevé expliquent directement une lenteur et désignent une ressource à creuser. Les nombreux « Service Host » sont normaux : chacun héberge des services Windows. Windows 11 en tant que tel n'est pas une cause de lenteur.",
+    "difficulty": 1
+  },
+  {
+    "code": "windiag-perfmon-fill",
+    "lesson": "n1-windows-diagnostic",
+    "skill": "windows",
+    "prompt": "Complétez la commande qui ouvre l'historique de fiabilité (Moniteur de fiabilité).",
+    "data": { "type": "fill", "template": "perfmon ___", "accepted": ["/rel", "-rel"] },
+    "explanation": "perfmon /rel ouvre directement le Moniteur de fiabilité, avec sa frise des défaillances et des installations. perfmon sans option ouvre l'Analyseur de performances, plus technique, et perfmon /res ouvre le Moniteur de ressources.",
+    "difficulty": 1
+  },
+  {
+    "code": "windiag-exam-1",
+    "lesson": "n1-windows-diagnostic",
+    "skill": "diagnostic",
+    "prompt": "Ce matin, le logiciel de sauvegarde ne fonctionne plus sur un poste. Le journal Système contient, à la même seconde, un 7001 pour « Agent de sauvegarde » et un 7000 pour « Service de connexion au coffre », avec le message « échec d'ouverture de session ». Quelle est la bonne analyse ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "L'agent de sauvegarde est corrompu et doit être réinstallé" },
+        { "id": "b", "text": "Le service de connexion n'a pas pu ouvrir de session, probablement à cause de son compte de service ; l'agent de sauvegarde n'est qu'une victime" },
+        { "id": "c", "text": "Il faut passer les deux services en type Désactivé" },
+        { "id": "d", "text": "Le disque est plein" }
+      ],
+      "answer": "b"
+    },
+    "explanation": "Le 7001 signale un service qui ne démarre pas parce qu'un service dont il dépend a échoué ; la cause est dans le 7000 de cette dépendance. « Échec d'ouverture de session » oriente vers le compte sous lequel tourne le service (mot de passe changé ou expiré), à transmettre au N2. Réinstaller l'agent ne réglerait rien, désactiver les services supprimerait la sauvegarde, et rien n'évoque un disque plein.",
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "code": "windiag-exam-2",
+    "lesson": "n1-windows-diagnostic",
+    "skill": "windows",
+    "prompt": "Remettez dans l'ordre la démarche pour analyser un poste qui « plante souvent depuis quelques jours ».",
+    "data": {
+      "type": "order",
+      "items": [
+        { "id": "filtre", "text": "Filtrer les journaux Système et Application sur les heures des plantages" },
+        { "id": "contexte", "text": "Demander à l'utilisateur quand, pendant quelle activité et sous quelle forme surviennent les plantages" },
+        { "id": "fiab", "text": "Ouvrir l'historique de fiabilité pour repérer le début des défaillances et ce qui a été installé" },
+        { "id": "ticket", "text": "Documenter les événements, l'hypothèse et les tests dans le ticket, puis escalader si besoin" }
+      ],
+      "answer": ["contexte", "fiab", "filtre", "ticket"]
+    },
+    "explanation": "On recueille d'abord le contexte, qui oriente toute la recherche. L'historique de fiabilité donne ensuite une vue d'ensemble : date de début des défaillances et changements récents. On approfondit alors dans les journaux, filtrés sur les heures utiles. On termine par la documentation et, si nécessaire, l'escalade. Commencer par les journaux sans contexte noie l'analyse dans des erreurs sans lien.",
+    "difficulty": 2,
+    "examOnly": true
+  }
+]

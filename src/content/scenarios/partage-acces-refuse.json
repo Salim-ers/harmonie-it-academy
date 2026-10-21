@@ -1,0 +1,374 @@
+{
+  "slug": "partage-acces-refuse",
+  "title": "Accès refusé malgré le bon groupe",
+  "summary": "Une nouvelle arrivée au service RH a été ajoutée ce matin au groupe qui ouvre le partage RH, mais le serveur lui répond toujours « Accès refusé ». Trouvez pourquoi le droit n'est pas encore appliqué, sans élargir aucun accès.",
+  "sector": "bureau",
+  "difficulty": 2,
+  "requiredTier": 2,
+  "estimatedMinutes": 20,
+  "skills": ["identity", "windows", "powershell", "security-hygiene", "diagnostic"],
+  "company": {
+    "name": "Ternelle Habitat (entreprise fictive)",
+    "description": "Bailleur social de 310 salariés. Domaine Active Directory ternelle.local, serveur de fichiers FS01 ; les droits sur les partages sont accordés uniquement par des groupes globaux (GG_<service>_Lecture, GG_<service>_Gestion) gérés par le N2 sur demande validée. Le N1 lit l'annuaire et les autorisations, sans les modifier."
+  },
+  "ticket": {
+    "reference": "INC-2026-05302",
+    "reporter": { "name": "Inès Morel", "role": "Gestionnaire RH (arrivée ce jour)", "site": "Siège – Rennes, 1er étage" },
+    "channel": "telephone",
+    "title": "Accès refusé au partage RH malgré l'ajout au groupe",
+    "description": "« Je commence aujourd'hui au service RH. On m'a dit vers 9 h 15 que j'avais été ajoutée au groupe pour le dossier RH, mais quand j'ouvre \\\\FS01\\RH, j'ai toujours « Accès refusé ». Ma responsable m'a demandé de préparer les contrats des saisonniers pour cet après-midi. »",
+    "impact": "individuel",
+    "urgency": "moyenne",
+    "slaMinutes": 60
+  },
+  "startFlags": [],
+  "clues": [
+    { "id": "c-session-0834", "label": "Session Windows ouverte à 08 h 34 à l'arrivée, jamais fermée depuis (seulement verrouillée)" },
+    { "id": "c-erreur-acces", "label": "\\\\FS01\\RH renvoie « Accès refusé » ; \\\\FS01\\Commun fonctionne" },
+    { "id": "c-whoami-sans-groupe", "label": "whoami /groups : GG_RH_Lecture n'apparaît pas dans le jeton de la session" },
+    { "id": "c-ad-membre", "label": "Annuaire : le compte imorel est bien membre de GG_RH_Lecture, ajouté à 09 h 12 (demande RQ-2026-1183)" },
+    { "id": "c-tgt-0834", "label": "klist : le ticket Kerberos principal (krbtgt) date de 08 h 34, avant l'ajout au groupe" },
+    { "id": "c-droits-ok", "label": "Partage et NTFS : GG_RH_Lecture a bien les droits de lecture sur \\\\FS01\\RH" },
+    { "id": "c-collegue-ok", "label": "Une collègue RH, membre du même groupe depuis longtemps, accède au partage" },
+    { "id": "c-smb-ouverte", "label": "Une session SMB vers FS01 est déjà ouverte (lecteur P: sur \\\\FS01\\Commun)" }
+  ],
+  "actions": [
+    {
+      "id": "interroger-chronologie",
+      "label": "Demander à quelle heure elle a ouvert sa session et si elle l'a fermée depuis",
+      "category": "interroger",
+      "minutes": 2,
+      "relevance": "useful",
+      "outcomes": [
+        { "when": { "all": ["session-rouverte"] }, "text": "« Je viens de me déconnecter et de me reconnecter, comme vous me l'avez demandé. »" },
+        { "text": "« Je suis arrivée à 8 h 30, j'ai ouvert ma session tout de suite après avoir reçu mon mot de passe. Depuis, je ne l'ai pas fermée : je verrouille quand je m'absente. Le message disant que j'étais ajoutée au groupe est arrivé vers 9 h 15. »", "reveals": ["c-session-0834"] }
+      ]
+    },
+    {
+      "id": "reproduire-erreur",
+      "label": "Faire ouvrir \\\\FS01\\RH et \\\\FS01\\Commun et relever le message exact",
+      "category": "tester",
+      "minutes": 2,
+      "relevance": "useful",
+      "outcomes": [
+        { "when": { "all": ["session-rouverte"] }, "text": "\\\\FS01\\RH s'ouvre : les dossiers Contrats, Paie (accès restreint) et Recrutement s'affichent." },
+        {
+          "text": "Le partage commun s'ouvre normalement ; le partage RH est refusé. Le serveur répond donc, et le compte s'authentifie : c'est l'autorisation qui manque.",
+          "terminal": { "shell": "cmd", "lines": ["C:\\> dir \\\\FS01\\Commun", " Le volume dans le lecteur \\\\FS01\\Commun s'appelle Donnees", " Répertoire de \\\\FS01\\Commun", "21/10/2026  08:02    <DIR>          Notes de service", "21/10/2026  07:55    <DIR>          Modeles", "", "C:\\> dir \\\\FS01\\RH", "Accès refusé."] },
+          "reveals": ["c-erreur-acces"]
+        }
+      ]
+    },
+    {
+      "id": "whoami-groups",
+      "label": "Afficher les groupes du jeton de la session (whoami /groups)",
+      "category": "tester",
+      "minutes": 2,
+      "relevance": "key",
+      "outcomes": [
+        {
+          "when": { "all": ["session-rouverte"] },
+          "text": "Dans la nouvelle session, le jeton contient GG_RH_Lecture.",
+          "terminal": { "shell": "cmd", "lines": ["C:\\> whoami /groups | findstr /i GG_", "TERNELLE\\GG_Tous_Collaborateurs      Groupe   S-1-5-21-3812447291-2204916375-1190358842-1604 Groupe obligatoire, Activé par défaut, Groupe activé", "TERNELLE\\GG_RH_Lecture               Groupe   S-1-5-21-3812447291-2204916375-1190358842-2318 Groupe obligatoire, Activé par défaut, Groupe activé", "TERNELLE\\GG_Imprimantes_Etage1       Groupe   S-1-5-21-3812447291-2204916375-1190358842-1877 Groupe obligatoire, Activé par défaut, Groupe activé"] }
+        },
+        {
+          "text": "Le jeton de la session ne contient que les groupes de départ : GG_RH_Lecture n'y figure pas. Ce jeton a été construit à l'ouverture de session.",
+          "terminal": {
+            "shell": "cmd",
+            "lines": [
+              "C:\\> whoami /groups",
+              "",
+              "INFORMATIONS DE GROUPE",
+              "----------------------",
+              "",
+              "Nom du groupe                            Type              SID                                            Attributs",
+              "======================================== ================= ============================================== ==================================================",
+              "Tout le monde                            Groupe bien connu S-1-1-0                                        Groupe obligatoire, Activé par défaut, Groupe activé",
+              "BUILTIN\\Utilisateurs                     Alias             S-1-5-32-545                                   Groupe obligatoire, Activé par défaut, Groupe activé",
+              "AUTORITE NT\\INTERACTIF                   Groupe bien connu S-1-5-4                                        Groupe obligatoire, Activé par défaut, Groupe activé",
+              "AUTORITE NT\\Utilisateurs authentifiés    Groupe bien connu S-1-5-11                                       Groupe obligatoire, Activé par défaut, Groupe activé",
+              "TERNELLE\\GG_Tous_Collaborateurs          Groupe            S-1-5-21-3812447291-2204916375-1190358842-1604 Groupe obligatoire, Activé par défaut, Groupe activé",
+              "TERNELLE\\GG_Imprimantes_Etage1           Groupe            S-1-5-21-3812447291-2204916375-1190358842-1877 Groupe obligatoire, Activé par défaut, Groupe activé",
+              "Étiquette obligatoire\\Niveau obligatoire moyen Étiquette S-1-16-8192"
+            ]
+          },
+          "reveals": ["c-whoami-sans-groupe"]
+        }
+      ]
+    },
+    {
+      "id": "annuaire-membre",
+      "label": "Vérifier dans l'annuaire l'appartenance au groupe et l'heure de l'ajout",
+      "category": "consulter",
+      "minutes": 3,
+      "relevance": "key",
+      "outcomes": [
+        {
+          "text": "L'annuaire est à jour : le compte est bien membre du groupe, sur les deux contrôleurs de domaine. La demande a été traitée à 09 h 12, soit 38 minutes après l'ouverture de session.",
+          "terminal": {
+            "shell": "powershell",
+            "lines": [
+              "PS> Get-ADGroupMember GG_RH_Lecture | Where SamAccountName -eq imorel | Select Name,SamAccountName",
+              "",
+              "Name        SamAccountName",
+              "----        --------------",
+              "Inès Morel  imorel",
+              "",
+              "PS> 'DC01','DC02' | % { [pscustomobject]@{ DC = $_; Membre = (Get-ADUser imorel -Server $_ -Properties MemberOf).MemberOf -match 'GG_RH_Lecture' -as [bool] } }",
+              "",
+              "DC   Membre",
+              "--   ------",
+              "DC01   True",
+              "DC02   True",
+              "",
+              "Demande RQ-2026-1183 : « Ajout de Mme Morel à GG_RH_Lecture » – traitée le 21/10/2026 à 09:12 par adm-n2-pdubois"
+            ]
+          },
+          "reveals": ["c-ad-membre"]
+        }
+      ]
+    },
+    {
+      "id": "klist",
+      "label": "Afficher les tickets Kerberos de la session (klist)",
+      "category": "tester",
+      "minutes": 2,
+      "relevance": "key",
+      "outcomes": [
+        {
+          "when": { "all": ["session-rouverte"] },
+          "text": "Les tickets ont été émis à la nouvelle ouverture de session, après l'ajout au groupe.",
+          "terminal": { "shell": "cmd", "lines": ["C:\\> klist", "", "L'ID d'ouverture de session actuel est 0:0x5c21f8", "", "Tickets mis en cache : (3)", "", "#0>     Client : imorel @ TERNELLE.LOCAL", "        Serveur : krbtgt/TERNELLE.LOCAL @ TERNELLE.LOCAL", "        Heure de démarrage : 21/10/2026 10:06:41 (local)", "        Heure de fin :   21/10/2026 20:06:41 (local)", "        KDC appelé : DC02.ternelle.local"] }
+        },
+        {
+          "text": "Le ticket principal (TGT) a été émis à l'ouverture de session de 08 h 34 et reste valable jusqu'à 18 h 34. Les groupes qu'il transporte sont ceux de 08 h 34 ; le ticket de service pour FS01 en dérive.",
+          "terminal": {
+            "shell": "cmd",
+            "lines": [
+              "C:\\> klist",
+              "",
+              "L'ID d'ouverture de session actuel est 0:0x3e7a2c",
+              "",
+              "Tickets mis en cache : (4)",
+              "",
+              "#0>     Client : imorel @ TERNELLE.LOCAL",
+              "        Serveur : krbtgt/TERNELLE.LOCAL @ TERNELLE.LOCAL",
+              "        Type de chiffrement KerbTicket : AES-256-CTS-HMAC-SHA1-96",
+              "        Heure de démarrage : 21/10/2026 8:34:12 (local)",
+              "        Heure de fin :   21/10/2026 18:34:12 (local)",
+              "        Heure de renouvellement : 28/10/2026 8:34:12 (local)",
+              "        Indicateurs de cache : 0x1 -> PRIMARY",
+              "        KDC appelé : DC01.ternelle.local",
+              "",
+              "#1>     Client : imorel @ TERNELLE.LOCAL",
+              "        Serveur : cifs/FS01.ternelle.local @ TERNELLE.LOCAL",
+              "        Heure de démarrage : 21/10/2026 8:35:03 (local)",
+              "        Heure de fin :   21/10/2026 18:34:12 (local)",
+              "        KDC appelé : DC01.ternelle.local"
+            ]
+          },
+          "reveals": ["c-tgt-0834"]
+        }
+      ]
+    },
+    {
+      "id": "droits-partage",
+      "label": "Lire les autorisations du partage et du dossier RH (sans les modifier)",
+      "category": "consulter",
+      "minutes": 3,
+      "relevance": "useful",
+      "outcomes": [
+        {
+          "text": "Les autorisations sont conformes au modèle : seul le groupe donne accès, en lecture. Rien n'est à corriger côté serveur.",
+          "terminal": {
+            "shell": "powershell",
+            "lines": [
+              "PS> Get-SmbShareAccess -CimSession FS01 -Name RH | Select AccountName,AccessControlType,AccessRight",
+              "",
+              "AccountName              AccessControlType AccessRight",
+              "-----------              ----------------- -----------",
+              "TERNELLE\\GG_RH_Lecture    Allow             Read",
+              "TERNELLE\\GG_RH_Gestion    Allow             Change",
+              "BUILTIN\\Administrateurs   Allow             Full",
+              "",
+              "PS> icacls \\\\FS01\\RH",
+              "\\\\FS01\\RH TERNELLE\\GG_RH_Lecture:(OI)(CI)(RX)",
+              "          TERNELLE\\GG_RH_Gestion:(OI)(CI)(M)",
+              "          BUILTIN\\Administrateurs:(OI)(CI)(F)",
+              "          AUTORITE NT\\Système:(OI)(CI)(F)",
+              "1 fichiers correctement traités ; échec du traitement de 0 fichiers"
+            ]
+          },
+          "reveals": ["c-droits-ok"]
+        }
+      ]
+    },
+    {
+      "id": "collegue-acces",
+      "label": "Vérifier qu'une collègue RH du même groupe accède au partage",
+      "category": "observer",
+      "minutes": 2,
+      "relevance": "useful",
+      "outcomes": [
+        { "text": "Mme Garnier, gestionnaire RH depuis trois ans et membre de GG_RH_Lecture, ouvre \\\\FS01\\RH sans difficulté. Le serveur et le partage fonctionnent pour les membres du groupe.", "reveals": ["c-collegue-ok"] }
+      ]
+    },
+    {
+      "id": "net-use",
+      "label": "Lister les connexions réseau ouvertes du poste (net use)",
+      "category": "observer",
+      "minutes": 1,
+      "relevance": "neutral",
+      "outcomes": [
+        {
+          "text": "Le lecteur P:, mappé par le script d'ouverture de session, maintient une connexion vers FS01.",
+          "terminal": { "shell": "cmd", "lines": ["C:\\> net use", "Les nouvelles connexions seront mémorisées.", "", "État         Local     Distant                   Réseau", "-------------------------------------------------------------------------------", "OK           P:        \\\\FS01\\Commun             Microsoft Windows Network", "La commande s'est terminée correctement."] },
+          "reveals": ["c-smb-ouverte"]
+        }
+      ]
+    },
+    {
+      "id": "klist-purge",
+      "label": "Purger les tickets Kerberos (klist purge) puis réessayer \\\\FS01\\RH",
+      "category": "corriger",
+      "minutes": 3,
+      "relevance": "neutral",
+      "outcomes": [
+        { "when": { "all": ["session-rouverte"] }, "text": "Les tickets sont purgés puis redemandés ; l'accès au partage RH fonctionnait déjà." },
+        {
+          "text": "Les tickets sont purgés et de nouveaux sont obtenus, avec les groupes à jour. Pourtant, \\\\FS01\\RH reste refusé : le lecteur P: maintient une session SMB vers FS01 ouverte à 08 h 35 avec l'ancien ticket, et le poste la réutilise. Dans d'autres situations, cette purge suffit ; ici, il faudrait aussi fermer toutes les connexions vers FS01 (et whoami /groups, qui reflète le jeton local, montrerait toujours l'ancienne liste). La déconnexion de session règle tout d'un coup.",
+          "terminal": { "shell": "cmd", "lines": ["C:\\> klist purge", "", "L'ID d'ouverture de session actuel est 0:0x3e7a2c", "\tSupprimer tous les tickets :", "\tLes tickets sont purgés !", "", "C:\\> dir \\\\FS01\\RH", "Accès refusé."] },
+          "reveals": ["c-smb-ouverte"]
+        }
+      ]
+    },
+    {
+      "id": "verrouiller-session",
+      "label": "Faire verrouiller puis déverrouiller la session (Windows + L)",
+      "category": "corriger",
+      "minutes": 1,
+      "relevance": "neutral",
+      "outcomes": [
+        { "text": "La session est déverrouillée. \\\\FS01\\RH : toujours « Accès refusé ». Le déverrouillage vérifie le mot de passe mais ne reconstruit pas le jeton de la session : c'est la même session qu'à 08 h 34." }
+      ]
+    },
+    {
+      "id": "admins-domaine",
+      "label": "Faire ajouter temporairement l'utilisatrice au groupe Admins du domaine « pour débloquer »",
+      "category": "escalader",
+      "minutes": 3,
+      "relevance": "irrelevant",
+      "risk": { "level": "dangerous", "explanation": "Admins du domaine donne le contrôle total de tout le système d'information : tous les serveurs, tous les comptes, y compris la paie et les dossiers médicaux du personnel. Un compte standard qui ouvre ses e-mails et navigue sur Internet deviendrait la cible idéale d'un rançongiciel. « Temporairement » ne protège de rien : il faudrait une demande de changement et l'accord du RSSI, qui refuserait. Et cela ne marcherait même pas avant une nouvelle ouverture de session." },
+      "outcomes": [
+        { "text": "Le N2 refuse catégoriquement et ouvre un signalement au RSSI pour demande de privilèges injustifiée. Et l'eût-il fait, le jeton de la session aurait ignoré ce groupe-là aussi jusqu'à la prochaine ouverture de session." }
+      ]
+    },
+    {
+      "id": "controle-total",
+      "label": "Demander que l'utilisatrice reçoive nominativement « Contrôle total » sur le partage RH",
+      "category": "escalader",
+      "minutes": 3,
+      "relevance": "irrelevant",
+      "risk": { "level": "dangerous", "explanation": "« Contrôle total » permet de supprimer tous les dossiers RH et de modifier leurs autorisations : l'utilisatrice pourrait s'ouvrir l'accès aux dossiers de paie ou les ouvrir à d'autres. Une autorisation nominative contourne le modèle par groupes, n'est jamais revue au départ de la personne et viole le principe du moindre privilège sur des données personnelles sensibles (RGPD). Toute modification d'autorisation passe par une demande validée par le responsable des données." },
+      "outcomes": [
+        { "text": "Le N2 refuse : le modèle d'autorisation de Ternelle interdit les droits nominatifs, et le responsable RH n'a demandé qu'un accès en lecture. Le vrai problème reste entier." }
+      ]
+    },
+    {
+      "id": "acl-ntfs",
+      "label": "Ajouter directement le compte de l'utilisatrice dans les autorisations NTFS du dossier RH",
+      "category": "corriger",
+      "minutes": 6,
+      "relevance": "neutral",
+      "risk": { "level": "caution", "explanation": "Modifier les autorisations NTFS d'un dossier de données sensibles sort du périmètre N1 et contourne le modèle par groupes : une entrée nominative oubliée reste en place après le départ de la personne. La propagation sur une grande arborescence est longue, consomme des ressources sur le serveur et une erreur de case peut ouvrir ou fermer l'accès à tout le service." },
+      "outcomes": [
+        { "text": "Votre compte support n'a que des droits de lecture sur les autorisations : la modification est refusée et la tentative est tracée dans le journal de sécurité de FS01. Même faite par le N2, elle n'aurait rien résolu : les autorisations du partage, au niveau supérieur, n'accordent l'accès qu'aux groupes GG_RH_*." }
+      ]
+    },
+    {
+      "id": "vider-cache-navigateur",
+      "label": "Vider le cache et les cookies du navigateur",
+      "category": "corriger",
+      "minutes": 3,
+      "relevance": "irrelevant",
+      "outcomes": [
+        { "text": "Le cache est vidé et l'utilisatrice doit se reconnecter à l'intranet. \\\\FS01\\RH est un partage de fichiers Windows ouvert par l'Explorateur : le navigateur n'y joue aucun rôle. Toujours « Accès refusé »." }
+      ]
+    },
+    {
+      "id": "test-acces-rh",
+      "label": "Faire ouvrir \\\\FS01\\RH et un fichier modèle de contrat",
+      "category": "tester",
+      "minutes": 2,
+      "relevance": "useful",
+      "outcomes": [
+        { "when": { "all": ["session-rouverte"] }, "text": "Dans la nouvelle session, \\\\FS01\\RH s'ouvre. Mme Morel ouvre le modèle de contrat saisonnier en lecture ; comme prévu par son groupe, elle ne peut pas enregistrer dans le dossier, et le sous-dossier Paie reste refusé. whoami /groups montre GG_RH_Lecture. Elle peut préparer ses contrats à partir des modèles." },
+        { "text": "Toujours « Accès refusé » sur \\\\FS01\\RH." }
+      ]
+    }
+  ],
+  "diagnoses": [
+    { "id": "d-jeton-ancien", "label": "La session a été ouverte avant l'ajout au groupe : son jeton et ses tickets Kerberos ne contiennent pas encore GG_RH_Lecture, qui ne sera pris en compte qu'à une nouvelle ouverture de session", "correct": true, "requiresClues": ["c-whoami-sans-groupe", "c-ad-membre", "c-tgt-0834"], "feedback": "Exact. Les groupes d'un utilisateur sont lus au moment où il s'authentifie : ils sont figés dans le jeton de la session et dans le ticket Kerberos de 08 h 34. L'annuaire est à jour depuis 09 h 12, mais la session n'en sait rien. Fermer la session et la rouvrir produit un nouveau jeton et de nouveaux tickets." },
+    { "id": "d-replication", "label": "L'ajout au groupe ne s'est pas encore répliqué sur tous les contrôleurs de domaine", "correct": false, "feedback": "L'appartenance est visible sur DC01 et DC02. Même répliqué, le changement ne s'applique pas à une session déjà ouverte." },
+    { "id": "d-droits-partage", "label": "Le groupe GG_RH_Lecture n'a pas les droits sur le partage", "correct": false, "feedback": "Les autorisations du partage et du dossier accordent bien la lecture à GG_RH_Lecture, et une collègue du même groupe accède au partage." },
+    { "id": "d-mauvais-groupe", "label": "L'utilisatrice a été ajoutée au mauvais groupe", "correct": false, "feedback": "C'est le bon groupe : celui qui figure dans les autorisations du partage RH. Le problème est que la session ne le connaît pas encore." },
+    { "id": "d-serveur", "label": "Le serveur FS01 rencontre un problème", "correct": false, "feedback": "\\\\FS01\\Commun s'ouvre et une collègue accède à \\\\FS01\\RH : le serveur fonctionne." }
+  ],
+  "resolutions": [
+    { "id": "r-reconnexion", "label": "Faire enregistrer son travail, fermer complètement la session (déconnexion, pas verrouillage), la rouvrir, puis tester l'accès", "correct": true, "setFlags": ["session-rouverte"], "feedback": "Bonne résolution : la nouvelle ouverture de session construit un jeton et des tickets Kerberos qui contiennent GG_RH_Lecture. Aucune autorisation n'est modifiée, le modèle par groupes est respecté." },
+    { "id": "r-klist-purge", "label": "Purger les tickets Kerberos avec klist purge et réessayer", "correct": false, "feedback": "Une purge peut suffire quand aucune connexion n'est déjà ouverte vers le serveur. Ici, le lecteur P: maintient une session SMB vers FS01 établie avec l'ancien ticket : l'accès reste refusé. La déconnexion de la session est plus simple et plus fiable." },
+    { "id": "r-readd", "label": "Retirer puis rajouter l'utilisatrice dans le groupe", "correct": false, "feedback": "L'annuaire était déjà correct : rejouer l'ajout ne change rien au jeton de la session ouverte. Vous auriez seulement ajouté du bruit dans le journal d'audit." },
+    { "id": "r-droits-nominatifs", "label": "Accorder à l'utilisatrice des droits nominatifs sur le dossier RH", "correct": false, "feedback": "Vous contourneriez le modèle d'autorisation par groupes sur des données sensibles, sans même régler le problème : les autorisations du partage ne s'ouvrent qu'aux groupes GG_RH_*." }
+  ],
+  "fixedFlag": "session-rouverte",
+  "verificationActionId": "test-acces-rh",
+  "closureRubric": {
+    "criteria": [
+      { "id": "cause", "label": "Cause expliquée (session ouverte avant l'ajout, jeton ou ticket Kerberos sans le groupe)", "points": 3, "patterns": ["jeton", "kerberos", "ticket", "session ouverte avant", "avant l ajout", "whoami"], "required": true },
+      { "id": "action", "label": "Action réalisée (déconnexion et reconnexion de la session)", "points": 3, "patterns": ["deconnexion", "deconnecte*", "reconnexion", "reconnecte*", "fermeture de session", "rouvert*"] },
+      { "id": "validation", "label": "Validation (accès au partage testé, groupe visible)", "points": 2, "patterns": ["test*", "acces ok", "s ouvre", "verifie*", "valide*", "confirme*"] },
+      { "id": "prevention", "label": "Prévention (prévenir les utilisateurs de se reconnecter après un ajout de groupe)", "points": 2, "patterns": ["prevention", "a l avenir", "rappel*", "modele de reponse", "message", "procedure", "kb"] }
+    ],
+    "redFlags": [
+      { "id": "privileges", "label": "Élargissement des droits", "patterns": ["controle total accorde", "ajoutee aux admins", "admins du domaine ajout"], "penalty": 4 }
+    ],
+    "passPercent": 60
+  },
+  "hints": [
+    "L'annuaire dit une chose, le serveur en applique une autre. Quand Windows lit-il les groupes d'un utilisateur ?",
+    "Comparez les groupes visibles dans la session (whoami /groups) avec ceux de l'annuaire, puis l'heure d'ouverture de session avec l'heure de l'ajout.",
+    "La session de 08 h 34 a un jeton et un ticket Kerberos antérieurs à l'ajout de 09 h 12 : une déconnexion puis une reconnexion suffisent."
+  ],
+  "debrief": {
+    "cause": "Mme Morel a ouvert sa session à 08 h 34 ; elle a été ajoutée à GG_RH_Lecture à 09 h 12. Les groupes sont lus à l'authentification : le jeton de la session et le ticket Kerberos de 08 h 34 ne contiennent pas le nouveau groupe, et FS01 refuse donc l'accès tant que la session n'est pas rouverte.",
+    "clues": [
+      "whoami /groups ne montre pas GG_RH_Lecture",
+      "L'annuaire montre l'appartenance, ajoutée à 09 h 12",
+      "Le TGT, comme la session, date de 08 h 34",
+      "Les autorisations du partage sont correctes et une collègue du groupe accède au dossier"
+    ],
+    "relevantTests": [
+      "whoami /groups (ce que la session sait réellement)",
+      "Lecture de l'appartenance dans l'annuaire, avec l'heure d'ajout",
+      "klist (date du ticket Kerberos)"
+    ],
+    "wrongHypotheses": [
+      { "hypothesis": "Réplication Active Directory", "why": "Les deux contrôleurs de domaine montrent l'appartenance." },
+      { "hypothesis": "Droits du partage incorrects", "why": "Le groupe a la lecture sur le partage et sur le dossier, et une collègue du groupe y accède." },
+      { "hypothesis": "Un verrouillage ou une purge Kerberos suffit", "why": "Le déverrouillage garde le même jeton ; la purge ne suffit pas tant qu'une session SMB vers FS01 reste ouverte avec l'ancien ticket." }
+    ],
+    "procedure": [
+      "Reproduire l'erreur et vérifier qu'un autre partage du même serveur fonctionne",
+      "Comparer whoami /groups avec l'appartenance dans l'annuaire",
+      "Comparer l'heure d'ouverture de session (et du ticket Kerberos) avec l'heure de l'ajout",
+      "Faire enregistrer le travail, déconnecter puis reconnecter la session",
+      "Tester l'accès au partage et vérifier que le groupe apparaît dans whoami /groups",
+      "Documenter le ticket"
+    ],
+    "prevention": [
+      "Ajouter au modèle de réponse des demandes d'accès : « déconnectez-vous puis reconnectez-vous pour que le nouvel accès soit pris en compte »",
+      "Pour les nouveaux arrivants, traiter les demandes de groupes la veille de l'arrivée"
+    ],
+    "exampleClosingNote": "Cause : la session de Mme Morel a été ouverte à 08 h 34, avant son ajout à GG_RH_Lecture à 09 h 12 (RQ-2026-1183) ; le jeton de session et le ticket Kerberos ne contenaient pas le groupe (whoami /groups et klist), alors que l'annuaire et les droits du partage étaient corrects. Action : travail enregistré, déconnexion puis reconnexion de la session. Validation : \\\\FS01\\RH s'ouvre, modèle de contrat consulté en lecture, GG_RH_Lecture visible dans whoami /groups. Prévention : rappel « se déconnecter puis se reconnecter après un ajout de groupe » proposé pour le modèle de réponse des demandes d'accès."
+  }
+}

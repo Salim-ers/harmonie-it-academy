@@ -1,0 +1,174 @@
+{
+  "meta": {
+    "slug": "n1-glpi",
+    "title": "GLPI : traiter un ticket de bout en bout",
+    "summary": "Créer, qualifier, attribuer, suivre et résoudre un ticket dans GLPI, en distinguant suivis, tâches et solution, puis retrouver les mêmes notions dans les autres outils ITSM.",
+    "level": "debutant",
+    "prerequisites": ["Connaître le cycle de vie d'un ticket (leçon « Cycle de vie d'un ticket »)", "Connaître les pratiques ITIL de base (leçon « ITIL 4 et ITSM »)"],
+    "objectives": [
+      "Créer un ticket complet dans GLPI et le qualifier : type, catégorie, urgence, impact, priorité",
+      "Renseigner correctement les acteurs : demandeur, observateur, technicien et groupe attribués",
+      "Choisir entre suivi, tâche et solution, et utiliser la visibilité privée à bon escient",
+      "Saisir le temps passé et relier le ticket au matériel de l'inventaire",
+      "Exploiter et enrichir la base de connaissances",
+      "Transposer ces notions dans ServiceNow, Jira Service Management ou un autre outil"
+    ],
+    "durationMin": 45,
+    "skills": [
+      { "code": "itsm-tools", "weight": 3 },
+      { "code": "itsm", "weight": 2 },
+      { "code": "documentation", "weight": 2 }
+    ],
+    "next": "n1-materiel"
+  },
+  "blocks": [
+    { "id": "intro", "kind": "paragraph", "text": "Premier jour de Yanis au centre de services qui gère le Groupe Valmont. Son tuteur lui ouvre GLPI et lui montre un ticket de la veille : un utilisateur écrit « toujours pas de réponse ?? » dans un suivi, alors que le technicien avait bien travaillé dessus pendant une heure. Le problème : tout son travail était consigné dans des **tâches privées**, invisibles pour l'utilisateur, et aucun **suivi** ne lui avait été adressé. L'utilisateur a cru qu'on l'ignorait. Le tuteur conclut : « Dans GLPI, chaque zone de saisie a un destinataire. Savoir où écrire, c'est la moitié du métier dans l'outil. » Cette leçon vous apprend à vous y retrouver." },
+    { "id": "h-glpi", "kind": "heading", "level": 2, "text": "GLPI en quelques mots" },
+    { "id": "def", "kind": "callout", "tone": "definition", "title": "Définition simple", "text": "**GLPI** est un logiciel libre de gestion des services informatiques. Il réunit dans une même interface la **gestion des tickets** (incidents, demandes, problèmes, changements), l'**inventaire du parc** (postes, imprimantes, logiciels, licences) et une **base de connaissances**. On l'utilise depuis un navigateur web." },
+    { "id": "p-glpi", "kind": "paragraph", "text": "GLPI est distribué sous licence libre GPL et développé en France ; l'éditeur Teclib' en assure aujourd'hui le développement principal et propose aussi une offre hébergée. Il est très répandu dans les collectivités, les établissements d'enseignement, les PME et chez de nombreux prestataires d'infogérance. Pour un débutant, c'est une excellente école : il applique les notions ITIL (incident, demande, problème, changement, SLA) avec un vocabulaire français." },
+    { "id": "warning-version", "kind": "callout", "tone": "warning", "title": "Selon la version et la configuration", "text": "L'interface de GLPI a beaucoup évolué entre les versions 9, 10 et 11, et chaque organisation la personnalise : champs masqués ou obligatoires par des gabarits, catégories propres, règles d'attribution automatique, plugins. Les libellés et emplacements cités dans cette leçon sont donc indicatifs. Retenez les **concepts** ; le jour venu, demandez à votre tuteur où se trouve chaque champ dans votre instance." },
+    { "id": "analogie", "kind": "callout", "tone": "analogy", "title": "Analogie", "text": "Un ticket GLPI ressemble au dossier d'un patient à l'hôpital. Il y a la feuille d'admission (le formulaire de création), les échanges avec le patient et sa famille (les **suivis**), les actes médicaux réalisés et leur durée (les **tâches**), les notes réservées à l'équipe soignante (le contenu **privé**), et le compte rendu de sortie (la **solution**). Chaque document a son lecteur : on n'écrit pas au patient dans le cahier de transmission des infirmiers." },
+    { "id": "h-interfaces", "kind": "heading", "level": 2, "text": "Deux interfaces, deux publics" },
+    { "id": "p-interfaces", "kind": "paragraph", "text": "GLPI propose une **interface simplifiée**, destinée aux utilisateurs : elle permet de créer un ticket, de suivre ses demandes, de répondre aux techniciens et de consulter la FAQ. Les techniciens travaillent dans l'**interface standard**, beaucoup plus complète : files de tickets, inventaire, statistiques, base de connaissances interne. Ce qui est affiché dépend du **profil** attribué à chaque compte. Les tickets peuvent aussi naître d'un **courriel** envoyé à une adresse surveillée par un collecteur : l'objet devient le titre, le corps la description." },
+    { "id": "h-creer", "kind": "heading", "level": 2, "text": "Créer et qualifier un ticket" },
+    { "id": "p-creer", "kind": "paragraph", "text": "Quand un utilisateur appelle, c'est souvent vous qui créez le ticket, depuis le menu Assistance de l'interface standard. Le formulaire reprend les éléments de qualification vus dans les leçons précédentes. Certains champs peuvent être pré-remplis, imposés ou masqués par un **gabarit** de ticket défini par l'administrateur." },
+    { "id": "tab-champs", "kind": "table", "caption": "Les principaux champs d'un ticket (libellés indicatifs)", "headers": ["Champ", "À quoi il sert", "Bon réflexe"], "rows": [
+      ["Type", "Incident ou Demande", "Qualifier selon les faits, pas la formulation de l'utilisateur"],
+      ["Catégorie", "Classer le ticket dans l'arborescence ; peut déclencher une attribution automatique", "Choisir la catégorie la plus précise, éviter « Autre »"],
+      ["Titre", "Résumer le ticket dans les listes", "Quoi, où, pour qui, impact"],
+      ["Description", "Symptôme, contexte, impact", "Utiliser la structure de la leçon sur la communication"],
+      ["Urgence", "À quel point c'est pressé pour l'utilisateur", "Poser la question de l'échéance"],
+      ["Impact", "Étendue des personnes ou services touchés", "Souvent fixé par le technicien"],
+      ["Priorité", "Calculée à partir de l'urgence et de l'impact par une matrice", "Ne pas la forcer sans raison écrite"],
+      ["Lieu", "Site, bâtiment, bureau", "Indispensable pour le support de proximité"],
+      ["Éléments associés", "Matériel ou logiciel de l'inventaire concerné", "Toujours relier le poste ou l'imprimante"]
+    ] },
+    { "id": "p-matrice", "kind": "paragraph", "text": "Dans GLPI, l'urgence et l'impact se choisissent parmi plusieurs niveaux (de très bas à très haut, selon la configuration), et la **priorité** est déduite d'une matrice que l'administrateur peut ajuster. Il existe aussi un niveau de priorité **Majeure**, au-dessus de tous les autres, réservé aux profils autorisés : c'est l'équivalent de l'incident majeur vu dans la leçon ITIL." },
+    { "id": "h-acteurs", "kind": "heading", "level": 2, "text": "Les acteurs : qui fait quoi ?" },
+    { "id": "tab-acteurs", "kind": "table", "caption": "Les trois rôles d'acteurs d'un ticket", "headers": ["Rôle", "Qui ?", "Ce qu'il voit et fait", "Exemple"], "rows": [
+      ["Demandeur", "La personne (ou le groupe) concernée par le ticket", "Reçoit les notifications, lit les suivis publics, valide la solution", "Mme Rocher, comptabilité"],
+      ["Observateur", "Une personne qui doit être informée sans agir", "Suit l'avancement, ne modifie pas le ticket", "Le responsable de Mme Rocher, à sa demande"],
+      ["Attribué à", "Le technicien, le groupe de techniciens ou le fournisseur qui traite", "Travaille sur le ticket, ajoute tâches et solution", "Groupe « N1 Siège », puis « N2 Messagerie »"]
+    ] },
+    { "id": "p-groupes", "kind": "paragraph", "text": "L'attribution à un **groupe** plutôt qu'à une seule personne est une bonne pratique : si le technicien est absent, ses collègues du groupe voient le ticket dans leur file. Lors d'une escalade fonctionnelle, on change le groupe attribué (par exemple de « N1 Siège » vers « N2 Réseau ») en ajoutant un suivi ou une tâche qui explique pourquoi. Selon la configuration, des **règles métier** attribuent automatiquement les tickets à un groupe selon la catégorie, le lieu ou l'entité." },
+    { "id": "info-entites", "kind": "callout", "tone": "info", "title": "Les entités", "text": "Dans un centre de services multi-clients, GLPI sépare souvent chaque client dans une **entité** : Groupe Valmont, Nordelis Logistique, Maison Aubrac. Chaque entité a ses utilisateurs, son matériel, ses catégories et parfois ses SLA. Avant de créer un ticket, vérifiez que vous êtes dans la bonne entité : un ticket créé chez le mauvais client part dans la mauvaise file et peut exposer des informations." },
+    { "id": "h-suivi", "kind": "heading", "level": 2, "text": "Suivi, tâche, solution : où écrire ?" },
+    { "id": "diag-cycle", "kind": "diagram", "diagram": "ticket-lifecycle", "caption": "Le ticket GLPI suit le cycle vu précédemment : Nouveau, En cours (attribué ou planifié), En attente, Résolu, Clos. Suivis, tâches et solution s'ajoutent au fil du traitement." },
+    { "id": "tab-suivi", "kind": "table", "caption": "Trois zones de saisie, trois usages", "headers": ["Élément", "Usage", "Visibilité", "Exemple"], "rows": [
+      ["Suivi", "Échange avec le demandeur : question, information, relance, réponse", "Public par défaut ; peut être rendu privé", "« Bonjour Madame Rocher, pouvez-vous me confirmer l'heure à laquelle le message est apparu ? »"],
+      ["Tâche", "Action technique réalisée ou planifiée, avec une durée", "Souvent privée ; dépend de la configuration", "« Vérification de l'état du compte dans l'annuaire : actif, non verrouillé. Durée 10 min. »"],
+      ["Solution", "Ce qui a résolu le ticket, rédigé pour le demandeur", "Publique ; le demandeur peut l'approuver ou la refuser", "« Le mot de passe enregistré sur votre poste était l'ancien. Nous l'avons supprimé ; la connexion fonctionne. »"]
+    ] },
+    { "id": "p-prive", "kind": "paragraph", "text": "Un suivi ou une tâche **privé** n'est visible que par les comptes autorisés à voir tous les suivis et tâches, en pratique les techniciens. Utilisez-le pour les informations internes : une piste technique non confirmée, un échange avec un autre groupe, une remarque sur l'infrastructure. N'y mettez jamais de mot de passe, et rappelez-vous que privé ne veut pas dire secret : tous vos collègues le lisent, et le ticket est conservé." },
+    { "id": "tip-regle", "kind": "callout", "tone": "tip", "title": "La règle d'or", "text": "Après chaque action importante, demandez-vous : **l'utilisateur sait-il où en est son ticket ?** Si votre dernière saisie est une tâche privée, ajoutez un suivi public de deux lignes : « J'ai vérifié votre compte, tout est normal de ce côté. Je transmets à l'équipe messagerie et je vous tiens informé avant 14 h. »" },
+    { "id": "h-temps", "kind": "heading", "level": 2, "text": "Le temps passé et les statuts" },
+    { "id": "p-temps", "kind": "paragraph", "text": "Chaque tâche peut porter une **durée**. La somme alimente la durée totale du ticket et les statistiques : charge de travail par groupe, temps moyen par catégorie, coût du support pour un client en infogérance. Saisissez un temps réaliste, même pour un appel de cinq minutes : un service desk qui ne déclare pas son temps paraît sous-occupé, et les décisions de recrutement se prennent sur ces chiffres. Une tâche peut aussi être **planifiée** à une date et une heure (une intervention sur site demain à 10 h) : le ticket passe alors en statut « En cours (planifié) »." },
+    { "id": "tab-statuts", "kind": "table", "caption": "Les statuts d'un ticket dans GLPI", "headers": ["Statut", "Quand ?"], "rows": [
+      ["Nouveau", "Le ticket vient d'être créé, personne n'est encore attribué"],
+      ["En cours (attribué)", "Un technicien, un groupe ou un fournisseur a été attribué"],
+      ["En cours (planifié)", "Une tâche a été planifiée dans le calendrier"],
+      ["En attente", "Le traitement dépend d'un tiers (réponse de l'utilisateur, livraison, fournisseur)"],
+      ["Résolu", "Une solution a été saisie ; le demandeur peut l'approuver ou la refuser"],
+      ["Clos", "La solution a été approuvée, ou le délai de clôture automatique est écoulé"]
+    ] },
+    { "id": "p-cloture", "kind": "paragraph", "text": "Si le demandeur **refuse** la solution, le ticket repart en traitement avec son commentaire. S'il ne répond pas, une **clôture automatique** peut intervenir après un délai fixé par l'administrateur. Une **enquête de satisfaction** peut ensuite être envoyée. GLPI permet aussi de définir des **SLA** et des **OLA** avec un temps de prise en charge et un temps de résolution : les échéances calculées apparaissent dans le ticket et colorent les listes quand elles approchent." },
+    { "id": "h-inventaire", "kind": "heading", "level": 2, "text": "Relier le ticket à l'inventaire" },
+    { "id": "p-inventaire", "kind": "paragraph", "text": "Le **parc** de GLPI recense les ordinateurs, écrans, imprimantes, téléphones, logiciels et licences, souvent alimenté automatiquement par un agent d'inventaire installé sur les postes. Relier le ticket au bon élément a deux avantages. Pour vous : la fiche du poste donne immédiatement son modèle, son système, sa mémoire, ses logiciels et l'historique de ses tickets. Pour l'organisation : on voit quel modèle d'imprimante tombe le plus souvent en panne, ou quel poste cumule les incidents et devrait être remplacé. Si l'utilisateur ne connaît pas le nom de son poste, une commande vous donne de quoi le retrouver." },
+    { "id": "cmd-serial", "kind": "command", "shell": "powershell", "command": "hostname\nGet-CimInstance -ClassName Win32_BIOS | Select-Object SerialNumber\nGet-CimInstance -ClassName Win32_ComputerSystem | Select-Object Manufacturer, Model", "explanation": "`hostname` affiche le nom du poste. `Get-CimInstance` interroge les informations système de Windows : la classe `Win32_BIOS` contient le **numéro de série** du constructeur, et `Win32_ComputerSystem` le fabricant et le modèle. `Select-Object` ne garde que les propriétés utiles. Aucune de ces commandes ne demande de droits administrateur.", "output": "PC-CPT-009\n\nSerialNumber\n------------\n5CG3214XKT\n\nManufacturer Model\n------------ -----\nHP           HP EliteBook 840 G9", "outputNotes": [
+      { "match": "PC-CPT-009", "note": "Le nom du poste : c'est généralement sous ce nom qu'il apparaît dans le parc GLPI. Recherchez-le dans la liste des ordinateurs, puis ajoutez-le aux éléments associés du ticket." },
+      { "match": "5CG3214XKT", "note": "Le numéro de série (fictif). Si le poste a été renommé ou n'est pas encore inventorié sous son nom, c'est l'identifiant le plus fiable pour le retrouver. Il est aussi exigé par le constructeur pour une prise sous garantie." },
+      { "match": "HP EliteBook 840 G9", "note": "Le modèle permet de chercher un article de base de connaissances spécifique ou de repérer un défaut connu sur une série." }
+    ] },
+    { "id": "h-kb", "kind": "heading", "level": 2, "text": "La base de connaissances" },
+    { "id": "p-kb", "kind": "paragraph", "text": "La base de connaissances de GLPI sert deux publics. Une partie, la **FAQ**, est visible par les utilisateurs dans l'interface simplifiée : c'est votre N0. Le reste est destiné aux techniciens. Chaque article a des **cibles** (entité, groupe, profil ou utilisateur) qui déterminent qui peut le lire : un article sans cible n'est visible que par son auteur et reste non publié. Les articles sont rangés par catégories, peuvent avoir une période de visibilité, des pièces jointes et un historique des révisions. Selon la configuration, une solution de ticket peut être enregistrée directement comme nouvel article." },
+    { "id": "field-kb", "kind": "callout", "tone": "field", "title": "Sur le terrain", "text": "Avant de chercher seul, cherchez dans la base de connaissances avec les **mots de l'utilisateur** et le message d'erreur exact. Si vous résolvez un cas qui n'y figure pas et qui risque de revenir, proposez un article : titre reprenant le symptôme, contexte, étapes numérotées, date. C'est l'une des contributions les plus visibles d'un N1 ; elle est souvent citée dans les entretiens annuels." },
+    { "id": "h-demo", "kind": "heading", "level": 2, "text": "Démonstration : un ticket de bout en bout" },
+    { "id": "steps-demo", "kind": "steps", "title": "Mme Rocher et son VPN, dans GLPI", "steps": [
+      { "title": "Vérifier l'entité et chercher l'existant", "text": "Entité Groupe Valmont. Recherche des tickets ouverts de Mme Rocher : celui de son collègue d'hier existe déjà. On le reprend au lieu d'en créer un nouveau, pour garder l'historique." },
+      { "title": "Requalifier", "text": "Type Incident, catégorie Accès distant > VPN, urgence haute (clôture à 18 h), impact faible (une personne). La priorité calculée s'affiche. Titre réécrit : « [Compta – télétravail] VPN : échec d'authentification depuis 8 h, PC-CPT-009 – clôture 18 h »." },
+      { "title": "Renseigner acteurs et éléments", "text": "Demandeur : Mme Rocher. Attribué : groupe N1 Siège et vous-même. Élément associé : l'ordinateur PC-CPT-009, retrouvé dans le parc." },
+      { "title": "Informer par un suivi public", "text": "« Bonjour Madame Rocher, je reprends votre ticket. Je vous appelle dans cinq minutes pour vérifier avec vous le mot de passe utilisé par le VPN. »" },
+      { "title": "Tracer le travail dans une tâche", "text": "Tâche privée de 15 minutes : « Compte actif, non verrouillé. Collègue de la compta connectée normalement au VPN. Identifiant VPN mémorisé sur le poste supprimé avec l'utilisatrice, nouveau mot de passe saisi par elle. Connexion OK à 9 h 42. »" },
+      { "title": "Saisir la solution", "text": "Solution publique : « Votre poste utilisait encore l'ancien mot de passe enregistré. Nous l'avons supprimé et vous avez saisi le nouveau : la connexion fonctionne. » Le ticket passe en Résolu." },
+      { "title": "Capitaliser", "text": "Le cas reviendra à chaque changement de mot de passe en télétravail. Vous proposez un article de base de connaissances, ou vous reliez le ticket à l'article existant s'il y en a un." }
+    ] },
+    { "id": "h-autres", "kind": "heading", "level": 2, "text": "Les mêmes concepts dans les autres outils" },
+    { "id": "p-autres", "kind": "paragraph", "text": "GLPI n'est pas le seul outil du marché. Les grandes entreprises utilisent souvent **ServiceNow**, beaucoup d'équipes techniques **Jira Service Management**, et l'on rencontre aussi **EasyVista**, iTop, Freshservice ou d'autres. Bonne nouvelle : ils s'appuient tous sur les mêmes notions issues d'ITIL. Seuls le vocabulaire et l'emplacement des champs changent. Le tableau ci-dessous donne des correspondances de **concepts**, à titre indicatif ; les termes exacts dépendent de la version, de la langue et de la configuration de chaque instance." },
+    { "id": "tab-correspondance", "kind": "table", "caption": "Correspondance indicative des concepts entre outils (vocabulaire courant, sans reproduire leurs interfaces)", "headers": ["Concept", "GLPI", "ServiceNow (termes fréquents)", "Jira Service Management (termes fréquents)"], "rows": [
+      ["Ticket d'incident", "Ticket de type Incident", "Incident", "Demande de catégorie Incident"],
+      ["Demande de service", "Ticket de type Demande", "Request / Requested item", "Service request"],
+      ["Personne concernée", "Demandeur", "Caller / Requested for", "Reporter / Customer"],
+      ["Personne informée", "Observateur", "Watch list", "Request participants"],
+      ["Équipe qui traite", "Groupe de techniciens attribué", "Assignment group", "Équipe et files d'attente (queues)"],
+      ["Échange avec l'utilisateur", "Suivi public", "Additional comments", "Réponse au client"],
+      ["Note interne", "Suivi ou tâche privé", "Work notes", "Note interne"],
+      ["Articles de connaissance", "Base de connaissances, FAQ", "Knowledge base", "Base de connaissances (souvent liée à Confluence)"],
+      ["Inventaire et configuration", "Parc, éléments associés", "CMDB, configuration items", "Assets"],
+      ["Engagements de délai", "SLA, OLA (prise en charge, résolution)", "SLA", "SLA"]
+    ] },
+    { "id": "p-transposer", "kind": "paragraph", "text": "En entretien, si l'on vous demande si vous connaissez l'outil de l'entreprise et que ce n'est pas le cas, répondez avec ces concepts : « Je n'ai pas utilisé cet outil, mais j'ai pratiqué GLPI : création et qualification de tickets, distinction entre suivi public et note interne, temps passé, liaison au parc et base de connaissances. Ce sont les mêmes notions ; il me faudra quelques jours pour apprendre l'interface. » C'est une réponse honnête et rassurante." },
+    { "id": "mistakes", "kind": "mistakes", "items": [
+      { "mistake": "Consigner tout le travail dans des tâches privées", "why": "L'utilisateur ne voit rien et croit que son ticket est abandonné.", "fix": "Ajouter un suivi public à chaque étape importante." },
+      { "mistake": "Créer un nouveau ticket alors qu'un ticket existe déjà", "why": "L'historique est éclaté, deux techniciens travaillent en parallèle sans le savoir.", "fix": "Chercher les tickets ouverts du demandeur avant de créer, et lier les doublons." },
+      { "mistake": "Ne pas relier le matériel concerné", "why": "On perd l'historique du poste et les statistiques par modèle.", "fix": "Ajouter systématiquement le poste ou l'imprimante en élément associé." },
+      { "mistake": "Saisir la solution « résolu » sans explication", "why": "L'utilisateur ne sait pas ce qui a été fait ; le collègue suivant non plus.", "fix": "Rédiger la solution pour l'utilisateur : ce qui a été fait et, si utile, la cause." },
+      { "mistake": "Travailler dans la mauvaise entité", "why": "Le ticket part dans la file d'un autre client et peut exposer des données.", "fix": "Vérifier l'entité active avant chaque création." }
+    ] },
+    { "id": "risks", "kind": "risks", "items": [
+      "Ne saisissez jamais de mot de passe dans un ticket, un suivi ou une tâche, même privés : ils sont lus par de nombreuses personnes et conservés longtemps.",
+      "Les pièces jointes (captures d'écran, fichiers) peuvent contenir des données personnelles ou confidentielles : floutez ou recadrez avant de les joindre.",
+      "Un compte technicien GLPI donne accès à l'inventaire et aux tickets de nombreux utilisateurs : verrouillez votre session quand vous quittez votre poste.",
+      "Ne modifiez pas les catégories, gabarits ou règles métier sans en avoir la responsabilité : ils influencent l'attribution de tous les tickets."
+    ] },
+    { "id": "quiz", "kind": "quiz", "title": "Vérifiez votre compréhension", "questions": ["glpi-suivi-tache-solution", "glpi-observateur", "glpi-prive", "glpi-statut-planifie", "glpi-correspondance"] },
+    { "id": "exercise", "kind": "exercise", "title": "Reprendre un ticket mal tenu", "context": "Dans l'entité Nordelis Logistique, vous héritez du ticket suivant. Titre : « Scanner ». Type : Demande. Catégorie : Autre. Priorité : Très haute. Demandeur : le chef d'équipe du quai 2. Aucun élément associé. Contenu : trois tâches privées d'un collègue (« redémarré le scanner », « testé autre batterie, idem », « Wi-Fi OK sur la tablette du quai »), aucun suivi public depuis trois jours. Le chef d'équipe vient d'ajouter un suivi : « Toujours rien ? On fait les inventaires à la main. » Un seul scanner, SCN-Q2-04, est concerné ; les cinq autres du quai fonctionnent.", "task": "Listez ce que vous corrigez dans le ticket (qualification, acteurs, éléments, saisies) et rédigez le suivi public que vous envoyez au chef d'équipe.", "hints": [
+      "Reprenez chaque champ : type, catégorie, priorité, titre, éléments associés. Lequel est faux, lequel est vide ?",
+      "Un seul scanner sur six est en panne et un contournement existe (les autres scanners) : que deviennent impact, urgence et priorité ?",
+      "Le chef d'équipe n'a rien vu du travail réalisé. Votre suivi doit résumer ce qui a été fait, ce qui va être fait, et quand il aura des nouvelles."
+    ], "solution": [
+      "Qualification : le type passe en **Incident**, car le scanner fonctionnait et ne fonctionne plus. La catégorie « Autre » est remplacée par la plus précise disponible, par exemple Matériel > Terminal mobile ou Scanner. Le titre devient : « [Nordelis quai 2] Scanner SCN-Q2-04 en panne – 5 autres scanners fonctionnels ».",
+      "Priorité : « Très haute » n'est pas justifiée. Un seul scanner sur six est touché et les autres permettent de travailler : impact faible, urgence moyenne. La priorité recalculée par la matrice est plus basse ; on note la raison dans une tâche ou un suivi privé. Si le chef d'équipe signale que les inventaires manuels mettent une échéance en danger, on réévalue l'urgence en l'écrivant.",
+      "Acteurs et éléments : demandeur conservé, attribution au groupe compétent (le vôtre, puis le support de proximité ou le prestataire matériel si le scanner doit partir en réparation). Élément associé : le scanner SCN-Q2-04, retrouvé dans le parc par son nom ou son numéro de série, ce qui donne son historique et sa garantie. Les tâches existantes restent, mais le résumé des tests doit maintenant être communiqué.",
+      "Suivi public au chef d'équipe, par exemple : « Bonjour, je reprends votre ticket et je vous prie de nous excuser pour l'absence de nouvelles. Nous avons déjà redémarré le scanner SCN-Q2-04 et testé une autre batterie, sans succès ; le Wi-Fi du quai fonctionne. En attendant, les cinq autres scanners du quai permettent-ils de reprendre les inventaires ? Je contacte aujourd'hui notre support matériel pour un échange ou une réparation et je vous donne un point demain avant 10 h. »"
+    ], "rubric": {
+      "criteria": [
+        { "id": "type", "label": "Corrige le type en Incident", "points": 2, "patterns": ["incident"], "required": true },
+        { "id": "categorie", "label": "Remplace la catégorie Autre par une catégorie précise", "points": 1, "patterns": ["categorie", "materiel", "terminal", "scanner"] },
+        { "id": "priorite", "label": "Revoit la priorité à la baisse en justifiant (1 sur 6, contournement)", "points": 3, "patterns": ["baisser la priorite", "priorite plus basse", "abaisser", "revoir la priorite", "pas justifiee", "un seul scanner", "1 sur 6", "cinq autres", "5 autres", "contournement"], "required": true },
+        { "id": "element", "label": "Relie le scanner en élément associé", "points": 2, "patterns": ["element associe", "elements associes", "scn-q2-04", "parc", "inventaire", "numero de serie"] },
+        { "id": "suivi", "label": "Ajoute un suivi public qui résume les actions", "points": 3, "patterns": ["suivi public", "suivi", "je reprends votre ticket", "nous avons deja", "avons redemarre"], "required": true },
+        { "id": "delai", "label": "S'engage sur une prochaine étape datée", "points": 1, "patterns": ["demain", "avant 10", "aujourd'hui", "je vous donne un point", "je reviens vers vous", "prochaine etape"] }
+      ],
+      "redFlags": [
+        { "id": "tachepriv", "label": "Répond à l'utilisateur uniquement par une tâche privée", "patterns": ["tache privee pour lui repondre", "uniquement en tache privee", "en prive au chef"], "penalty": 2 }
+      ],
+      "passPercent": 60
+    } },
+    { "id": "interview", "kind": "interview", "questions": [
+      { "question": "Dans GLPI, quelle est la différence entre un suivi, une tâche et une solution ?", "expectedPoints": ["Suivi : échange avec le demandeur, public par défaut", "Tâche : action technique avec une durée, souvent privée, planifiable", "Solution : ce qui a résolu le ticket, soumis à l'approbation du demandeur", "Usage du privé pour les informations internes"], "modelAnswer": "Le suivi sert à échanger avec le demandeur : poser une question, l'informer, lui répondre ; il est public par défaut. La tâche décrit une action technique réalisée ou planifiée, avec sa durée, ce qui alimente le temps passé ; elle est souvent privée. La solution décrit ce qui a résolu le ticket : elle passe le ticket en Résolu et le demandeur peut l'approuver ou la refuser. Je fais attention à ce que l'utilisateur soit toujours informé : si mon travail est dans une tâche privée, j'ajoute un suivi public pour qu'il sache où en est son ticket." },
+      { "question": "Vous arrivez dans une entreprise qui utilise ServiceNow, que vous ne connaissez pas. Comment vous adaptez-vous ?", "expectedPoints": ["Les concepts ITSM sont communs", "Transposer : demandeur, groupe d'affectation, notes internes, base de connaissances", "Se faire montrer les procédures locales", "Apprendre l'interface rapidement et demander les gabarits ou champs obligatoires"], "modelAnswer": "Je m'appuie sur les concepts que je connais déjà avec GLPI : incident et demande, qualification, groupe d'affectation, distinction entre commentaires visibles par l'utilisateur et notes internes, base de connaissances et lien avec l'inventaire. Ce sont les mêmes notions sous d'autres noms. Je demande à mon tuteur de me montrer les procédures et les champs obligatoires propres à l'entreprise, je traite mes premiers tickets en binôme, et je note les correspondances de vocabulaire. En quelques jours, l'interface devient un détail." }
+    ] },
+    { "id": "glossary", "kind": "glossary", "terms": [
+      { "term": "Suivi", "en": "Followup", "definition": "Message ajouté à un ticket pour échanger avec le demandeur ; public ou privé." },
+      { "term": "Tâche", "en": "Task", "definition": "Action technique liée au ticket, avec une durée, éventuellement planifiée." },
+      { "term": "Demandeur", "en": "Requester", "definition": "Personne ou groupe concerné par le ticket." },
+      { "term": "Observateur", "en": "Watcher / Observer", "definition": "Personne qui suit le ticket sans le modifier." },
+      { "term": "Entité", "en": "Entity", "definition": "Découpage de GLPI qui sépare des organisations ou des clients et leurs données." },
+      { "term": "Gabarit de ticket", "en": "Ticket template", "definition": "Modèle qui rend des champs obligatoires, pré-remplis ou masqués." },
+      { "term": "Collecteur", "en": "Mail collector", "definition": "Fonction qui crée des tickets ou des suivis à partir des courriels reçus." }
+    ] },
+    { "id": "summary", "kind": "summary", "points": [
+      "GLPI est un logiciel libre qui réunit tickets, inventaire du parc et base de connaissances ; ses libellés varient selon la version et la configuration.",
+      "Un ticket bien qualifié : bonne entité, type, catégorie précise, urgence et impact (la priorité est calculée), titre explicite, élément associé.",
+      "Acteurs : demandeur (concerné), observateur (informé), attribué (technicien, groupe ou fournisseur). On attribue de préférence à un groupe.",
+      "Suivi = échange avec l'utilisateur ; tâche = action technique avec durée ; solution = résolution soumise à approbation. Le privé est interne, jamais secret.",
+      "ServiceNow, Jira Service Management, EasyVista et les autres reprennent les mêmes concepts : apprenez les notions, l'interface suivra."
+    ] },
+    { "id": "references", "kind": "references", "items": [
+      { "title": "GLPI — site officiel du projet", "url": "https://glpi-project.org/", "publisher": "GLPI Project", "verifiedAt": "2026-10-21" },
+      { "title": "Gérer les tickets", "url": "https://glpi-user-documentation.readthedocs.io/fr/latest/modules/assistance/tickets/ticketmanagement.html", "publisher": "Documentation GLPI", "verifiedAt": "2026-10-21" },
+      { "title": "Définir les acteurs et les rôles", "url": "https://glpi-user-documentation.readthedocs.io/fr/latest/modules/assistance/actors.html", "publisher": "Documentation GLPI", "verifiedAt": "2026-10-21" },
+      { "title": "Gérer la base de connaissances", "url": "https://glpi-user-documentation.readthedocs.io/fr/latest/modules/tools/knowledgebase.html", "publisher": "Documentation GLPI", "verifiedAt": "2026-10-21" }
+    ] }
+  ]
+}

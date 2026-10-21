@@ -1,0 +1,141 @@
+{
+  "meta": {
+    "slug": "n1-dhcp",
+    "title": "DHCP : comment un poste obtient son adresse IP",
+    "summary": "Comprendre l'échange DORA, lire un ipconfig /all, reconnaître une adresse APIPA et distinguer une panne DHCP d'un problème de câble.",
+    "level": "debutant",
+    "prerequisites": ["Savoir ce qu'est une adresse IP (leçon « Adresse IP, masque et passerelle »)"],
+    "objectives": [
+      "Expliquer avec vos mots pourquoi le DHCP existe et ce qu'il distribue",
+      "Décrire les quatre messages de l'échange DORA dans le bon ordre",
+      "Lire la sortie d'ipconfig /all et y repérer bail, serveur DHCP, passerelle et DNS",
+      "Reconnaître une adresse APIPA (169.254.x.x) et en déduire la bonne piste",
+      "Différencier en moins de cinq minutes une panne DHCP d'un problème de câble ou de port"
+    ],
+    "durationMin": 35,
+    "skills": [
+      { "code": "network-services", "weight": 3 },
+      { "code": "diagnostic", "weight": 2 },
+      { "code": "powershell", "weight": 1 }
+    ],
+    "next": "n1-dns"
+  },
+  "blocks": [
+    { "id": "intro", "kind": "paragraph", "text": "Lundi, 8 h 40. Un collaborateur appelle : « Internet ne marche plus, ni Teams, ni le partage réseau. » Dans un cas sur trois, la première commande que vous lancerez sera `ipconfig /all` — et la réponse se cachera dans une seule ligne. Cette leçon vous apprend à la trouver." },
+    { "id": "h-pourquoi", "kind": "heading", "level": 2, "text": "Pourquoi une machine a besoin d'une adresse IP" },
+    { "id": "p-ip", "kind": "paragraph", "text": "Sur un réseau, chaque équipement doit être joignable. L'**adresse IP** joue le rôle d'une adresse postale : sans elle, le poste peut envoyer des messages, mais personne ne sait où lui répondre. Pour fonctionner normalement, un poste a besoin de quatre informations : son adresse IP, son **masque** (qui délimite son quartier, le sous-réseau), sa **passerelle** (la sortie vers les autres réseaux) et au moins un **serveur DNS** (l'annuaire qui traduit les noms en adresses)." },
+    { "id": "def", "kind": "callout", "tone": "definition", "title": "Définition simple", "text": "Le DHCP (Dynamic Host Configuration Protocol) est un service qui distribue automatiquement, pour une durée limitée appelée **bail**, la configuration réseau dont un appareil a besoin : adresse IP, masque, passerelle, serveurs DNS et parfois d'autres options." },
+    { "id": "p-sans", "kind": "paragraph", "text": "Sans DHCP, il faudrait saisir ces quatre valeurs à la main sur chaque poste, chaque imprimante et chaque téléphone. Sur 150 collaborateurs, c'est des heures de travail et surtout des erreurs : deux postes avec la même adresse se coupent mutuellement le réseau. Le DHCP centralise la distribution et garde la trace de qui possède quoi." },
+    { "id": "analogie", "kind": "callout", "tone": "analogy", "title": "Analogie", "text": "Imaginez l'accueil d'un hôtel. Vous arrivez sans chambre (le poste démarre sans adresse). Vous demandez à voix haute « Y a-t-il une chambre ? » dans le hall (Discover). Le réceptionniste propose la 214 (Offer). Vous dites « Je prends la 214 » (Request). Il vous remet la clé avec l'heure de départ (Acknowledge) : c'est le bail. À l'échéance, vous prolongez ou vous rendez la chambre." },
+    { "id": "h-dora", "kind": "heading", "level": 2, "text": "Que se passe-t-il quand le PC démarre : l'échange DORA" },
+    { "id": "diag-dora", "kind": "diagram", "diagram": "dhcp-dora", "caption": "Les quatre messages DHCP entre le poste et le serveur. Les deux premiers sont envoyés en diffusion : le poste n'a pas encore d'adresse." },
+    { "id": "dora-list", "kind": "list", "ordered": true, "items": [
+      "**Discover** — le poste crie à tout le réseau local : « Y a-t-il un serveur DHCP ? ». Il n'a pas d'adresse, il utilise 0.0.0.0 comme source et la diffusion 255.255.255.255 comme destination.",
+      "**Offer** — un serveur DHCP répond en proposant une adresse libre de son étendue, avec le masque, la passerelle, le DNS et la durée du bail.",
+      "**Request** — le poste accepte officiellement l'offre (toujours en diffusion, pour que les autres serveurs DHCP éventuels sachent que leur offre est refusée).",
+      "**Acknowledge** — le serveur confirme et enregistre le bail. Le poste configure sa carte réseau : il est opérationnel."
+    ] },
+    { "id": "relay", "kind": "callout", "tone": "field", "title": "Sur le terrain", "text": "Une diffusion ne franchit pas un routeur. Dans une entreprise avec plusieurs réseaux (VLAN), le serveur DHCP est souvent dans le réseau des serveurs : le routeur ou le switch de cœur relaie les demandes grâce à un **agent de relais DHCP** (commande `ip helper-address` chez Cisco). Si ce relais est mal configuré sur un VLAN, tout un étage peut se retrouver sans adresse — c'est une information précieuse à transmettre au N2." },
+    { "id": "h-bail", "kind": "heading", "level": 3, "text": "Le bail et son renouvellement" },
+    { "id": "p-bail", "kind": "paragraph", "text": "Le bail n'est pas éternel. À la moitié de sa durée, le poste demande poliment une prolongation directement au serveur qui le lui a accordé. S'il n'obtient pas de réponse, il retente plus tard, puis repart de zéro avec un Discover si le bail expire. C'est pour cela qu'une panne du serveur DHCP ne se voit pas immédiatement : les postes déjà configurés gardent leur adresse jusqu'à l'échéance, seuls les nouveaux arrivants (ou ceux qui redémarrent) sont touchés." },
+    { "id": "h-exemple", "kind": "heading", "level": 2, "text": "Exemple concret : le réseau du Groupe Valmont" },
+    { "id": "tab-valmont", "kind": "table", "caption": "Configuration fictive du VLAN Bureaux du siège", "headers": ["Paramètre", "Valeur", "Rôle"], "rows": [
+      ["Réseau", "10.20.10.0/24", "Le « quartier » des postes de bureau"],
+      ["Étendue DHCP", "10.20.10.50 à 10.20.10.240", "Adresses distribuables automatiquement"],
+      ["Exclusions", "10.20.10.1 à 10.20.10.49", "Réservées aux équipements fixes (imprimantes, bornes)"],
+      ["Passerelle (option 003)", "10.20.10.1", "Sortie vers les autres réseaux et Internet"],
+      ["DNS (option 006)", "10.20.1.10 et 10.20.1.11", "Contrôleurs de domaine"],
+      ["Durée du bail", "8 jours", "Adaptée à un parc de postes fixes"]
+    ] },
+    { "id": "p-reservation", "kind": "paragraph", "text": "Une **réservation** associe une adresse fixe à l'adresse MAC d'un appareil : l'imprimante du 2e étage reçoit toujours 10.20.10.21 tout en restant gérée par le DHCP. C'est la bonne pratique pour les équipements que l'on doit retrouver facilement." },
+    { "id": "h-demo", "kind": "heading", "level": 2, "text": "Démonstration : vérifier la configuration d'un poste" },
+    { "id": "steps-demo", "kind": "steps", "title": "Contrôler l'adresse d'un poste Windows en quatre étapes", "steps": [
+      { "title": "Ouvrir un terminal", "text": "Touche Windows, tapez « Terminal » ou « cmd », puis Entrée. Aucun droit administrateur n'est nécessaire pour consulter la configuration." },
+      { "title": "Afficher la configuration détaillée", "text": "La version courte d'ipconfig ne montre pas le serveur DHCP ni le bail : utilisez toujours l'option /all en support.", "command": "ipconfig /all" },
+      { "title": "Repérer la bonne carte", "text": "Un portable affiche souvent plusieurs cartes (Ethernet, Wi-Fi, VPN). Identifiez celle qui est réellement utilisée : « Statut du média : Média déconnecté » signifie qu'elle n'est pas branchée." },
+      { "title": "Lire les cinq lignes clés", "text": "DHCP activé, adresse IPv4, passerelle par défaut, serveur DHCP, serveurs DNS. Si l'une manque ou paraît étrange, vous tenez une piste." }
+    ] },
+    { "id": "cmd-ipconfig", "kind": "command", "shell": "cmd", "command": "ipconfig /all", "explanation": "ipconfig affiche la configuration IP de chaque carte réseau. L'option /all ajoute les informations DHCP (serveur, bail), l'adresse physique (MAC) et les serveurs DNS.", "output": "Carte Ethernet Ethernet :\n\n   Suffixe DNS propre à la connexion. . . : valmont.local\n   Description. . . . . . . . . . . . . . : Intel(R) Ethernet Connection I219-LM\n   Adresse physique . . . . . . . . . . . : 3C-52-82-4A-19-07\n   DHCP activé. . . . . . . . . . . . . . : Oui\n   Adresse IPv4. . . . . . . . . . . . . .: 10.20.10.87(préféré)\n   Masque de sous-réseau. . . . . . . . . : 255.255.255.0\n   Bail obtenu. . . . . . . . . . . . . . : lundi 6 octobre 2026 08:12:44\n   Bail expirant. . . . . . . . . . . . . : mardi 14 octobre 2026 08:12:44\n   Passerelle par défaut. . . . . . . . . : 10.20.10.1\n   Serveur DHCP . . . . . . . . . . . . . : 10.20.1.10\n   Serveurs DNS. . .  . . . . . . . . . . : 10.20.1.10\n                                       10.20.1.11", "outputNotes": [
+      { "match": "DHCP activé", "note": "« Oui » : la carte attend sa configuration du DHCP. « Non » signifie une configuration manuelle (fréquent sur les postes « bricolés »)." },
+      { "match": "Adresse IPv4", "note": "Elle appartient bien à l'étendue 10.20.10.50–240 : le DHCP a fonctionné." },
+      { "match": "Bail obtenu", "note": "Date et heure du dernier Acknowledge. Un bail obtenu il y a quelques minutes indique un redémarrage ou un renouvellement récent." },
+      { "match": "Serveur DHCP", "note": "Le serveur qui a accordé le bail. Utile pour l'escalade : c'est lui que le N2 ira consulter." },
+      { "match": "Serveurs DNS", "note": "Ici les contrôleurs de domaine. Un DNS public (8.8.8.8) sur un poste du domaine est une anomalie à signaler." }
+    ] },
+    { "id": "h-apipa", "kind": "heading", "level": 2, "text": "Le symptôme APIPA : 169.254.x.x" },
+    { "id": "p-apipa", "kind": "paragraph", "text": "Quand un poste configuré en DHCP n'obtient aucune réponse, Windows ne reste pas sans adresse : il s'attribue lui-même une adresse dans la plage **169.254.0.0/16**, appelée APIPA (adressage automatique). Cette adresse permet seulement de parler aux voisins dans la même situation. Pas de passerelle, pas de DNS : ni Internet, ni partage, ni messagerie." },
+    { "id": "cmd-apipa", "kind": "command", "shell": "cmd", "command": "ipconfig", "explanation": "La version courte suffit pour repérer une APIPA : l'adresse commence par 169.254 et la passerelle est vide.", "output": "Carte Ethernet Ethernet :\n\n   Suffixe DNS propre à la connexion. . . :\n   Adresse IPv6 de liaison locale. . . . .: fe80::4c1a:9e2b:7d10:3a5f%12\n   Adresse IPv4 de configuration automatique: 169.254.58.201\n   Masque de sous-réseau. . . . . . . . . : 255.255.0.0\n   Passerelle par défaut. . . . . . . . . :", "outputNotes": [
+      { "match": "configuration automatique", "note": "Le libellé lui-même trahit l'APIPA : aucun serveur DHCP n'a répondu." },
+      { "match": "Passerelle par défaut", "note": "Vide : le poste ne peut sortir de son réseau local." }
+    ] },
+    { "id": "apipa-meaning", "kind": "callout", "tone": "info", "title": "Ce que prouve une APIPA", "text": "Une APIPA prouve que la carte est active et configurée en DHCP, mais qu'aucun Offer n'est revenu. La cause est donc entre le poste et le serveur : câble, port de switch, VLAN, relais DHCP, étendue pleine ou serveur arrêté. Elle innocente presque toujours les applications (Outlook, Teams) : inutile de les réinstaller." },
+    { "id": "h-cable", "kind": "heading", "level": 2, "text": "Problème DHCP ou problème de câble ?" },
+    { "id": "tab-diff", "kind": "table", "caption": "Ce que montre ipconfig selon la cause", "headers": ["Observation", "Piste probable", "Vérification suivante"], "rows": [
+      ["« Média déconnecté », pas d'adresse", "Lien physique absent : câble, prise, port, carte", "Voyant de la carte, autre câble, autre prise"],
+      ["169.254.x.x, lien actif", "Aucune réponse DHCP : VLAN, relais, étendue, serveur", "Un voisin du même bureau a-t-il une adresse ? Renouveler le bail"],
+      ["Adresse correcte mais pas de nom résolu", "Problème DNS, pas DHCP", "nslookup sur un nom interne"],
+      ["Adresse d'un autre réseau (ex. 192.168.1.x)", "Serveur DHCP pirate ou box branchée par erreur", "Identifier le « Serveur DHCP » indiqué et alerter le N2"]
+    ] },
+    { "id": "cmd-renew", "kind": "command", "shell": "cmd", "command": "ipconfig /release\nipconfig /renew", "explanation": "/release rend le bail actuel, /renew relance un échange DORA complet. Si /renew échoue après un long délai avec « Délai d'attente dépassé », aucune offre n'est revenue : c'est un argument solide pour l'escalade.", "output": "Une erreur s'est produite lors du renouvellement de l'interface Ethernet :\nle délai d'attente du sémaphore a expiré." },
+    { "id": "cmd-ps", "kind": "command", "shell": "powershell", "command": "Get-NetIPConfiguration -Detailed", "explanation": "Équivalent PowerShell, plus lisible et exploitable dans un script. Get-NetIPAddress -AddressFamily IPv4 liste uniquement les adresses ; la colonne PrefixOrigin vaut « Dhcp » ou « WellKnown » (APIPA)." },
+    { "id": "mistakes", "kind": "mistakes", "items": [
+      { "mistake": "Réinstaller Outlook ou Teams parce que « rien ne marche »", "why": "Une APIPA coupe toutes les applications réseau à la fois ; l'application n'est pas en cause.", "fix": "Toujours vérifier ipconfig avant de toucher aux logiciels." },
+      { "mistake": "Saisir une adresse IP fixe « pour dépanner »", "why": "Vous risquez un conflit d'adresse avec un autre poste et vous masquez la vraie panne.", "fix": "Rester en DHCP et escalader avec les éléments observés." },
+      { "mistake": "Lire la carte Wi-Fi alors que le poste est en Ethernet", "why": "Les portables affichent plusieurs cartes ; on conclut sur la mauvaise.", "fix": "Repérer la carte active (statut du média, description)." },
+      { "mistake": "Enchaîner release/renew à distance sur un poste", "why": "Après le /release, vous perdez la connexion de prise en main à distance.", "fix": "Faire réaliser la commande par l'utilisateur ou utiliser ipconfig /renew seul." }
+    ] },
+    { "id": "risks", "kind": "risks", "items": [
+      "Ne jamais brancher un routeur ou une box personnelle sur le réseau de l'entreprise : elle peut devenir un serveur DHCP pirate et couper tout un étage.",
+      "Un /release lancé lors d'une prise en main à distance coupe la session : prévenez l'utilisateur et prévoyez un plan B.",
+      "La modification d'une étendue ou d'une réservation sur le serveur DHCP relève du N2 ou de l'administrateur réseau, avec une demande de changement."
+    ] },
+    { "id": "quiz", "kind": "quiz", "title": "Vérifiez votre compréhension", "questions": ["dhcp-dora-ordre", "dhcp-apipa-sens", "dhcp-bail-renouvellement", "dhcp-option-dns", "dhcp-diag-voisin"] },
+    { "id": "exercise", "kind": "exercise", "title": "Diagnostiquer un poste qui « n'a plus rien »", "context": "Mme Lefort, au service comptabilité (2e étage), a changé de bureau ce matin. Depuis, aucune application ne fonctionne. Son ipconfig indique : adresse 169.254.112.9, masque 255.255.0.0, passerelle vide, statut du média connecté. Son ancien voisin, resté à l'ancien bureau, fonctionne normalement. Le nouveau voisin de bureau de Mme Lefort fonctionne aussi.", "task": "Rédigez en quelques lignes votre analyse : ce que prouve l'ipconfig, ce que vous vérifiez ensuite, et ce que vous écririez dans le ticket si vous devez escalader.", "hints": [
+      "Le lien physique est-il présent ? Que dit le statut du média ?",
+      "Le voisin du nouveau bureau fonctionne : qu'est-ce qui diffère entre son branchement et celui de Mme Lefort ?",
+      "Une prise murale peut être brassée sur un autre VLAN, sans DHCP. Comparez les numéros de prise et testez la prise du voisin."
+    ], "solution": [
+      "L'adresse 169.254.112.9 est une APIPA : la carte est connectée (média connecté) et configurée en DHCP, mais aucun serveur n'a répondu. Les applications ne sont pas en cause.",
+      "Le voisin du même bureau fonctionne : le serveur DHCP et l'étendue du VLAN Bureaux sont donc opérationnels. La différence est dans le chemin propre au poste de Mme Lefort : sa prise murale, son brassage ou le port du switch.",
+      "Vérification rapide : brancher le poste sur la prise du voisin (avec son accord) ou sur une autre prise du bureau. S'il obtient une adresse 10.20.10.x, la prise d'origine est en cause.",
+      "Note d'escalade attendue : « Poste PC-CPT-014, Mme Lefort, bureau 2.14 : APIPA sur prise 2.14-B, média connecté. Fonctionne sur la prise 2.14-A. Prise 2.14-B probablement brassée sur un VLAN sans DHCP. Contournement en place, demande de vérification du brassage et du port de switch au N2 réseau. »"
+    ], "rubric": {
+      "criteria": [
+        { "id": "apipa", "label": "Identifie l'adresse APIPA / l'absence de réponse DHCP", "points": 3, "patterns": ["apipa", "169.254", "pas de dhcp", "aucun serveur dhcp", "pas de reponse dhcp", "aucune reponse dhcp"], "required": true },
+        { "id": "physique", "label": "Note que le lien physique est présent", "points": 1, "patterns": ["media connecte", "lien actif", "cable ok", "lien physique", "connecte"] },
+        { "id": "voisin", "label": "Exploite le fait que le voisin fonctionne", "points": 2, "patterns": ["voisin", "collegue", "autre poste"] },
+        { "id": "prise", "label": "Soupçonne la prise, le brassage, le port ou le VLAN", "points": 3, "patterns": ["prise", "brassage", "port", "vlan", "switch"], "required": true },
+        { "id": "test", "label": "Propose un test de comparaison (autre prise)", "points": 2, "patterns": ["autre prise", "changer de prise", "prise du voisin", "tester une autre", "brancher sur"] },
+        { "id": "escalade", "label": "Prévoit une escalade documentée", "points": 1, "patterns": ["escalad*", "n2", "equipe reseau", "transmettre"] }
+      ],
+      "redFlags": [
+        { "id": "ipfixe", "label": "Propose une IP fixe comme solution", "patterns": ["ip fixe", "adresse fixe", "adresse statique", "ip statique"], "penalty": 2 },
+        { "id": "reinstall", "label": "Propose de réinstaller des applications", "patterns": ["reinstaller", "reinstallation"], "penalty": 2 }
+      ],
+      "passPercent": 60
+    } },
+    { "id": "interview", "kind": "interview", "questions": [
+      { "question": "Un utilisateur a une adresse en 169.254. Que pensez-vous et que faites-vous ?", "expectedPoints": ["C'est une APIPA : le poste n'a pas reçu de réponse DHCP", "Vérifier le lien physique et la carte utilisée", "Comparer avec un poste voisin pour isoler poste/prise ou réseau", "Tenter ipconfig /renew et noter le résultat", "Escalader avec les éléments si le problème est au-delà du poste"], "modelAnswer": "Une adresse en 169.254 est une APIPA : la carte attend le DHCP mais aucun serveur n'a répondu. Je vérifie d'abord que je regarde la bonne carte et que le lien est actif, puis je regarde si un voisin sur le même réseau fonctionne : si oui, je soupçonne la prise ou le port ; si personne ne fonctionne, je pense au serveur, au relais ou à l'étendue. Je tente un ipconfig /renew, et si cela échoue j'escalade au N2 avec le nom du poste, la prise, le résultat des tests et l'impact." },
+      { "question": "Expliquez DORA à quelqu'un qui n'est pas informaticien.", "expectedPoints": ["Quatre étapes : Discover, Offer, Request, Acknowledge", "Une analogie claire (accueil, hôtel…)", "La notion de durée de bail"], "modelAnswer": "Quand l'ordinateur démarre, il demande à la cantonade une adresse (Discover), le serveur lui en propose une (Offer), l'ordinateur l'accepte (Request) et le serveur confirme en lui prêtant l'adresse pour une durée limitée, le bail (Acknowledge). C'est comme demander une chambre à l'accueil d'un hôtel." }
+    ] },
+    { "id": "glossary", "kind": "glossary", "terms": [
+      { "term": "Bail DHCP", "en": "DHCP lease", "definition": "Durée pendant laquelle une adresse est prêtée à un appareil." },
+      { "term": "Étendue", "en": "Scope", "definition": "Plage d'adresses qu'un serveur DHCP peut distribuer sur un réseau." },
+      { "term": "Réservation", "en": "Reservation", "definition": "Adresse toujours attribuée au même appareil, identifié par son adresse MAC." },
+      { "term": "APIPA", "en": "Automatic Private IP Addressing", "definition": "Adresse 169.254.x.x que Windows s'attribue faute de réponse DHCP." },
+      { "term": "Agent de relais DHCP", "en": "DHCP relay agent", "definition": "Fonction d'un routeur qui transmet les demandes DHCP vers un serveur situé sur un autre réseau." }
+    ] },
+    { "id": "summary", "kind": "summary", "points": [
+      "Le DHCP prête une configuration complète (IP, masque, passerelle, DNS) pour une durée limitée : le bail.",
+      "DORA : Discover, Offer, Request, Acknowledge. Les deux premiers messages sont diffusés.",
+      "ipconfig /all est le premier réflexe : DHCP activé, adresse, passerelle, serveur DHCP, DNS.",
+      "169.254.x.x = APIPA = aucune réponse DHCP. Le problème est entre le poste et le serveur, pas dans les applications.",
+      "Comparer avec un voisin permet d'isoler rapidement la prise ou le port d'une panne plus large."
+    ] },
+    { "id": "references", "kind": "references", "items": [
+      { "title": "RFC 2131 — Dynamic Host Configuration Protocol", "url": "https://www.rfc-editor.org/rfc/rfc2131", "publisher": "IETF", "verifiedAt": "2026-10-21" },
+      { "title": "Commande ipconfig", "url": "https://learn.microsoft.com/windows-server/administration/windows-commands/ipconfig", "publisher": "Microsoft Learn", "verifiedAt": "2026-10-21" },
+      { "title": "Vue d'ensemble du protocole DHCP sous Windows Server", "url": "https://learn.microsoft.com/windows-server/networking/technologies/dhcp/dhcp-top", "publisher": "Microsoft Learn", "verifiedAt": "2026-10-21" }
+    ] }
+  ]
+}

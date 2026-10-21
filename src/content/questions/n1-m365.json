@@ -1,0 +1,129 @@
+[
+  {
+    "code": "m365-entra-ancien-nom",
+    "lesson": "n1-m365",
+    "skill": "m365",
+    "prompt": "Microsoft Entra ID est le nouveau nom de quel service ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Active Directory Domain Services installé sur les serveurs de l'entreprise" },
+        { "id": "b", "text": "Azure Active Directory (Azure AD)" },
+        { "id": "c", "text": "Exchange Online" },
+        { "id": "d", "text": "Microsoft Teams" }
+      ],
+      "answer": "b"
+    },
+    "explanation": "Microsoft a renommé Azure Active Directory en Microsoft Entra ID, sans changer ses fonctions : c'est le service d'identité cloud de Microsoft 365. Active Directory Domain Services est l'annuaire sur site, qui garde son nom et qui peut être synchronisé vers Entra ID ; Exchange Online et Teams sont des services débloqués par les licences, pas des services d'identité.",
+    "difficulty": 1
+  },
+  {
+    "code": "m365-licence-services",
+    "lesson": "n1-m365",
+    "skill": "m365",
+    "prompt": "Associez chaque symptôme au service Microsoft 365 dont la licence ou le plan manque probablement.",
+    "data": {
+      "type": "match",
+      "left": [
+        { "id": "boite", "text": "Outlook sur le web indique qu'aucune boîte aux lettres n'existe" },
+        { "id": "reunion", "text": "Impossible de rejoindre les réunions et conversations d'équipe avec le compte" },
+        { "id": "fichiers", "text": "Pas d'espace de stockage personnel synchronisé" },
+        { "id": "sites", "text": "Accès refusé aux sites et bibliothèques de documents d'équipe" }
+      ],
+      "right": [
+        { "id": "exchange", "text": "Exchange Online" },
+        { "id": "teams", "text": "Teams" },
+        { "id": "onedrive", "text": "OneDrive" },
+        { "id": "sharepoint", "text": "SharePoint" },
+        { "id": "entra", "text": "Entra ID" }
+      ],
+      "answer": { "boite": "exchange", "reunion": "teams", "fichiers": "onedrive", "sites": "sharepoint" }
+    },
+    "explanation": "Exchange Online fournit la boîte aux lettres, Teams les réunions et conversations, OneDrive le stockage personnel et SharePoint les sites d'équipe. Entra ID est un leurre : c'est le service d'identité qui authentifie l'utilisateur, il ne se « débloque » pas par une licence de service comme les quatre autres, et l'utilisateur ici parvient à s'authentifier.",
+    "difficulty": 1
+  },
+  {
+    "code": "m365-owa-test",
+    "lesson": "n1-m365",
+    "skill": "m365",
+    "prompt": "Outlook reste bloqué sur un poste, mais l'utilisateur se connecte sans problème à Outlook sur le web et voit ses messages du jour. Que pouvez-vous en déduire ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Sa licence Exchange a expiré" },
+        { "id": "b", "text": "Son compte est verrouillé dans Entra ID" },
+        { "id": "c", "text": "Le compte, la licence et la boîte fonctionnent : la piste est locale au poste (profil, application, réseau du poste)" },
+        { "id": "d", "text": "Le service Exchange Online est en panne pour toute l'entreprise" }
+      ],
+      "answer": "c"
+    },
+    "explanation": "Si OWA affiche la boîte, l'authentification, la MFA, la licence et le service fonctionnent pour ce compte. Une licence expirée ou un compte verrouillé empêcheraient aussi l'accès à OWA, et une panne générale d'Exchange Online toucherait OWA comme Outlook. Le problème est donc propre au poste : profil Outlook, application, cache ou connectivité locale.",
+    "difficulty": 1
+  },
+  {
+    "code": "m365-fatigue-mfa",
+    "lesson": "n1-m365",
+    "skill": "security-hygiene",
+    "prompt": "Un utilisateur reçoit en pleine nuit plusieurs demandes d'approbation MFA qu'il n'a pas déclenchées. Quelles réactions sont appropriées ? (plusieurs réponses)",
+    "data": {
+      "type": "multiple",
+      "choices": [
+        { "id": "refuser", "text": "Lui demander de refuser toutes les demandes non sollicitées" },
+        { "id": "alerte", "text": "Considérer que son mot de passe est probablement connu d'un attaquant et alerter l'équipe sécurité" },
+        { "id": "changer", "text": "Faire changer son mot de passe après vérification d'identité, selon la procédure" },
+        { "id": "approuver", "text": "Lui conseiller d'approuver une fois pour que les demandes cessent" },
+        { "id": "desactiver", "text": "Désactiver la MFA de son compte pour lui éviter ces notifications" }
+      ],
+      "answer": ["refuser", "alerte", "changer"]
+    },
+    "explanation": "Des demandes MFA non sollicitées signifient que quelqu'un a saisi le bon mot de passe : il faut refuser, alerter et changer le mot de passe après vérification d'identité. Approuver ouvrirait une session à l'attaquant, c'est précisément le but de la fatigue MFA. Désactiver la MFA retirerait la dernière barrière restante, alors que le mot de passe est compromis.",
+    "difficulty": 2
+  },
+  {
+    "code": "m365-moindre-privilege",
+    "lesson": "n1-m365",
+    "skill": "security-hygiene",
+    "prompt": "Vrai ou faux : pour gagner du temps, il est raisonnable d'attribuer le rôle d'administrateur général à tous les techniciens du support N1.",
+    "data": { "type": "truefalse", "answer": false },
+    "explanation": "Faux. Le principe du moindre privilège impose de donner à chacun uniquement les droits nécessaires : un rôle de support limité suffit pour réinitialiser les mots de passe des utilisateurs standards. L'administrateur général peut tout faire, y compris modifier les autres administrateurs : multiplier ces comptes multiplie les cibles pour un attaquant et les risques d'erreur. Le gain de temps apparent ne compense pas ce risque.",
+    "difficulty": 1
+  },
+  {
+    "code": "m365-exam-1",
+    "lesson": "n1-m365",
+    "skill": "security-hygiene",
+    "prompt": "Une collaboratrice de Nordelis Logistique appelle : elle a cliqué sur un lien « document partagé », saisi son mot de passe et validé une demande MFA il y a dix minutes. Depuis, la page affichait une erreur. Quelle est la priorité ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Lui expliquer qu'elle n'aurait pas dû cliquer et clore l'appel" },
+        { "id": "b", "text": "Supprimer le message reçu de sa boîte pour éviter qu'elle clique à nouveau" },
+        { "id": "c", "text": "La remercier, déclencher immédiatement la procédure de compromission (alerte sécurité, changement de mot de passe après vérification, révocation des sessions par le N2) et noter l'heure et le message" },
+        { "id": "d", "text": "Attendre de voir si des messages suspects partent de sa boîte avant d'agir" }
+      ],
+      "answer": "c"
+    },
+    "explanation": "Mot de passe saisi sur une fausse page et MFA validée : l'attaquant a probablement déjà une session ouverte. Chaque minute compte, il faut agir et faire révoquer les sessions, pas seulement changer le mot de passe. Sermonner décourage les signalements futurs ; supprimer le message efface une trace utile à l'équipe sécurité (le signaler est la bonne démarche) ; attendre laisse à l'attaquant le temps d'agir.",
+    "difficulty": 2,
+    "examOnly": true
+  },
+  {
+    "code": "m365-exam-2",
+    "lesson": "n1-m365",
+    "skill": "m365",
+    "prompt": "Chez Groupe Valmont (comptes synchronisés depuis AD), un utilisateur a changé de service. Son manager demande au support de corriger le nom du service affiché dans son profil Microsoft 365. Où la modification doit-elle être faite ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Dans Active Directory sur site, la synchronisation reportant ensuite la modification dans Entra ID" },
+        { "id": "b", "text": "Directement dans le centre d'administration Microsoft 365, car c'est là qu'il s'affiche" },
+        { "id": "c", "text": "Dans Outlook sur le web, par l'utilisateur lui-même" },
+        { "id": "d", "text": "En créant un nouveau compte cloud avec le bon service" }
+      ],
+      "answer": "a"
+    },
+    "explanation": "Pour une identité synchronisée, la source de vérité est Active Directory : on modifie l'attribut dans AD (selon ses droits ou via le N2), puis la synchronisation le propage. Une modification faite directement dans le cloud est refusée ou écrasée au cycle suivant ; l'utilisateur ne gère pas ces attributs d'annuaire ; créer un nouveau compte ferait perdre boîte, fichiers et historique.",
+    "difficulty": 2,
+    "examOnly": true
+  }
+]

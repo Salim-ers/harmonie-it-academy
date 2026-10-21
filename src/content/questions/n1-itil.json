@@ -1,0 +1,122 @@
+[
+  {
+    "code": "itil-incident-probleme",
+    "lesson": "n1-itil",
+    "skill": "itsm",
+    "prompt": "Associez chaque situation à la pratique ITIL concernée.",
+    "data": {
+      "type": "match",
+      "left": [
+        { "id": "s1", "text": "Mme Durand ne peut pas ouvrir sa session ce matin" },
+        { "id": "s2", "text": "Chercher pourquoi les sessions sont lentes chaque lundi depuis un mois" },
+        { "id": "s3", "text": "Déplacer une tâche planifiée sur un serveur" },
+        { "id": "s4", "text": "Un nouvel alternant a besoin d'un compte et d'un poste" }
+      ],
+      "right": [
+        { "id": "incident", "text": "Gestion des incidents" },
+        { "id": "probleme", "text": "Gestion des problèmes" },
+        { "id": "changement", "text": "Habilitation des changements" },
+        { "id": "demande", "text": "Gestion des demandes de service" },
+        { "id": "fournisseur", "text": "Gestion des fournisseurs" }
+      ],
+      "answer": { "s1": "incident", "s2": "probleme", "s3": "changement", "s4": "demande" }
+    },
+    "explanation": "Une session impossible à ouvrir est une interruption de service : un incident. La recherche de la cause d'incidents récurrents relève de la gestion des problèmes. Modifier une tâche sur un serveur est un changement. L'arrivée d'un collaborateur suit un circuit prévu : c'est une demande de service. La gestion des fournisseurs existe dans ITIL mais ne correspond à aucune de ces situations.",
+    "difficulty": 1
+  },
+  {
+    "code": "itil-objectif-incident",
+    "lesson": "n1-itil",
+    "skill": "itsm",
+    "prompt": "Vrai ou faux : selon ITIL, un incident ne peut être résolu qu'une fois sa cause identifiée.",
+    "data": { "type": "truefalse", "answer": false },
+    "explanation": "Faux. L'objectif de la gestion des incidents est de rétablir le service le plus vite possible et de réduire l'impact. Un contournement qui remet l'utilisateur au travail suffit à résoudre l'incident. La recherche de la cause relève de la gestion des problèmes, qui peut prendre des jours ou des semaines sans bloquer la résolution des incidents.",
+    "difficulty": 1
+  },
+  {
+    "code": "itil-types-changement",
+    "lesson": "n1-itil",
+    "skill": "itsm",
+    "prompt": "Installer un logiciel du catalogue sur un poste, en suivant exactement la procédure écrite et déjà approuvée, est un changement :",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "standard", "text": "Standard" },
+        { "id": "normal", "text": "Normal" },
+        { "id": "urgent", "text": "Urgent" },
+        { "id": "aucun", "text": "Ce n'est pas un changement" }
+      ],
+      "answer": "standard"
+    },
+    "explanation": "Un changement fréquent, à faible risque, déjà évalué et décrit dans une procédure est un changement standard : il est pré-autorisé. Un changement normal demanderait une évaluation et une autorisation au cas par cas. Un changement urgent répond à une situation critique, comme un incident majeur ou une faille exploitée. Et il s'agit bien d'un changement, puisque l'on modifie la configuration d'un poste : on l'enregistre.",
+    "difficulty": 1
+  },
+  {
+    "code": "itil-majeur-reflexes",
+    "lesson": "n1-itil",
+    "skill": "itsm",
+    "prompt": "En dix minutes, quatre utilisateurs de services différents signalent que la messagerie ne fonctionne plus. Quels sont les bons réflexes du N1 ? (plusieurs réponses)",
+    "data": {
+      "type": "multiple",
+      "choices": [
+        { "id": "alerter", "text": "Alerter tout de suite le responsable ou le coordinateur" },
+        { "id": "rattacher", "text": "Rattacher les tickets suivants à un incident principal" },
+        { "id": "info", "text": "Communiquer aux utilisateurs uniquement l'information validée" },
+        { "id": "hypothese", "text": "Annoncer aux utilisateurs que c'est sûrement une attaque informatique" },
+        { "id": "unparun", "text": "Diagnostiquer chaque poste séparément avant de prévenir qui que ce soit" }
+      ],
+      "answer": ["alerter", "rattacher", "info"]
+    },
+    "explanation": "Plusieurs services touchés en peu de temps évoquent un incident majeur : on alerte tôt, on regroupe les tickets sous un incident principal et l'on ne diffuse que l'information validée. Avancer une hypothèse non vérifiée, comme une attaque, peut créer la panique et devra être démentie. Diagnostiquer chaque poste séparément fait perdre un temps précieux alors que la cause est manifestement commune.",
+    "difficulty": 2
+  },
+  {
+    "code": "itil-cmdb",
+    "lesson": "n1-itil",
+    "skill": "itsm",
+    "prompt": "Complétez : la base qui recense les éléments de configuration du système d'information et leurs relations s'appelle la ___.",
+    "data": { "type": "fill", "template": "La base qui recense les éléments de configuration et leurs relations s'appelle la ___.", "accepted": ["CMDB", "Configuration Management Database", "base de données de gestion des configurations"] },
+    "explanation": "La CMDB (Configuration Management Database) recense les éléments de configuration, appelés CI, et surtout leurs relations : c'est ce qui permet de savoir quels services et utilisateurs sont touchés si un serveur tombe. La base de connaissances, elle, contient des articles et des procédures, pas l'inventaire des éléments et de leurs liens.",
+    "difficulty": 1
+  },
+  {
+    "code": "itil-exam-1",
+    "lesson": "n1-itil",
+    "skill": "itsm",
+    "prompt": "Un technicien N1 dispose d'un accès à la console du pare-feu, hérité d'un ancien projet. Un utilisateur se plaint qu'un site professionnel est bloqué. Le technicien pense qu'une simple règle suffirait et qu'il pourrait l'ajouter en deux minutes. Que doit-il faire ?",
+    "data": {
+      "type": "single",
+      "choices": [
+        { "id": "a", "text": "Documenter la demande et la transmettre pour qu'elle soit traitée par un changement évalué et autorisé, et signaler que son accès au pare-feu n'est plus justifié" },
+        { "id": "b", "text": "Ajouter la règle, puisqu'il a l'accès, et la documenter ensuite" },
+        { "id": "c", "text": "Ajouter la règle temporairement et la retirer le soir même" },
+        { "id": "d", "text": "Expliquer à l'utilisateur qu'il ne peut rien faire et clore le ticket" }
+      ],
+      "answer": "a"
+    },
+    "explanation": "Modifier une règle de pare-feu touche la sécurité de toute l'entreprise : c'est un changement normal à évaluer et autoriser, quel que soit le temps nécessaire. Avoir l'accès technique ne donne pas l'autorisation, et un accès qui ne correspond plus au rôle doit être signalé. Une règle « temporaire » non enregistrée reste un changement non maîtrisé. Clore le ticket sans transmettre laisse l'utilisateur sans réponse alors qu'un circuit existe.",
+    "difficulty": 3,
+    "examOnly": true
+  },
+  {
+    "code": "itil-exam-2",
+    "lesson": "n1-itil",
+    "skill": "itsm",
+    "prompt": "Remettez dans l'ordre le parcours d'un incident récurrent jusqu'à sa disparition.",
+    "data": {
+      "type": "order",
+      "items": [
+        { "id": "changement", "text": "Corriger la cause par un changement autorisé" },
+        { "id": "incidents", "text": "Résoudre les incidents par un contournement" },
+        { "id": "probleme", "text": "Ouvrir un problème et y relier les tickets" },
+        { "id": "verif", "text": "Vérifier que les incidents ne se reproduisent plus, puis clôturer" },
+        { "id": "recurrence", "text": "Repérer la récurrence dans les tickets" },
+        { "id": "erreur", "text": "Publier une erreur connue avec le contournement" }
+      ],
+      "answer": ["incidents", "recurrence", "probleme", "erreur", "changement", "verif"]
+    },
+    "explanation": "Les incidents sont d'abord résolus pour remettre les utilisateurs au travail. La récurrence repérée conduit à ouvrir un problème, auquel on relie les tickets. En attendant la correction, une erreur connue diffuse le contournement. La cause identifiée est corrigée par un changement, puis l'on vérifie dans la durée que les incidents ont cessé avant de tout clôturer. Lancer le changement avant d'avoir ouvert et analysé le problème reviendrait à corriger au hasard.",
+    "difficulty": 2,
+    "examOnly": true
+  }
+]

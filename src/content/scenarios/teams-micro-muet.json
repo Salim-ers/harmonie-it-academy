@@ -1,0 +1,296 @@
+{
+  "slug": "teams-micro-muet",
+  "title": "Personne ne m'entend dans Teams",
+  "summary": "Depuis la mise à jour de Windows d'hier, personne n'entend un chargé d'affaires dans Teams, alors que son casque enregistre très bien dans le Magnétophone. Trouvez ce qui distingue les deux applications.",
+  "sector": "bureau",
+  "difficulty": 1,
+  "requiredTier": 1,
+  "estimatedMinutes": 15,
+  "skills": ["windows", "m365", "hardware", "diagnostic", "communication"],
+  "company": {
+    "name": "Ostréa Ingénierie (entreprise fictive)",
+    "description": "Bureau d'études de 140 personnes spécialisé en génie climatique. Portables Windows 11 gérés par le service informatique, mises à jour mensuelles déployées le mardi soir, Teams comme outil principal de réunion avec les clients. Le support N1 intervient par prise en main à distance avec l'accord de l'utilisateur."
+  },
+  "ticket": {
+    "reference": "INC-2026-05278",
+    "reporter": { "name": "Antoine Lefèvre", "role": "Chargé d'affaires", "site": "Agence de Bordeaux" },
+    "channel": "chat",
+    "title": "Micro muet dans Teams depuis la mise à jour",
+    "description": "« Depuis la mise à jour de Windows d'hier soir, personne ne m'entend dans Teams. Je vois et j'entends tout le monde, mais pour eux je suis muet. Le casque marche : je me suis enregistré avec le Magnétophone, le son est parfait. J'ai une réunion client à 14 h. »",
+    "impact": "individuel",
+    "urgency": "moyenne",
+    "slaMinutes": 45
+  },
+  "startFlags": [],
+  "clues": [
+    { "id": "c-maj-hier", "label": "Mise à jour cumulative de Windows installée hier soir, avec redémarrage ; Teams fonctionnait encore hier à 16 h 40" },
+    { "id": "c-magnetophone-ok", "label": "Le Magnétophone enregistre correctement avec le micro du casque" },
+    { "id": "c-niveau-windows-ok", "label": "Paramètres > Son : le micro du casque est l'entrée par défaut et la jauge réagit à la voix" },
+    { "id": "c-teams-appel-test", "label": "Appel test Teams : le casque est sélectionné, mais aucun son n'est enregistré" },
+    { "id": "c-reglage-bureau-off", "label": "Confidentialité > Microphone : « Autoriser les applications de bureau à accéder à votre microphone » est désactivé" },
+    { "id": "c-store-on", "label": "Confidentialité > Microphone : accès global et accès des applications du Store activés, Magnétophone autorisé" },
+    { "id": "c-teams-liste-bureau", "label": "Teams figure dans la liste des applications de bureau, dernier accès au micro hier à 16 h 40" },
+    { "id": "c-registre-deny", "label": "Registre utilisateur : la clé ConsentStore\\microphone\\NonPackaged vaut « Deny »" },
+    { "id": "c-autre-app-bureau", "label": "Une autre application de bureau (logiciel de dictée) ne capte pas non plus le micro" }
+  ],
+  "actions": [
+    {
+      "id": "interroger-chronologie",
+      "label": "Faire préciser quand Teams a fonctionné pour la dernière fois et ce qui s'est passé depuis",
+      "category": "interroger",
+      "minutes": 2,
+      "relevance": "useful",
+      "outcomes": [
+        { "text": "« Hier, j'ai eu une réunion jusqu'à 16 h 40 sans problème. Le soir, l'ordinateur a installé une mise à jour et redémarré. À la reconnexion, Windows m'a montré quelques écrans de réglages, j'ai cliqué un peu vite. Ce matin, à ma première réunion, personne ne m'entendait. »", "reveals": ["c-maj-hier"] }
+      ]
+    },
+    {
+      "id": "historique-maj",
+      "label": "Consulter l'historique de Windows Update",
+      "category": "consulter",
+      "minutes": 2,
+      "relevance": "neutral",
+      "outcomes": [
+        { "text": "Paramètres > Windows Update > Historique : « Mise à jour cumulative pour Windows 11 », installée avec succès hier à 19 h 12, et une mise à jour des définitions de Microsoft Defender. Aucune mise à jour de pilote audio n'apparaît. La chronologie concorde, mais l'historique ne dit pas ce qui a changé sur le poste." }
+      ]
+    },
+    {
+      "id": "tester-magnetophone",
+      "label": "Refaire avec l'utilisateur un enregistrement dans le Magnétophone",
+      "category": "tester",
+      "minutes": 2,
+      "relevance": "useful",
+      "outcomes": [
+        { "text": "L'enregistrement de dix secondes est parfaitement audible. Le casque, son micro et le pilote audio fonctionnent : le son arrive jusqu'à Windows.", "reveals": ["c-magnetophone-ok"] }
+      ]
+    },
+    {
+      "id": "parametres-son",
+      "label": "Vérifier Paramètres > Système > Son : périphérique d'entrée et jauge du micro",
+      "category": "observer",
+      "minutes": 2,
+      "relevance": "useful",
+      "outcomes": [
+        { "text": "Entrée : « Microphone (Casque Jabra Evolve2 40) » sélectionné par défaut, volume 82 %. Quand M. Lefèvre parle, la jauge de test du micro réagit normalement.", "reveals": ["c-niveau-windows-ok"] }
+      ]
+    },
+    {
+      "id": "teams-appel-test",
+      "label": "Dans Teams, ouvrir Paramètres > Périphériques et passer un appel test",
+      "category": "tester",
+      "minutes": 3,
+      "relevance": "key",
+      "outcomes": [
+        { "when": { "all": ["micro-autorise"] }, "text": "Le micro du casque est sélectionné et la jauge réagit. À la fin de l'appel test, l'enregistrement est restitué clairement." },
+        {
+          "text": "Teams voit bien le casque et le propose comme micro, mais la jauge reste plate et l'appel test se termine sur un résumé sans appel : le micro est reconnu, mais aucun son ne parvient à Teams.",
+          "terminal": { "shell": "text", "lines": ["Teams – Paramètres > Périphériques", "Haut-parleur ........ Casque Jabra Evolve2 40", "Microphone .......... Casque Jabra Evolve2 40", "Niveau du micro ..... ▁▁▁▁▁▁▁▁▁▁ (aucune activité)", "", "Résultats de l'appel test", "Microphone .......... Aucun son détecté", "Haut-parleur ........ OK", "Réseau .............. OK"] },
+          "reveals": ["c-teams-appel-test"]
+        }
+      ]
+    },
+    {
+      "id": "confidentialite-micro",
+      "label": "Ouvrir Paramètres > Confidentialité et sécurité > Microphone",
+      "category": "observer",
+      "minutes": 3,
+      "relevance": "key",
+      "outcomes": [
+        { "when": { "all": ["micro-autorise"] }, "text": "Les trois réglages sont activés : accès au microphone, accès des applications (Magnétophone autorisé) et accès des applications de bureau, avec Microsoft Teams en tête de la liste, « Utilisé à l'instant »." },
+        {
+          "text": "L'accès global au micro et l'accès des applications du Store sont activés, et le Magnétophone y est autorisé. Mais le dernier réglage, qui concerne les applications de bureau, est désactivé. Sur ce poste, Teams apparaît dans cette liste des applications de bureau, avec un dernier accès hier à 16 h 40.",
+          "terminal": {
+            "shell": "text",
+            "lines": [
+              "Confidentialité et sécurité > Microphone",
+              "Accès au microphone ................................... Activé",
+              "Autoriser les applications à accéder à votre microphone  Activé",
+              "    Appareil photo ...................................... Activé",
+              "    Magnétophone ........................................ Activé   (utilisé aujourd'hui à 10:21)",
+              "Autoriser les applications de bureau à accéder à votre microphone  DÉSACTIVÉ",
+              "    Microsoft Teams ..................................... Dernier accès 20/10/2026 16:40",
+              "    Dictée Pro .......................................... Dernier accès 14/10/2026 09:03"
+            ]
+          },
+          "reveals": ["c-reglage-bureau-off", "c-store-on", "c-teams-liste-bureau"]
+        }
+      ]
+    },
+    {
+      "id": "lire-registre",
+      "label": "Lire en PowerShell (sans modifier) la clé de consentement micro des applications de bureau",
+      "category": "consulter",
+      "minutes": 3,
+      "relevance": "useful",
+      "outcomes": [
+        {
+          "when": { "all": ["micro-autorise"] },
+          "text": "La valeur est revenue à « Allow ».",
+          "terminal": { "shell": "powershell", "lines": ["PS C:\\> Get-ItemPropertyValue 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\microphone\\NonPackaged' -Name Value", "Allow"] }
+        },
+        {
+          "text": "La valeur qui correspond au réglage des applications de bureau est à « Deny » ; celle du réglage général du micro est à « Allow ».",
+          "terminal": {
+            "shell": "powershell",
+            "lines": [
+              "PS C:\\> $cs = 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\microphone'",
+              "PS C:\\> Get-ItemPropertyValue $cs -Name Value",
+              "Allow",
+              "PS C:\\> Get-ItemPropertyValue \"$cs\\NonPackaged\" -Name Value",
+              "Deny"
+            ]
+          },
+          "reveals": ["c-registre-deny"]
+        }
+      ]
+    },
+    {
+      "id": "autre-app-bureau",
+      "label": "Tester le micro avec une autre application de bureau installée (logiciel de dictée)",
+      "category": "tester",
+      "minutes": 3,
+      "relevance": "useful",
+      "outcomes": [
+        { "when": { "all": ["micro-autorise"] }, "text": "Le logiciel de dictée transcrit de nouveau la phrase de test." },
+        { "text": "Le logiciel de dictée « Dictée Pro », une application de bureau classique, affiche « Aucun signal du microphone ». Le problème ne touche donc pas que Teams : il concerne les applications de bureau, alors que l'application du Store fonctionne.", "reveals": ["c-autre-app-bureau"] }
+      ]
+    },
+    {
+      "id": "kb-micro",
+      "label": "Consulter la fiche « Micro non détecté dans une application » de la base de connaissances",
+      "category": "consulter",
+      "minutes": 2,
+      "relevance": "neutral",
+      "outcomes": [
+        { "text": "Fiche KB-0433 : vérifier dans l'ordre le périphérique par défaut, la jauge Windows, puis les trois réglages de Confidentialité > Microphone. Windows distingue les applications du Store et les applications de bureau : selon la version de Teams et de Windows, Teams peut apparaître dans l'une ou l'autre liste, il faut donc vérifier les deux. Ne pas réinstaller de pilote tant qu'une autre application capte le micro." }
+      ]
+    },
+    {
+      "id": "desinstaller-pilote",
+      "label": "Désinstaller le pilote audio à distance et forcer le redémarrage",
+      "category": "corriger",
+      "minutes": 10,
+      "relevance": "neutral",
+      "risk": { "level": "caution", "explanation": "Le pilote fonctionne (le Magnétophone enregistre). Un redémarrage forcé fait perdre les documents non enregistrés de l'utilisateur et coupe la prise en main à distance ; si le pilote ne se réinstalle pas seul, le poste se retrouve sans son à deux heures d'une réunion client. Toute action de ce type se fait avec l'accord de l'utilisateur, après sauvegarde de son travail, et seulement si le diagnostic la justifie." },
+      "outcomes": [
+        { "when": { "all": ["micro-autorise"] }, "text": "Le poste redémarre, le pilote se réinstalle. Rien ne change : tout fonctionnait déjà." },
+        { "text": "La prise en main se coupe au redémarrage. M. Lefèvre perd le devis qu'il n'avait pas enregistré. Après dix minutes, le pilote générique est réinstallé : le Magnétophone fonctionne toujours, Teams reste muet. Le réglage de confidentialité n'a pas bougé." }
+      ]
+    },
+    {
+      "id": "admin-local",
+      "label": "Ajouter l'utilisateur au groupe Administrateurs local pour qu'il gère lui-même ses autorisations",
+      "category": "corriger",
+      "minutes": 3,
+      "relevance": "irrelevant",
+      "risk": { "level": "dangerous", "explanation": "Les droits d'administrateur local permettent d'installer n'importe quel logiciel, de désactiver l'antivirus et de contourner les stratégies du poste : un simple e-mail piégé ouvert par l'utilisateur s'exécuterait avec ces droits. C'est contraire au principe du moindre privilège et à la politique de sécurité ; une élévation exige une demande validée par le responsable sécurité. Ici, elle est en plus inutile : ce réglage de confidentialité est propre à l'utilisateur et ne demande aucun droit d'administration." },
+      "outcomes": [
+        { "text": "L'outil de gestion du parc signale une modification du groupe Administrateurs hors procédure et la remonte au responsable sécurité. Teams reste muet : l'utilisateur pouvait déjà modifier ce réglage avec ses droits standard." }
+      ]
+    },
+    {
+      "id": "reinstaller-teams",
+      "label": "Désinstaller et réinstaller Teams",
+      "category": "corriger",
+      "minutes": 15,
+      "relevance": "irrelevant",
+      "outcomes": [
+        { "when": { "all": ["micro-autorise"] }, "text": "Teams est réinstallé. Il fonctionnait déjà ; l'utilisateur doit simplement se reconnecter." },
+        { "text": "Un quart d'heure plus tard, Teams est réinstallé et reconnecté. L'appel test indique toujours « Aucun son détecté » : Windows refuse toujours l'accès au micro aux applications de bureau, quelle que soit l'installation de Teams." }
+      ]
+    },
+    {
+      "id": "changer-casque",
+      "label": "Envoyer un casque neuf à l'utilisateur",
+      "category": "escalader",
+      "minutes": 5,
+      "relevance": "irrelevant",
+      "outcomes": [
+        { "text": "Le casque neuf arrive par coursier une heure plus tard. Branché, il est reconnu… et Teams reste muet. Le premier casque fonctionnait : le Magnétophone l'avait prouvé dès le début." }
+      ]
+    },
+    {
+      "id": "redemarrer-teams",
+      "label": "Quitter complètement Teams et le relancer",
+      "category": "corriger",
+      "minutes": 2,
+      "relevance": "neutral",
+      "outcomes": [
+        { "when": { "all": ["micro-autorise"] }, "text": "Teams redémarre et retrouve le micro." },
+        { "text": "Teams est fermé depuis la zone de notification puis relancé. L'appel test indique toujours « Aucun son détecté »." }
+      ]
+    },
+    {
+      "id": "reunion-test",
+      "label": "Organiser une courte réunion Teams avec un collègue pour vérifier qu'il entend l'utilisateur",
+      "category": "tester",
+      "minutes": 4,
+      "relevance": "useful",
+      "outcomes": [
+        { "when": { "all": ["micro-autorise"] }, "text": "Après le redémarrage de Teams, vous rejoignez la réunion test : vous entendez M. Lefèvre distinctement, l'indicateur de voix s'anime quand il parle. Il est prêt pour sa réunion client de 14 h." },
+        { "text": "Vous rejoignez la réunion test : M. Lefèvre parle, son icône ne s'anime pas et vous n'entendez rien." }
+      ]
+    }
+  ],
+  "diagnoses": [
+    { "id": "d-confidentialite-bureau", "label": "Le réglage « Autoriser les applications de bureau à accéder à votre microphone » est désactivé : Teams, qui figure parmi les applications de bureau sur ce poste, ne reçoit plus le son, alors que le Magnétophone, application du Store, reste autorisé", "correct": true, "requiresClues": ["c-teams-appel-test", "c-reglage-bureau-off", "c-magnetophone-ok"], "feedback": "Exact. Windows gère séparément l'accès au micro des applications du Store et celui des applications de bureau. Le Magnétophone dépend du premier réglage, activé ; Teams, listé sur ce poste parmi les applications de bureau, dépend du second, désactivé. Le matériel et le pilote fonctionnent : seule l'autorisation bloque." },
+    { "id": "d-casque", "label": "Le micro du casque est défectueux", "correct": false, "feedback": "Le Magnétophone enregistre parfaitement avec ce casque et la jauge Windows réagit : le micro fonctionne." },
+    { "id": "d-pilote", "label": "La mise à jour a installé un pilote audio défectueux", "correct": false, "feedback": "Aucun pilote n'a été mis à jour, et le pilote fonctionne puisque le Magnétophone capte la voix. Un pilote défectueux bloquerait toutes les applications." },
+    { "id": "d-teams-corrompu", "label": "L'installation de Teams est corrompue", "correct": false, "feedback": "Une autre application de bureau, le logiciel de dictée, est bloquée de la même façon : la cause est commune aux applications de bureau, pas propre à Teams." },
+    { "id": "d-mauvais-peripherique", "label": "Teams utilise le mauvais micro (micro intégré au lieu du casque)", "correct": false, "feedback": "Les paramètres de Teams montrent le casque comme micro sélectionné ; c'est le son qui n'arrive pas, pas le choix du périphérique." }
+  ],
+  "resolutions": [
+    { "id": "r-activer-bureau", "label": "Avec l'utilisateur, réactiver « Autoriser les applications de bureau à accéder à votre microphone », relancer Teams et tester en réunion", "correct": true, "setFlags": ["micro-autorise"], "feedback": "Bonne résolution : un seul réglage, propre à l'utilisateur, sans droits d'administration ni réinstallation. En le faisant avec lui, vous lui apprenez où regarder si cela se reproduit." },
+    { "id": "r-pilote", "label": "Réinstaller le pilote audio", "correct": false, "feedback": "Le pilote fonctionne : vous perdriez du temps et prendriez le risque d'un poste sans son, sans toucher à l'autorisation qui bloque Teams." },
+    { "id": "r-teams", "label": "Réinstaller Teams", "correct": false, "feedback": "Teams réinstallé resterait soumis au même réglage de confidentialité Windows : l'appel test serait toujours muet." },
+    { "id": "r-casque", "label": "Remplacer le casque", "correct": false, "feedback": "Le casque fonctionne avec le Magnétophone. Un nouveau casque serait bloqué de la même façon dans Teams." }
+  ],
+  "fixedFlag": "micro-autorise",
+  "verificationActionId": "reunion-test",
+  "closureRubric": {
+    "criteria": [
+      { "id": "cause", "label": "Cause expliquée (accès au micro désactivé pour les applications de bureau)", "points": 3, "patterns": ["applications de bureau", "confidentialite", "autorisation*", "acces au micro*", "nonpackaged"], "required": true },
+      { "id": "action", "label": "Action réalisée (réglage réactivé, Teams relancé)", "points": 3, "patterns": ["reactive*", "active*", "autorise*", "remis"] },
+      { "id": "validation", "label": "Validation (appel test ou réunion test réussie)", "points": 2, "patterns": ["appel test", "reunion test", "test", "entendu", "valide*", "verifie*"] },
+      { "id": "prevention", "label": "Prévention ou signalement (expliquer le réglage, surveiller les autres postes après la mise à jour)", "points": 2, "patterns": ["explique*", "montre*", "signale*", "autres postes", "surveill*", "prevention", "n2"] }
+    ],
+    "passPercent": 60
+  },
+  "hints": [
+    "Le casque fonctionne dans une application et pas dans une autre. Qu'est-ce qui, dans Windows, peut traiter différemment deux applications pour le même micro ?",
+    "Ouvrez les réglages de confidentialité du microphone et lisez-les tous : il y en a plusieurs, et ils ne visent pas les mêmes applications.",
+    "Le Magnétophone est une application du Store, autorisée. Teams figure ici parmi les applications de bureau, dont l'accès au micro est désactivé : réactivez ce réglage."
+  ],
+  "debrief": {
+    "cause": "Le réglage Windows « Autoriser les applications de bureau à accéder à votre microphone » a été trouvé désactivé au lendemain de la mise à jour (l'origine exacte, écrans de configuration validés trop vite ou réinitialisation, n'est pas établie). Sur ce poste, Teams figure parmi les applications de bureau et ne reçoit donc plus le son ; le Magnétophone, application du Store, dépend d'un autre réglage resté activé.",
+    "clues": [
+      "Le casque fonctionne dans le Magnétophone et la jauge Windows réagit : matériel et pilote sont hors de cause",
+      "Teams voit le casque mais ne reçoit aucun son à l'appel test",
+      "Une autre application de bureau est bloquée de la même manière",
+      "Dans Confidentialité > Microphone, seul le réglage des applications de bureau est désactivé"
+    ],
+    "relevantTests": [
+      "Comparaison entre deux applications sur le même casque (Magnétophone et Teams)",
+      "Appel test Teams",
+      "Lecture des trois réglages de Confidentialité > Microphone"
+    ],
+    "wrongHypotheses": [
+      { "hypothesis": "Casque ou pilote défectueux", "why": "Le Magnétophone enregistre parfaitement : le son arrive jusqu'à Windows." },
+      { "hypothesis": "Teams corrompu", "why": "Une autre application de bureau est bloquée de la même façon : la cause est commune." },
+      { "hypothesis": "Mauvais périphérique sélectionné", "why": "Teams a bien le casque comme micro ; c'est l'accès au son qui est refusé." }
+    ],
+    "procedure": [
+      "Vérifier que le micro fonctionne dans Windows (jauge, autre application)",
+      "Passer un appel test dans Teams pour confirmer le symptôme",
+      "Lire les trois réglages de Confidentialité et sécurité > Microphone (Teams peut relever de l'une ou l'autre liste selon sa version)",
+      "Avec l'utilisateur, réactiver l'accès des applications de bureau",
+      "Relancer Teams et valider par une réunion test avec un collègue",
+      "Documenter et signaler au N2 pour vérifier si d'autres postes sont touchés après la mise à jour"
+    ],
+    "prevention": [
+      "Montrer à l'utilisateur où se trouvent ces réglages de confidentialité",
+      "Signaler au N2 le lien possible avec la mise à jour, pour surveiller les autres postes et, si besoin, fixer le réglage par stratégie"
+    ],
+    "exampleClosingNote": "Cause : dans Confidentialité et sécurité > Microphone, le réglage « Autoriser les applications de bureau à accéder à votre microphone » était désactivé depuis la mise à jour d'hier (valeur NonPackaged à Deny) ; Teams, listé parmi les applications de bureau, ne recevait aucun son, alors que le Magnétophone (application du Store) restait autorisé. Casque et pilote fonctionnels. Action : réglage réactivé avec l'utilisateur, Teams relancé. Validation : appel test OK et réunion test avec un collègue, M. Lefèvre est entendu clairement. Prévention : réglage expliqué à l'utilisateur ; signalé au N2 pour surveiller les autres postes après la mise à jour."
+  }
+}
