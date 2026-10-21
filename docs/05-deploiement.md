@@ -34,7 +34,7 @@ Vérifier le domaine d'envoi (SPF, DKIM, DMARC). Sans `RESEND_API_KEY`, l'applic
 
 ## 5. Premier compte administrateur
 
-**Option automatique** : renseigner `ADMIN_EMAIL` et `ADMIN_PASSWORD` (12 caractères minimum, `ADMIN_NAME` facultatif) dans Vercel puis redéployer. `vercel-build` crée le compte avec l'adresse déjà vérifiée et le rôle `super_admin` (ou promeut le compte s'il existe déjà, sans toucher à son mot de passe). Retirer ensuite `ADMIN_PASSWORD` des variables. En local : `npm run db:admin`. Activer la double authentification (étape 2 ci-dessous) reste nécessaire pour ouvrir le Studio.
+**Option automatique** : renseigner `ADMIN_EMAIL` et `ADMIN_PASSWORD` (12 caractères minimum, `ADMIN_NAME` facultatif) dans Vercel puis redéployer. `vercel-build` crée le compte avec l'adresse déjà vérifiée et le rôle `super_admin` (ou promeut le compte s'il existe déjà). Tant que `ADMIN_PASSWORD` est défini, il redevient le mot de passe du compte à chaque déploiement : le retirer des variables une fois connecté. En local : `npm run db:admin`. Activer la double authentification (étape 2 ci-dessous) reste nécessaire pour ouvrir le Studio.
 
 **Option manuelle** :
 
